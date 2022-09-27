@@ -1,0 +1,33 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: manager-role
+rules:
+- apiGroups:
+  - pubsubplus.solace.com
+  resources:
+  - eventbrokers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - pubsubplus.solace.com
+  resources:
+  - eventbrokers/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - pubsubplus.solace.com
+  resources:
+  - eventbrokers/status
+  verbs:
+  - get
+  - patch
+  - update

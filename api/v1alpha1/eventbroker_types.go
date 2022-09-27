@@ -1,0 +1,68 @@
+/*
+Copyright 2022.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+package v1alpha1
+
+import (
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
+// EventBrokerSpec defines the desired state of EventBroker
+type EventBrokerSpec struct {
+	//+kubebuilder:validation:Minimum=0
+	// Size is the size of the eventbroker deployment
+	Size int32 `json:"size"`
+	//+optional
+	// Abcd is an arbitrary string
+	Abcd string `json:"abcd"`
+	//+optional
+	// Efgh is an arbitrary string
+	Efgh string `json:"efgh"`
+}
+
+// EventBrokerStatus defines the observed state of EventBroker
+type EventBrokerStatus struct {
+	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
+	// Important: Run "make" to regenerate code after modifying this file
+
+	// BrokerPods are the names of the eventbroker pods
+	BrokerPods []string `json:"brokerpods"`
+}
+
+//+kubebuilder:object:root=true
+//+kubebuilder:subresource:status
+
+// EventBroker is the Schema for the eventbrokers API
+type EventBroker struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	Spec   EventBrokerSpec   `json:"spec,omitempty"`
+	Status EventBrokerStatus `json:"status,omitempty"`
+}
+
+//+kubebuilder:object:root=true
+
+// EventBrokerList contains a list of EventBroker
+type EventBrokerList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+	Items           []EventBroker `json:"items"`
+}
+
+func init() {
+	SchemeBuilder.Register(&EventBroker{}, &EventBrokerList{})
+}
