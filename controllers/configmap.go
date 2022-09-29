@@ -49,8 +49,7 @@ func (r *EventBrokerReconciler) configmapForEventBroker(m *eventbrokerv1alpha1.E
 	return dep
 }
 
-var InitSh = `
-export username_admin_passwordfilepath="/mnt/disks/secrets/username_admin_password"
+var InitSh = `export username_admin_passwordfilepath="/mnt/disks/secrets/username_admin_password"
 export username_admin_globalaccesslevel=admin
 export service_ssh_port='2222'
 export service_webtransport_port='8008'
@@ -67,7 +66,7 @@ if [ "${BROKER_REDUNDANCY}" = "true" ]; then
   is_monitor=$([ ${host_array[-2]} = "m" ] && echo 1 || echo 0)
   is_backup=$([ ${host_array[-2]} = "b" ] && echo 1 || echo 0)
   namespace=$(echo $STATEFULSET_NAMESPACE)
-  service={{ template "solace.fullname" . }}
+  service=${BROKERSERVICES_NAME}
   # Deal with the fact we cannot accept "-" in broker names
   service_name=$(echo ${service} | sed 's/-//g')
   export routername=$(echo $(hostname) | sed 's/-//g')
@@ -101,8 +100,7 @@ if [ "${BROKER_REDUNDANCY}" = "true" ]; then
   fi
 fi`
 
-var StartupBrokerSh = `
-#!/bin/bash
+var StartupBrokerSh = `#!/bin/bash
 APP=$(basename "$0")
 IFS='-' read -ra host_array <<< $(hostname)
 is_monitor=$([ ${host_array[-2]} = "m" ] && echo 1 || echo 0)
@@ -290,8 +288,7 @@ if [[ ! -e ${INITIAL_STARTUP_FILE} ]]; then
 fi
 exit 0`
 
-var ReadinessCheckSh = `
-#!/bin/bash
+var ReadinessCheckSh = `#!/bin/bash
 APP=$(basename "$0")
 LOG_FILE=/usr/sw/var/k8s_readiness_check.log # STDOUT/STDERR goes to k8s event logs but gets cleaned out eventually. This will also persist it.
 if [ -f ${LOG_FILE} ] ; then
@@ -483,8 +480,7 @@ else
   esac
 fi`
 
-var SempQuerySh = `
-#!/bin/bash
+var SempQuerySh = `#!/bin/bash
 APP=$(basename "$0")
 OPTIND=1         # Reset in case getopts has been used previously in the shell.
 # Initialize our own variables:

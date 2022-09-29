@@ -26,8 +26,8 @@ type EventBrokerSpec struct {
 	// Size is the size of the eventbroker deployment
 	Size int32 `json:"size"`
 	//+optional
-	// Abcd is an arbitrary string
-	Abcd string `json:"abcd"`
+	// Redundancy true is HA deployment, false is Non-HA
+	Redundancy bool `json:"redundancy"`
 	//+optional
 	// Efgh is an arbitrary string
 	Efgh string `json:"efgh"`
@@ -44,6 +44,7 @@ type EventBrokerStatus struct {
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+//+kubebuilder:resource:path=eventbrokers,shortName=eb
 
 // EventBroker is the Schema for the eventbrokers API
 type EventBroker struct {

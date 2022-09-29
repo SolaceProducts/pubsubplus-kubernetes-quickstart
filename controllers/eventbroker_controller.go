@@ -74,27 +74,6 @@ func (r *EventBrokerReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		log.Info("Detected existing eventbroker", " eventbroker.Name", eventbroker.Name)
 	}
 
-	// Check if the Service already exists, if not create a new one
-	svc := &corev1.Service{}
-	err = r.Get(ctx, types.NamespacedName{Name: eventbroker.Name + "-pubsubplus", Namespace: eventbroker.Namespace}, svc)
-	if err != nil && errors.IsNotFound(err) {
-		// Define a new service
-		svc := r.serviceForEventBroker(eventbroker)
-		log.Info("Creating a new Service", "Service.Namespace", svc.Namespace, "Service.Name", svc.Name)
-		err = r.Create(ctx, svc)
-		if err != nil {
-			log.Error(err, "Failed to create new Service", "Service.Namespace", svc.Namespace, "Service.Name", svc.Name)
-			return ctrl.Result{}, err
-		}
-		// Service created successfully - return and requeue
-		return ctrl.Result{Requeue: true}, nil
-	} else if err != nil {
-		log.Error(err, "Failed to get Service")
-		return ctrl.Result{}, err
-	} else {
-		log.Info("Detected existing Service", " Service.Name", svc.Name)
-	}
-
 	// Check if the ConfigMap already exists, if not create a new one
 	cm := &corev1.ConfigMap{}
 	err = r.Get(ctx, types.NamespacedName{Name: eventbroker.Name + "-pubsubplus", Namespace: eventbroker.Namespace}, cm)
@@ -116,16 +95,61 @@ func (r *EventBrokerReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		log.Info("Detected existing ConfigMap", " ConfigMap.Name", cm.Name)
 	}
 
-	// Check if the StatefulSet already exists, if not create a new one
-	sts := &appsv1.StatefulSet{}
-	err = r.Get(ctx, types.NamespacedName{Name: eventbroker.Name + "-pubsubplus-p", Namespace: eventbroker.Namespace}, sts)
+	// Check if the Service already exists, if not create a new one
+	svc := &corev1.Service{}
+	err = r.Get(ctx, types.NamespacedName{Name: eventbroker.Name + "-pubsubplus", Namespace: eventbroker.Namespace}, svc)
+	if err != nil && errors.IsNotFound(err) {
+		// Define a new service
+		svc := r.serviceForEventBroker(eventbroker)
+		log.Info("Creating a new Service", "Service.Namespace", svc.Namespace, "Service.Name", svc.Name)
+		err = r.Create(ctx, svc)
+		if err != nil {
+			log.Error(err, "Failed to create new Service", "Service.Namespace", svc.Namespace, "Service.Name", svc.Name)
+			return ctrl.Result{}, err
+		}
+		// Service created successfully - return and requeue
+		return ctrl.Result{Requeue: true}, nil
+	} else if err != nil {
+		log.Error(err, "Failed to get Service")
+		return ctrl.Result{}, err
+	} else {
+		log.Info("Detected existing Service", " Service.Name", svc.Name)
+	}
+
+	haDeployment := eventbroker.Spec.Redundancy
+	if haDeployment {
+		// Check if the Discovery Service already exists, if not create a new one
+		svc := &corev1.Service{}
+		err = r.Get(ctx, types.NamespacedName{Name: eventbroker.Name + "-pubsubplus-discovery", Namespace: eventbroker.Namespace}, svc)
+		if err != nil && errors.IsNotFound(err) {
+			// Define a new service
+			svc := r.discoveryserviceForEventBroker(eventbroker)
+			log.Info("Creating a new Service", "Service.Namespace", svc.Namespace, "Service.Name", svc.Name)
+			err = r.Create(ctx, svc)
+			if err != nil {
+				log.Error(err, "Failed to create new Service", "Service.Namespace", svc.Namespace, "Service.Name", svc.Name)
+				return ctrl.Result{}, err
+			}
+			// Service created successfully - return and requeue
+			return ctrl.Result{Requeue: true}, nil
+		} else if err != nil {
+			log.Error(err, "Failed to get Service")
+			return ctrl.Result{}, err
+		} else {
+			log.Info("Detected existing Discovery Service", " Service.Name", svc.Name)
+		}
+	}
+	
+	// Check if Primary StatefulSet already exists, if not create a new one
+	stsP := &appsv1.StatefulSet{}
+	err = r.Get(ctx, types.NamespacedName{Name: eventbroker.Name + "-pubsubplus-p", Namespace: eventbroker.Namespace}, stsP)
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new statefulset
-		sts := r.statefulsetForEventBroker(eventbroker, "-p")
-		log.Info("Creating a new StatefulSet", "StatefulSet.Namespace", sts.Namespace, "StatefulSet.Name", sts.Name)
-		err = r.Create(ctx, sts)
+		stsP := r.statefulsetForEventBroker(eventbroker, "-p", haDeployment, "message-routing-primary")
+		log.Info("Creating a new Primary StatefulSet", "StatefulSet.Namespace", stsP.Namespace, "StatefulSet.Name", stsP.Name)
+		err = r.Create(ctx, stsP)
 		if err != nil {
-			log.Error(err, "Failed to create new StatefulSet", "StatefulSet.Namespace", sts.Namespace, "StatefulSet.Name", sts.Name)
+			log.Error(err, "Failed to create new Primary StatefulSet", "StatefulSet.Namespace", stsP.Namespace, "StatefulSet.Name", stsP.Name)
 			return ctrl.Result{}, err
 		}
 		// StatefulSet created successfully - return and requeue
@@ -134,7 +158,53 @@ func (r *EventBrokerReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		log.Error(err, "Failed to get StatefulSet")
 		return ctrl.Result{}, err
 	} else {
-		log.Info("Detected existing StatefulSet", " StatefulSet.Name", sts.Name)
+		log.Info("Detected existing Primary StatefulSet", " StatefulSet.Name", stsP.Name)
+	}
+
+	if haDeployment {
+		// Add backup and monitor statefulsets
+		
+		// Check if Backup StatefulSet already exists, if not create a new one
+		stsB := &appsv1.StatefulSet{}
+		err = r.Get(ctx, types.NamespacedName{Name: eventbroker.Name + "-pubsubplus-b", Namespace: eventbroker.Namespace}, stsB)
+		if err != nil && errors.IsNotFound(err) {
+			// Define a new statefulset
+			stsB := r.statefulsetForEventBroker(eventbroker, "-b", haDeployment, "message-routing-backup")
+			log.Info("Creating a new Backup StatefulSet", "StatefulSet.Namespace", stsB.Namespace, "StatefulSet.Name", stsB.Name)
+			err = r.Create(ctx, stsB)
+			if err != nil {
+				log.Error(err, "Failed to create new Backup StatefulSet", "StatefulSet.Namespace", stsB.Namespace, "StatefulSet.Name", stsB.Name)
+				return ctrl.Result{}, err
+			}
+			// StatefulSet created successfully - return and requeue
+			return ctrl.Result{Requeue: true}, nil
+		} else if err != nil {
+			log.Error(err, "Failed to get StatefulSet")
+			return ctrl.Result{}, err
+		} else {
+			log.Info("Detected existing Backup StatefulSet", " StatefulSet.Name", stsB.Name)
+		}
+		
+		// Check if Monitor StatefulSet already exists, if not create a new one
+		stsM := &appsv1.StatefulSet{}
+		err = r.Get(ctx, types.NamespacedName{Name: eventbroker.Name + "-pubsubplus-m", Namespace: eventbroker.Namespace}, stsM)
+		if err != nil && errors.IsNotFound(err) {
+			// Define a new statefulset
+			stsM := r.statefulsetForEventBroker(eventbroker, "-m", haDeployment, "monitor")
+			log.Info("Creating a new Monitor StatefulSet", "StatefulSet.Namespace", stsM.Namespace, "StatefulSet.Name", stsM.Name)
+			err = r.Create(ctx, stsM)
+			if err != nil {
+				log.Error(err, "Failed to create new Monitor StatefulSet", "StatefulSet.Namespace", stsM.Namespace, "StatefulSet.Name", stsM.Name)
+				return ctrl.Result{}, err
+			}
+			// StatefulSet created successfully - return and requeue
+			return ctrl.Result{Requeue: true}, nil
+		} else if err != nil {
+			log.Error(err, "Failed to get StatefulSet")
+			return ctrl.Result{}, err
+		} else {
+			log.Info("Detected existing Monitor StatefulSet", " StatefulSet.Name", stsM.Name)
+		}
 	}
 
 	// // Ensure the StatefulSet size is the same as the spec

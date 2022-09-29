@@ -17,6 +17,8 @@ limitations under the License.
 package controllers
 
 import (
+	"strconv"
+
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -29,9 +31,17 @@ import (
 )
 
 // statefulsetForEventBroker returns an eventbroker StatefulSet object
-func (r *EventBrokerReconciler) statefulsetForEventBroker(m *eventbrokerv1alpha1.EventBroker, namePostfix string) *appsv1.StatefulSet {
+func (r *EventBrokerReconciler) statefulsetForEventBroker(m *eventbrokerv1alpha1.EventBroker, namePostfix string, haDeployment bool, nodeType string) *appsv1.StatefulSet {
 	stsName := m.Name + "-pubsubplus" + namePostfix
-	nodeType := "message-routing-primary"
+	brokerServicesName := m.Name + "-pubsubplus"
+	discoveryServiceName := m.Name + "-pubsubplus-discovery"
+
+	// hardcode for now
+	cpuRequests := (map[bool]string{true: "1", false: "1"})[nodeType == "monitor"]
+	cpuLimits := (map[bool]string{true: "1", false: "2"})[nodeType == "monitor"]
+	memRequests := (map[bool]string{true: "2Gi", false: "3410Mi"})[nodeType == "monitor"]
+	memLimits := (map[bool]string{true: "2Gi", false: "3410Mi"})[nodeType == "monitor"]
+	storageSize := (map[bool]string{true: "10Gi", false: "30Gi"})[nodeType == "monitor"]
 
 	dep := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
@@ -68,12 +78,12 @@ func (r *EventBrokerReconciler) statefulsetForEventBroker(m *eventbrokerv1alpha1
 							ImagePullPolicy: corev1.PullIfNotPresent,
 							Resources: corev1.ResourceRequirements{
 								Limits: map[corev1.ResourceName]resource.Quantity{
-									corev1.ResourceCPU:    resource.MustParse("2"),
-									corev1.ResourceMemory: resource.MustParse("3410Mi"),
+									corev1.ResourceCPU:    resource.MustParse(cpuLimits),
+									corev1.ResourceMemory: resource.MustParse(memLimits),
 								},
 								Requests: map[corev1.ResourceName]resource.Quantity{
-									corev1.ResourceCPU:    resource.MustParse("1"),
-									corev1.ResourceMemory: resource.MustParse("3410Mi"),
+									corev1.ResourceCPU:    resource.MustParse(cpuRequests),
+									corev1.ResourceMemory: resource.MustParse(memRequests),
 								},
 							},
 							Command: []string{
@@ -105,6 +115,10 @@ func (r *EventBrokerReconciler) statefulsetForEventBroker(m *eventbrokerv1alpha1
 									},
 								},
 								{
+									Name:  "BROKERSERVICES_NAME",
+									Value: brokerServicesName,
+								},
+								{
 									Name:  "BROKER_MAXCONNECTIONCOUNT",
 									Value: "100",
 								},
@@ -122,7 +136,7 @@ func (r *EventBrokerReconciler) statefulsetForEventBroker(m *eventbrokerv1alpha1
 								},
 								{
 									Name:  "BROKER_REDUNDANCY",
-									Value: "false",
+									Value: strconv.FormatBool(haDeployment),
 								},
 								{
 									Name:  "TZ",
@@ -262,7 +276,7 @@ func (r *EventBrokerReconciler) statefulsetForEventBroker(m *eventbrokerv1alpha1
 					// TopologySpreadConstraints:     []corev1.TopologySpreadConstraint{},
 				},
 			},
-			ServiceName: "test1-pubsubplus",
+			ServiceName: discoveryServiceName,
 			UpdateStrategy: appsv1.StatefulSetUpdateStrategy{
 				Type: appsv1.OnDeleteStatefulSetStrategyType,
 			},
@@ -275,7 +289,7 @@ func (r *EventBrokerReconciler) statefulsetForEventBroker(m *eventbrokerv1alpha1
 						AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
 						Resources: corev1.ResourceRequirements{
 							Requests: map[corev1.ResourceName]resource.Quantity{
-								corev1.ResourceStorage: resource.MustParse("30Gi"),
+								corev1.ResourceStorage: resource.MustParse(storageSize),
 							},
 						},
 					},

@@ -5,5 +5,5 @@ metadata:
 spec:
   # TODO(user): Add fields here
   size: 1
-  abcd: "Hohaho"
+  redundancy: true
   efgh: "Huhaho"
