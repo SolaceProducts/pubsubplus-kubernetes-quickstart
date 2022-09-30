@@ -8,6 +8,33 @@
 You’ll need a Kubernetes cluster to run against. You can use [KIND](https://sigs.k8s.io/kind) to get a local cluster for testing, or run against a remote cluster.
 **Note:** Your controller will automatically use the current context in your kubeconfig file (i.e. whatever cluster `kubectl cluster-info` shows).
 
+### Run locally outside the cluster
+
+Additional Prerequisites:
+
+*  go version 1.18
+*  docker version 17.03+.
+*  kubectl
+
+1. Clone this git repo
+2. Change to the project root
+```sh
+cd pubsubplus-kubernetes-operator/
+```
+3. Create Custom Resource and start the operator
+```sh
+make install run
+```
+4. Use the sample `EventBroker` resource to create an HA cluster
+```sh
+kubectl apply -f config/samples/pubsubplus_v1alpha1_eventbroker.yaml
+```
+5. Wait for the pods to come up
+```sh
+kubectl get po -w --show-labels
+```
+6. Forward services at port 8080 and 8008 to use WebAdmin and Try-me
+
 ### Running on the cluster
 1. Install Instances of Custom Resources:
 
