@@ -31,10 +31,15 @@ import (
 )
 
 // statefulsetForEventBroker returns an eventbroker StatefulSet object
-func (r *EventBrokerReconciler) statefulsetForEventBroker(m *eventbrokerv1alpha1.EventBroker, namePostfix string, haDeployment bool, nodeType string) *appsv1.StatefulSet {
-	stsName := m.Name + "-pubsubplus" + namePostfix
+func (r *EventBrokerReconciler) statefulsetForEventBroker(m *eventbrokerv1alpha1.EventBroker, namePostfix string) *appsv1.StatefulSet {
+	stsName := m.Name + "-pubsubplus-" + namePostfix
 	brokerServicesName := m.Name + "-pubsubplus"
 	discoveryServiceName := m.Name + "-pubsubplus-discovery"
+	secretName := m.Name + "-pubsubplus-secrets"
+	configmapName := m.Name + "-pubsubplus"
+	serviceAccountName := m.Name + "-pubsubplus-sa"
+	haDeployment := m.Spec.Redundancy
+	nodeType := (map[string]string{"p": "message-routing-primary", "b": "message-routing-backup", "m": "monitor"})[namePostfix]
 
 	// hardcode for now
 	cpuRequests := (map[bool]string{true: "1", false: "1"})[nodeType == "monitor"]
@@ -215,7 +220,7 @@ func (r *EventBrokerReconciler) statefulsetForEventBroker(m *eventbrokerv1alpha1
 					},
 					RestartPolicy:                 corev1.RestartPolicyAlways,
 					TerminationGracePeriodSeconds: &[]int64{1200}[0], // 1200
-					ServiceAccountName:            "test1-pubsubplus-sa",
+					ServiceAccountName:            serviceAccountName,
 					// NodeName:                      "",
 					SecurityContext: &corev1.PodSecurityContext{
 						RunAsUser: &[]int64{1000001}[0], // 1000001
@@ -244,7 +249,7 @@ func (r *EventBrokerReconciler) statefulsetForEventBroker(m *eventbrokerv1alpha1
 							VolumeSource: corev1.VolumeSource{
 								ConfigMap: &corev1.ConfigMapVolumeSource{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: m.Name + "-pubsubplus",
+										Name: configmapName,
 									},
 									DefaultMode: &[]int32{493}[0], // 493
 								},
@@ -254,7 +259,7 @@ func (r *EventBrokerReconciler) statefulsetForEventBroker(m *eventbrokerv1alpha1
 							Name: "secrets",
 							VolumeSource: corev1.VolumeSource{
 								Secret: &corev1.SecretVolumeSource{
-									SecretName:  "test1-pubsubplus-secrets",
+									SecretName:  secretName,
 									DefaultMode: &[]int32{256}[0], // 256
 								},
 							},

@@ -25,6 +25,11 @@ import (
 	eventbrokerv1alpha1 "github.com/SolaceProducts/pubsubplus-operator/api/v1alpha1"
 )
 
+// TODO: consider typed "sigs.k8s.io/structured-merge-diff/v4/typed"
+// 					var schemaYAML = typed.YAMLObject(`
+// for YAML
+
+
 func (r *EventBrokerReconciler) configmapForEventBroker(m *eventbrokerv1alpha1.EventBroker) *corev1.ConfigMap {
 	cmName := m.Name + "-pubsubplus"
 	dep := &corev1.ConfigMap{
