@@ -16,7 +16,7 @@ Additional Prerequisites:
 *  docker version 17.03+.
 *  kubectl
 
-1. Clone this git repo
+1. Clone this git repo, checkout to this branch
 2. Change to the project root
 ```sh
 cd pubsubplus-kubernetes-operator/
