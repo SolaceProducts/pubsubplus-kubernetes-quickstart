@@ -17,8 +17,8 @@ limitations under the License.
 package controllers
 
 import (
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	ctrl "sigs.k8s.io/controller-runtime"
 
@@ -26,29 +26,23 @@ import (
 )
 
 // rolebindingForEventBroker returns an eventbroker RoleBinding object
-func (r *EventBrokerReconciler) rolebindingForEventBroker(m *eventbrokerv1alpha1.EventBroker) *rbacv1.RoleBinding {
-	rolebindingName := m.Name + "-pubsubplus-serviceaccounts-to-podtagupdater"
-
+func (r *EventBrokerReconciler) rolebindingForEventBroker(rbName string, m *eventbrokerv1alpha1.EventBroker) *rbacv1.RoleBinding {
 	dep := &rbacv1.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      rolebindingName,
+			Name:      rbName,
 			Namespace: m.Namespace,
-			Labels: map[string]string{
-				"app.kubernetes.io/instance":   m.Name,
-				"app.kubernetes.io/name":       "eventbroker",
-				"app.kubernetes.io/managed-by": "solace-pubsubplus-operator",
-			},
+			Labels:    getObjectLabels(m.Name),
 		},
-		Subjects:   []rbacv1.Subject{
+		Subjects: []rbacv1.Subject{
 			{
-				Kind:      rbacv1.ServiceAccountKind,
-				Name:      m.Name + "-pubsubplus-sa",
+				Kind: rbacv1.ServiceAccountKind,
+				Name: getObjectName("ServiceAccount", m.Name),
 			},
 		},
-		RoleRef:    rbacv1.RoleRef{
+		RoleRef: rbacv1.RoleRef{
 			APIGroup: rbacv1.GroupName,
 			Kind:     "Role",
-			Name:     m.Name + "-pubsubplus-podtagupdater",
+			Name:     getObjectName("Role", m.Name),
 		},
 	}
 

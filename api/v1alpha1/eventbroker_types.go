@@ -22,15 +22,11 @@ import (
 
 // EventBrokerSpec defines the desired state of EventBroker
 type EventBrokerSpec struct {
-	//+kubebuilder:validation:Minimum=0
-	// Size is the size of the eventbroker deployment
-	Size int32 `json:"size"`
 	//+optional
-	// Redundancy true is HA deployment, false is Non-HA
+	//+kubebuilder:validation:Type:=boolean
+	//+kubebuilder:default:=false
+	// Redundancy true specifies HA deployment, false specifies Non-HA
 	Redundancy bool `json:"redundancy"`
-	//+optional
-	// Efgh is an arbitrary string
-	Efgh string `json:"efgh"`
 }
 
 // EventBrokerStatus defines the observed state of EventBroker

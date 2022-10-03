@@ -24,47 +24,39 @@ import (
 	eventbrokerv1alpha1 "github.com/SolaceProducts/pubsubplus-operator/api/v1alpha1"
 )
 
-func (r *EventBrokerReconciler) discoveryserviceForEventBroker(m *eventbrokerv1alpha1.EventBroker) *corev1.Service {
-	svcName := m.Name + "-pubsubplus-discovery"
+func (r *EventBrokerReconciler) discoveryserviceForEventBroker(dsvcName string, m *eventbrokerv1alpha1.EventBroker) *corev1.Service {
 	dep := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:                       svcName,
-			Namespace:                  m.Namespace,
-			Labels: map[string]string{
-				"app.kubernetes.io/instance":   m.Name,
-				"app.kubernetes.io/name":       "eventbroker",
-				"app.kubernetes.io/managed-by": "solace-pubsubplus-operator",
-			},
+			Name:      dsvcName,
+			Namespace: m.Namespace,
+			Labels:    getObjectLabels(m.Name),
 		},
 		Spec: corev1.ServiceSpec{
-			Ports:                         []corev1.ServicePort{
+			Ports: []corev1.ServicePort{
 				{
-					Name:        "tcp-semp",
-					Port:        8080,
+					Name: "tcp-semp",
+					Port: 8080,
 				},
 				{
-					Name:        "tcp-ha-mate-link",
-					Port:        8741,
+					Name: "tcp-ha-mate-link",
+					Port: 8741,
 				},
 				{
-					Name:        "tcp-ha-conf-sync0",
-					Port:        8300,
+					Name: "tcp-ha-conf-sync0",
+					Port: 8300,
 				},
 				{
-					Name:        "tcp-ha-conf-sync1",
-					Port:        8301,
+					Name: "tcp-ha-conf-sync1",
+					Port: 8301,
 				},
 				{
-					Name:        "tcp-ha-conf-sync2",
-					Port:        8302,
+					Name: "tcp-ha-conf-sync2",
+					Port: 8302,
 				},
 			},
-			Selector:                      map[string]string{
-				"app.kubernetes.io/instance":   m.Name,
-				"app.kubernetes.io/name":       "eventbroker",
-			},
-			ClusterIP:                     corev1.ClusterIPNone,
-			PublishNotReadyAddresses:      true,
+			Selector:                 getDiscoveryServiceSelector(m.Name),
+			ClusterIP:                corev1.ClusterIPNone,
+			PublishNotReadyAddresses: true,
 		},
 	}
 	// Set EventBroker instance as the owner and controller

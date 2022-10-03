@@ -31,15 +31,14 @@ import (
 )
 
 // statefulsetForEventBroker returns an eventbroker StatefulSet object
-func (r *EventBrokerReconciler) statefulsetForEventBroker(m *eventbrokerv1alpha1.EventBroker, namePostfix string) *appsv1.StatefulSet {
-	stsName := m.Name + "-pubsubplus-" + namePostfix
-	brokerServicesName := m.Name + "-pubsubplus"
-	discoveryServiceName := m.Name + "-pubsubplus-discovery"
-	secretName := m.Name + "-pubsubplus-secrets"
-	configmapName := m.Name + "-pubsubplus"
-	serviceAccountName := m.Name + "-pubsubplus-sa"
+func (r *EventBrokerReconciler) statefulsetForEventBroker(stsName string, m *eventbrokerv1alpha1.EventBroker) *appsv1.StatefulSet {
+	brokerServicesName := getObjectName("Service", m.Name)
+	discoveryServiceName := getObjectName("DiscoveryService", m.Name)
+	secretName := getObjectName("Secret", m.Name)
+	configmapName := getObjectName("ConfigMap", m.Name)
+	serviceAccountName := getObjectName("ServiceAccount", m.Name)
 	haDeployment := m.Spec.Redundancy
-	nodeType := (map[string]string{"p": "message-routing-primary", "b": "message-routing-backup", "m": "monitor"})[namePostfix]
+	nodeType := getBrokerNodeType(m.Name)
 
 	// hardcode for now
 	cpuRequests := (map[bool]string{true: "1", false: "1"})[nodeType == "monitor"]
@@ -52,28 +51,16 @@ func (r *EventBrokerReconciler) statefulsetForEventBroker(m *eventbrokerv1alpha1
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      stsName,
 			Namespace: m.Namespace,
-			Labels: map[string]string{
-				"app.kubernetes.io/instance":   m.Name,
-				"app.kubernetes.io/name":       "eventbroker",
-				"app.kubernetes.io/managed-by": "solace-pubsubplus-operator",
-			},
+			Labels:    getObjectLabels(m.Name),
 		},
 		Spec: appsv1.StatefulSetSpec{
 			Replicas: &[]int32{1}[0], // Set to 1
-			Selector: &metav1.LabelSelector{
-				MatchLabels: map[string]string{
-					"app.kubernetes.io/instance": m.Name,
-					"app.kubernetes.io/name":     "eventbroker",
-					"node-type":                  nodeType,
-				},
+			Selector: &metav1.LabelSelector{ // Refers to the broker Pod labels - see template below
+				MatchLabels: getPodLabels(m.Name, nodeType),
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{
-						"app.kubernetes.io/instance": m.Name,
-						"app.kubernetes.io/name":     "eventbroker",
-						"node-type":                  nodeType,
-					},
+					Labels: getPodLabels(m.Name, nodeType),
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{

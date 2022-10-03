@@ -55,7 +55,7 @@ type EventBrokerReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.12.2/pkg/reconcile
 func (r *EventBrokerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	
+
 	// TODO: fix timestamp format
 	log := ctrllog.FromContext(ctx)
 
@@ -79,10 +79,11 @@ func (r *EventBrokerReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 	// Check if ServiceAccount already exists, if not create a new one
 	sa := &corev1.ServiceAccount{}
-	err = r.Get(ctx, types.NamespacedName{Name: eventbroker.Name + "-pubsubplus-sa", Namespace: eventbroker.Namespace}, sa)
+	saName := getObjectName("ServiceAccount", eventbroker.Name)
+	err = r.Get(ctx, types.NamespacedName{Name: saName, Namespace: eventbroker.Namespace}, sa)
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new ServiceAccount
-		sa := r.serviceaccountForEventBroker(eventbroker)
+		sa := r.serviceaccountForEventBroker(saName, eventbroker)
 		log.Info("Creating a new ServiceAccount", "ServiceAccount.Namespace", sa.Namespace, "ServiceAccount.Name", sa.Name)
 		err = r.Create(ctx, sa)
 		if err != nil {
@@ -98,12 +99,13 @@ func (r *EventBrokerReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		log.Info("Detected existing ServiceAccount", " ServiceAccount.Name", sa.Name)
 	}
 
-	// Check if podtagupdater RoleBinding already exists, if not create a new one
+	// Check if podtagupdater Role already exists, if not create a new one
 	role := &rbacv1.Role{}
-	err = r.Get(ctx, types.NamespacedName{Name: eventbroker.Name + "-pubsubplus-podtagupdater", Namespace: eventbroker.Namespace}, role)
+	roleName := getObjectName("Role", eventbroker.Name)
+	err = r.Get(ctx, types.NamespacedName{Name: roleName, Namespace: eventbroker.Namespace}, role)
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new Role
-		role := r.roleForEventBroker(eventbroker)
+		role := r.roleForEventBroker(roleName, eventbroker)
 		log.Info("Creating a new Role", "Role.Namespace", role.Namespace, "Role.Name", role.Name)
 		err = r.Create(ctx, role)
 		if err != nil {
@@ -121,10 +123,11 @@ func (r *EventBrokerReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 	// Check if RoleBinding already exists, if not create a new one
 	rb := &rbacv1.RoleBinding{}
-	err = r.Get(ctx, types.NamespacedName{Name: eventbroker.Name + "-pubsubplus-serviceaccounts-to-podtagupdater", Namespace: eventbroker.Namespace}, rb)
+	rbName := getObjectName("RoleBinding", eventbroker.Name)
+	err = r.Get(ctx, types.NamespacedName{Name: rbName, Namespace: eventbroker.Namespace}, rb)
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new RoleBinding
-		rb := r.rolebindingForEventBroker(eventbroker)
+		rb := r.rolebindingForEventBroker(rbName, eventbroker)
 		log.Info("Creating a new RoleBinding", "RoleBinding.Namespace", rb.Namespace, "RoleBinding.Name", rb.Name)
 		err = r.Create(ctx, rb)
 		if err != nil {
@@ -142,10 +145,11 @@ func (r *EventBrokerReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 	// Check if the ConfigMap already exists, if not create a new one
 	cm := &corev1.ConfigMap{}
-	err = r.Get(ctx, types.NamespacedName{Name: eventbroker.Name + "-pubsubplus", Namespace: eventbroker.Namespace}, cm)
+	cmName := getObjectName("ConfigMap", eventbroker.Name)
+	err = r.Get(ctx, types.NamespacedName{Name: cmName, Namespace: eventbroker.Namespace}, cm)
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new configmap
-		cm := r.configmapForEventBroker(eventbroker)
+		cm := r.configmapForEventBroker(cmName, eventbroker)
 		log.Info("Creating a new ConfigMap", "Configmap.Namespace", cm.Namespace, "Configmap.Name", cm.Name)
 		err = r.Create(ctx, cm)
 		if err != nil {
@@ -163,10 +167,11 @@ func (r *EventBrokerReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 	// Check if the Service already exists, if not create a new one
 	svc := &corev1.Service{}
-	err = r.Get(ctx, types.NamespacedName{Name: eventbroker.Name + "-pubsubplus", Namespace: eventbroker.Namespace}, svc)
+	svcName := getObjectName("Service", eventbroker.Name)
+	err = r.Get(ctx, types.NamespacedName{Name: svcName, Namespace: eventbroker.Namespace}, svc)
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new service
-		svc := r.serviceForEventBroker(eventbroker)
+		svc := r.serviceForEventBroker(svcName, eventbroker)
 		log.Info("Creating a new Service", "Service.Namespace", svc.Namespace, "Service.Name", svc.Name)
 		err = r.Create(ctx, svc)
 		if err != nil {
@@ -185,11 +190,12 @@ func (r *EventBrokerReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	haDeployment := eventbroker.Spec.Redundancy
 	if haDeployment {
 		// Check if the Discovery Service already exists, if not create a new one
-		svc := &corev1.Service{}
-		err = r.Get(ctx, types.NamespacedName{Name: eventbroker.Name + "-pubsubplus-discovery", Namespace: eventbroker.Namespace}, svc)
+		dsvc := &corev1.Service{}
+		dsvcName := getObjectName("DiscoveryService", eventbroker.Name)
+		err = r.Get(ctx, types.NamespacedName{Name: dsvcName, Namespace: eventbroker.Namespace}, dsvc)
 		if err != nil && errors.IsNotFound(err) {
 			// Define a new service
-			svc := r.discoveryserviceForEventBroker(eventbroker)
+			svc := r.discoveryserviceForEventBroker(dsvcName, eventbroker)
 			log.Info("Creating a new Service", "Service.Namespace", svc.Namespace, "Service.Name", svc.Name)
 			err = r.Create(ctx, svc)
 			if err != nil {
@@ -202,16 +208,17 @@ func (r *EventBrokerReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			log.Error(err, "Failed to get Service")
 			return ctrl.Result{}, err
 		} else {
-			log.Info("Detected existing Discovery Service", " Service.Name", svc.Name)
+			log.Info("Detected existing Discovery Service", " Service.Name", dsvc.Name)
 		}
 	}
 
 	// Check Secret
 	secret := &corev1.Secret{}
-	err = r.Get(ctx, types.NamespacedName{Name: eventbroker.Name + "-pubsubplus-secrets", Namespace: eventbroker.Namespace}, secret)
+	secretName := getObjectName("Secret", eventbroker.Name)
+	err = r.Get(ctx, types.NamespacedName{Name: secretName, Namespace: eventbroker.Namespace}, secret)
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new Secret
-		secret := r.secretForEventBroker(eventbroker)
+		secret := r.secretForEventBroker(secretName, eventbroker)
 		log.Info("Creating a new Secret", "Secret.Namespace", secret.Namespace, "Secret.Name", secret.Name)
 		err = r.Create(ctx, secret)
 		if err != nil {
@@ -229,10 +236,11 @@ func (r *EventBrokerReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 	// Check if Primary StatefulSet already exists, if not create a new one
 	stsP := &appsv1.StatefulSet{}
-	err = r.Get(ctx, types.NamespacedName{Name: eventbroker.Name + "-pubsubplus-p", Namespace: eventbroker.Namespace}, stsP)
+	stsPName := getStatefulsetName(eventbroker.Name, "p")
+	err = r.Get(ctx, types.NamespacedName{Name: stsPName, Namespace: eventbroker.Namespace}, stsP)
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new statefulset
-		stsP := r.statefulsetForEventBroker(eventbroker, "p")
+		stsP := r.statefulsetForEventBroker(stsPName, eventbroker)
 		log.Info("Creating a new Primary StatefulSet", "StatefulSet.Namespace", stsP.Namespace, "StatefulSet.Name", stsP.Name)
 		err = r.Create(ctx, stsP)
 		if err != nil {
@@ -253,10 +261,11 @@ func (r *EventBrokerReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 		// Check if Backup StatefulSet already exists, if not create a new one
 		stsB := &appsv1.StatefulSet{}
-		err = r.Get(ctx, types.NamespacedName{Name: eventbroker.Name + "-pubsubplus-b", Namespace: eventbroker.Namespace}, stsB)
+		stsBName := getStatefulsetName(eventbroker.Name, "b")
+		err = r.Get(ctx, types.NamespacedName{Name: stsBName, Namespace: eventbroker.Namespace}, stsB)
 		if err != nil && errors.IsNotFound(err) {
 			// Define a new statefulset
-			stsB := r.statefulsetForEventBroker(eventbroker, "b")
+			stsB := r.statefulsetForEventBroker(stsBName, eventbroker)
 			log.Info("Creating a new Backup StatefulSet", "StatefulSet.Namespace", stsB.Namespace, "StatefulSet.Name", stsB.Name)
 			err = r.Create(ctx, stsB)
 			if err != nil {
@@ -274,10 +283,11 @@ func (r *EventBrokerReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 		// Check if Monitor StatefulSet already exists, if not create a new one
 		stsM := &appsv1.StatefulSet{}
-		err = r.Get(ctx, types.NamespacedName{Name: eventbroker.Name + "-pubsubplus-m", Namespace: eventbroker.Namespace}, stsM)
+		stsMName := getStatefulsetName(eventbroker.Name, "m")
+		err = r.Get(ctx, types.NamespacedName{Name: stsMName, Namespace: eventbroker.Namespace}, stsM)
 		if err != nil && errors.IsNotFound(err) {
 			// Define a new statefulset
-			stsM := r.statefulsetForEventBroker(eventbroker, "m")
+			stsM := r.statefulsetForEventBroker(stsMName, eventbroker)
 			log.Info("Creating a new Monitor StatefulSet", "StatefulSet.Namespace", stsM.Namespace, "StatefulSet.Name", stsM.Name)
 			err = r.Create(ctx, stsM)
 			if err != nil {

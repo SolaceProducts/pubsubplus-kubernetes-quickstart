@@ -19,45 +19,36 @@ package controllers
 import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	ctrl "sigs.k8s.io/controller-runtime"
 
 	eventbrokerv1alpha1 "github.com/SolaceProducts/pubsubplus-operator/api/v1alpha1"
 )
 
-func (r *EventBrokerReconciler) serviceForEventBroker(m *eventbrokerv1alpha1.EventBroker) *corev1.Service {
-	svcName := m.Name + "-pubsubplus"
+func (r *EventBrokerReconciler) serviceForEventBroker(svcName string, m *eventbrokerv1alpha1.EventBroker) *corev1.Service {
 	dep := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:                       svcName,
-			Namespace:                  m.Namespace,
-			Labels: map[string]string{
-				"app.kubernetes.io/instance":   m.Name,
-				"app.kubernetes.io/name":       "eventbroker",
-				"app.kubernetes.io/managed-by": "solace-pubsubplus-operator",
-			},
+			Name:      svcName,
+			Namespace: m.Namespace,
+			Labels:    getObjectLabels(m.Name),
 		},
 		Spec: corev1.ServiceSpec{
-			Type:                          corev1.ServiceTypeLoadBalancer,
-			Ports:                         []corev1.ServicePort{
+			Type: corev1.ServiceTypeLoadBalancer,
+			Ports: []corev1.ServicePort{
 				{
-					Name:        "tcp-semp",
-					Protocol:    corev1.ProtocolTCP,
-					Port:        8080,
-					TargetPort:  intstr.IntOrString{Type: intstr.Int, IntVal: int32(8080)},
+					Name:       "tcp-semp",
+					Protocol:   corev1.ProtocolTCP,
+					Port:       8080,
+					TargetPort: intstr.IntOrString{Type: intstr.Int, IntVal: int32(8080)},
 				},
 				{
-					Name:        "tcp-web",
-					Protocol:    corev1.ProtocolTCP,
-					Port:        8008,
-					TargetPort:  intstr.IntOrString{Type: intstr.Int, IntVal: int32(8008)},
+					Name:       "tcp-web",
+					Protocol:   corev1.ProtocolTCP,
+					Port:       8008,
+					TargetPort: intstr.IntOrString{Type: intstr.Int, IntVal: int32(8008)},
 				},
 			},
-			Selector:                      map[string]string{
-				"active": "true",
-				"app.kubernetes.io/instance":   m.Name,
-				"app.kubernetes.io/name":       "eventbroker",
-			},
+			Selector: getServiceSelector(m.Name),
 		},
 	}
 	// Set EventBroker instance as the owner and controller

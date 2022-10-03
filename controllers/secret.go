@@ -30,8 +30,7 @@ import (
 )
 
 // secretForEventBroker returns an eventbroker Secret object
-func (r *EventBrokerReconciler) secretForEventBroker(m *eventbrokerv1alpha1.EventBroker) *corev1.Secret {
-	secretName := m.Name + "-pubsubplus-secrets"
+func (r *EventBrokerReconciler) secretForEventBroker(secretName string, m *eventbrokerv1alpha1.EventBroker) *corev1.Secret {
 
 	// TODO: Replace with more serious generator
 	randomPassword := generateSimplePassword(8)
@@ -40,16 +39,12 @@ func (r *EventBrokerReconciler) secretForEventBroker(m *eventbrokerv1alpha1.Even
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      secretName,
 			Namespace: m.Namespace,
-			Labels: map[string]string{
-				"app.kubernetes.io/instance":   m.Name,
-				"app.kubernetes.io/name":       "eventbroker",
-				"app.kubernetes.io/managed-by": "solace-pubsubplus-operator",
-			},
+			Labels:    getObjectLabels(m.Name),
 		},
-		Data:       map[string][]byte{
+		Data: map[string][]byte{
 			"username_admin_password": []byte(randomPassword),
 		},
-		Type:       corev1.SecretTypeOpaque,
+		Type: corev1.SecretTypeOpaque,
 	}
 
 	// FOR NOW. May be reconsidered.

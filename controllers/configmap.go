@@ -29,18 +29,12 @@ import (
 // 					var schemaYAML = typed.YAMLObject(`
 // for YAML
 
-
-func (r *EventBrokerReconciler) configmapForEventBroker(m *eventbrokerv1alpha1.EventBroker) *corev1.ConfigMap {
-	cmName := m.Name + "-pubsubplus"
+func (r *EventBrokerReconciler) configmapForEventBroker(cmName string, m *eventbrokerv1alpha1.EventBroker) *corev1.ConfigMap {
 	dep := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      cmName,
 			Namespace: m.Namespace,
-			Labels: map[string]string{
-				"app.kubernetes.io/instance":   m.Name,
-				"app.kubernetes.io/name":       "eventbroker",
-				"app.kubernetes.io/managed-by": "solace-pubsubplus-operator",
-			},
+			Labels:    getObjectLabels(m.Name),
 		},
 		Data: map[string]string{
 			"init.sh":            InitSh,

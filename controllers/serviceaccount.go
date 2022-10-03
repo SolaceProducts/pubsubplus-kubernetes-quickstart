@@ -26,18 +26,12 @@ import (
 )
 
 // serviceaccountForEventBroker returns an eventbroker ServiceAccount object
-func (r *EventBrokerReconciler) serviceaccountForEventBroker(m *eventbrokerv1alpha1.EventBroker) *corev1.ServiceAccount {
-	serviceaccountName := m.Name + "-pubsubplus-sa"
-
+func (r *EventBrokerReconciler) serviceaccountForEventBroker(saName string, m *eventbrokerv1alpha1.EventBroker) *corev1.ServiceAccount {
 	dep := &corev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      serviceaccountName,
+			Name:      saName,
 			Namespace: m.Namespace,
-			Labels: map[string]string{
-				"app.kubernetes.io/instance":   m.Name,
-				"app.kubernetes.io/name":       "eventbroker",
-				"app.kubernetes.io/managed-by": "solace-pubsubplus-operator",
-			},
+			Labels:    getObjectLabels(m.Name),
 		},
 	}
 

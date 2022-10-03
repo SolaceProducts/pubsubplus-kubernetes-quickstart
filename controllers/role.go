@@ -17,8 +17,8 @@ limitations under the License.
 package controllers
 
 import (
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	ctrl "sigs.k8s.io/controller-runtime"
 
@@ -26,28 +26,22 @@ import (
 )
 
 // roleForEventBroker returns an eventbroker Role object
-func (r *EventBrokerReconciler) roleForEventBroker(m *eventbrokerv1alpha1.EventBroker) *rbacv1.Role {
-	roleName := m.Name + "-pubsubplus-podtagupdater"
-
+func (r *EventBrokerReconciler) roleForEventBroker(roleName string, m *eventbrokerv1alpha1.EventBroker) *rbacv1.Role {
 	dep := &rbacv1.Role{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      roleName,
 			Namespace: m.Namespace,
-			Labels: map[string]string{
-				"app.kubernetes.io/instance":   m.Name,
-				"app.kubernetes.io/name":       "eventbroker",
-				"app.kubernetes.io/managed-by": "solace-pubsubplus-operator",
-			},
+			Labels:    getObjectLabels(m.Name),
 		},
-		Rules:      []rbacv1.PolicyRule{
+		Rules: []rbacv1.PolicyRule{
 			{
-				Verbs:           []string{
+				Verbs: []string{
 					"patch",
 				},
-				APIGroups:       []string{
+				APIGroups: []string{
 					"",
 				},
-				Resources:       []string{
+				Resources: []string{
 					"pods",
 				},
 			},
@@ -57,4 +51,3 @@ func (r *EventBrokerReconciler) roleForEventBroker(m *eventbrokerv1alpha1.EventB
 	ctrl.SetControllerReference(m, dep, r.Scheme)
 	return dep
 }
-

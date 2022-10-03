@@ -3,6 +3,4 @@ kind: EventBroker
 metadata:
   name: test1
 spec:
-  # TODO(user): Add fields here
-  size: 1
   redundancy: true
