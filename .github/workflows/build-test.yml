@@ -27,5 +27,5 @@ jobs:
           echo "current-context:" $(kubectl config current-context)
           echo "environment-kubeconfig:" ${KUBECONFIG}
           make install run &
-          sleep 5
-          kubctl get crd
+          sleep 20
+          kubectl get crd
