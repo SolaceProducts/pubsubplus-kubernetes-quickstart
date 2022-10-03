@@ -28,5 +28,5 @@ jobs:
           echo "environment-kubeconfig:" ${KUBECONFIG}
           nohup make install run > /tmp/operator.out &
           sleep 1
-          grep -q 'Starting Controller' <(tail -f /tmp/operator.out)
-          kubectl get crd
+          while ! cat /tmp/operator.out | grep "Starting Controller" ; do sleep 1 ; done
+          kubectl get crd -o yaml
