@@ -59,25 +59,25 @@ func getBrokerNodeType(statefulSetDeploymentName string) string {
 // Provides the labels for a broker Pod in the current EventBroker deployment
 func getPodLabels(deploymentName string, nodeType string) map[string]string {
 	return map[string]string{
-		"app.kubernetes.io/instance":  deploymentName,
-		"app.kubernetes.io/name":      "eventbroker",
-		"node-type":                   nodeType,
+		"app.kubernetes.io/instance": deploymentName,
+		"app.kubernetes.io/name":     "eventbroker",
+		"node-type":                  nodeType,
 	}
 }
 
 // Provides the selector (from Pods) to be used for broker services
 func getServiceSelector(deploymentName string) map[string]string {
 	return map[string]string{
-		"app.kubernetes.io/instance":   deploymentName,
-		"app.kubernetes.io/name":       "eventbroker",
-		"active":                     	"true",
+		"app.kubernetes.io/instance": deploymentName,
+		"app.kubernetes.io/name":     "eventbroker",
+		"active":                     "true",
 	}
 }
 
 // Provides the selector (from Pods) to be used for broker nodes discovery services
 func getDiscoveryServiceSelector(deploymentName string) map[string]string {
 	return map[string]string{
-		"app.kubernetes.io/instance":   deploymentName,
-		"app.kubernetes.io/name":       "eventbroker",
+		"app.kubernetes.io/instance": deploymentName,
+		"app.kubernetes.io/name":     "eventbroker",
 	}
 }
