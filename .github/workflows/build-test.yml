@@ -26,6 +26,6 @@ jobs:
           kubectl get pods -n kube-system
           echo "current-context:" $(kubectl config current-context)
           echo "environment-kubeconfig:" ${KUBECONFIG}
-          make install run &
-          sleep 20
+          nohup make install run &
+          while ! tail -f nohup.out | grep "Starting Controller" ; do sleep 5; done
           kubectl get crd
