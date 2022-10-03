@@ -27,5 +27,5 @@ jobs:
           echo "current-context:" $(kubectl config current-context)
           echo "environment-kubeconfig:" ${KUBECONFIG}
           nohup make install run > /tmp/operator.out &
-          tail -f /tmp/operator.out | egrep -m 1 "Starting Controller"
+          sleep 10; tail -f /tmp/operator.out | egrep -m 1 "Starting Controller"
           kubectl get crd
