@@ -4,6 +4,31 @@ on:
   push:
 
 jobs:
+  build:
+    name: Build & push image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Go
+        uses: actions/setup-go@v1
+        with:
+          go-version: 1.19
+
+      - name: Check out code
+        uses: actions/checkout@v1
+
+      - name: Build
+        run: make docker-build
+
+      - name: Login to Github Packages
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build image and push GitHub Container Registry
+        run: make docker-push
+
 
   test:
     name: Test
@@ -26,9 +51,3 @@ jobs:
           kubectl get pods -n kube-system
           echo "current-context:" $(kubectl config current-context)
           echo "environment-kubeconfig:" ${KUBECONFIG}
-          make install
-          kubectl get crd -o yaml
-          nohup go run main.go > /tmp/operator.out &
-          sleep 1
-          while ! cat /tmp/operator.out | grep "Starting Controller" ; do sleep 1 ; done
-          echo HERE!!!
