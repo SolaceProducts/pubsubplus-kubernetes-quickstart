@@ -4,9 +4,8 @@ on:
   push:
 
 jobs:
-
-  lint:
-    name: Lint
+  build:
+    name: Build & push image
     runs-on: ubuntu-latest
     steps:
       - name: Set up Go
@@ -17,10 +16,19 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v1
 
-      - name: Lint Go Code
-        run: |
-          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s v1.49.0
-          make lint
+      - name: Build
+        run: make docker-build
+
+      - name: Login to Github Packages
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build image and push GitHub Container Registry
+        run: make docker-push
+
 
   test:
     name: Test
@@ -36,3 +44,10 @@ jobs:
 
       - name: Create k8s Kind Cluster
         uses: helm/kind-action@v1.3.0
+
+      - name: Testing
+        run: |
+          kubectl cluster-info
+          kubectl get pods -n kube-system
+          echo "current-context:" $(kubectl config current-context)
+          echo "environment-kubeconfig:" ${KUBECONFIG}
