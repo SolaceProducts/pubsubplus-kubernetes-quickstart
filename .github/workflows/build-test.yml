@@ -33,6 +33,7 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
+    needs: [build]
     steps:
       - name: Set up Go
         uses: actions/setup-go@v1
@@ -45,9 +46,34 @@ jobs:
       - name: Create k8s Kind Cluster
         uses: helm/kind-action@v1.3.0
 
-      - name: Testing
+      - name: Login to Github Packages
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Testing operator deployment
         run: |
           kubectl cluster-info
           kubectl get pods -n kube-system
           echo "current-context:" $(kubectl config current-context)
           echo "environment-kubeconfig:" ${KUBECONFIG}
+          kubectl create ns pubsubplus-v1alpha1-system
+          kubectl create secret generic regcred --from-file=.dockerconfigjson=${HOME}/.docker/config.json --type=kubernetes.io/dockerconfigjson -n pubsubplus-v1alpha1-system
+          make deploy | grep created
+          kubectl rollout status deployment pubsubplus-v1alpha1-controller-manager -n pubsubplus-v1alpha1-system --timeout=30s
+          get crd | grep eventbrokers
+
+      - name: Testing the Operator - HA
+        run: |
+          kubectl apply -f ci/manifests/eventbroker-ha.yaml | grep "test-ha created"
+          kubectl wait pods --selector app.kubernetes.io/instance=test-ha --for condition=Ready
+          kubectl get po --show-labels | grep test-ha | grep "1/1" | wc -l | grep 3  // ensure all available
+          kubectl get po --show-labels | grep test-ha | grep active=true | wc -l | grep 1  // ensure active label present once 
+          kubectl get sts | grep test-ha | wc -l | grep 3 // ensure 3 statefulsets
+          kubectl port-forward svc/test1-pubsubplus 8080:8080 &
+          curl localhost:8080 | grep aurelia // confirms SEMP access is working
+          
+
+
