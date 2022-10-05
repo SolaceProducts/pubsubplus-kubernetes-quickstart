@@ -4,36 +4,36 @@ on:
   push:
 
 jobs:
-  build:
-    name: Build & push image
-    runs-on: ubuntu-latest
-    steps:
-      - name: Set up Go
-        uses: actions/setup-go@v1
-        with:
-          go-version: 1.19
+  # build:
+  #   name: Build & push image
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Set up Go
+  #       uses: actions/setup-go@v1
+  #       with:
+  #         go-version: 1.19
 
-      - name: Check out code
-        uses: actions/checkout@v1
+  #     - name: Check out code
+  #       uses: actions/checkout@v1
 
-      - name: Build
-        run: make docker-build
+  #     - name: Build
+  #       run: make docker-build
 
-      - name: Login to Github Packages
-        uses: docker/login-action@v2
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+  #     - name: Login to Github Packages
+  #       uses: docker/login-action@v2
+  #       with:
+  #         registry: ghcr.io
+  #         username: ${{ github.actor }}
+  #         password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build image and push GitHub Container Registry
-        run: make docker-push
+  #     - name: Build image and push GitHub Container Registry
+  #       run: make docker-push
 
 
   test:
     name: Test
     runs-on: ubuntu-latest
-    needs: [build]
+    # needs: [build]
     steps:
       - name: Set up Go
         uses: actions/setup-go@v1
@@ -63,7 +63,7 @@ jobs:
           kubectl create secret generic regcred --from-file=.dockerconfigjson=${HOME}/.docker/config.json --type=kubernetes.io/dockerconfigjson -n pubsubplus-v1alpha1-system
           make deploy | grep created
           kubectl rollout status deployment pubsubplus-v1alpha1-controller-manager -n pubsubplus-v1alpha1-system --timeout=30s
-          get crd | grep eventbrokers
+          kubectl get crd | grep eventbrokers
 
       - name: Testing the Operator - HA
         run: |
@@ -73,7 +73,11 @@ jobs:
           kubectl get po --show-labels | grep test-ha | grep active=true | wc -l | grep 1  // ensure active label present once 
           kubectl get sts | grep test-ha | wc -l | grep 3 // ensure 3 statefulsets
           kubectl port-forward svc/test1-pubsubplus 8080:8080 &
+          kubectl port-forward svc/test1-pubsubplus 55555:55555 &
           curl localhost:8080 | grep aurelia // confirms SEMP access is working
-          
+          curl -O https://sftp.solace.com/download/SDKPERF_C_LINUX64 // get sdkperf
+          tar -xvf SDKPERF_C_LINUX64 // setup sdkperf
+          pubSubTools/sdkperf_c -cip=tcp://localhost:55555 -mn=1000 -mr=0 -ptl=t1 -stl=t1 | grep "Total Messages"
+
 
 
