@@ -68,7 +68,7 @@ jobs:
       - name: Testing the Operator - HA
         run: |
           kubectl apply -f ci/manifests/eventbroker-ha.yaml | grep "test-ha created"
-          sleep 5 ; kubectl wait pods --selector app.kubernetes.io/instance=test-ha --for condition=Ready
+          sleep 5 ; kubectl wait pods --selector app.kubernetes.io/instance=test-ha --for condition=Ready --timeout=120s
           kubectl get po --show-labels | grep test-ha | grep "1/1" | wc -l | grep 3
           kubectl get po --show-labels | grep test-ha | grep active=true | wc -l | grep 1
           kubectl get sts | grep test-ha | wc -l | grep 3 // ensure 3 statefulsets
