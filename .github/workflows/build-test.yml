@@ -4,36 +4,36 @@ on:
   push:
 
 jobs:
-  # build:
-  #   name: Build & push image
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Set up Go
-  #       uses: actions/setup-go@v1
-  #       with:
-  #         go-version: 1.19
+  build:
+    name: Build & push image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Go
+        uses: actions/setup-go@v1
+        with:
+          go-version: 1.19
 
-  #     - name: Check out code
-  #       uses: actions/checkout@v1
+      - name: Check out code
+        uses: actions/checkout@v1
 
-  #     - name: Build
-  #       run: make docker-build
+      - name: Build
+        run: make docker-build
 
-  #     - name: Login to Github Packages
-  #       uses: docker/login-action@v2
-  #       with:
-  #         registry: ghcr.io
-  #         username: ${{ github.actor }}
-  #         password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Login to Github Packages
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-  #     - name: Build image and push GitHub Container Registry
-  #       run: make docker-push
+      - name: Build image and push GitHub Container Registry
+        run: make docker-push
 
 
   test:
     name: Test
     runs-on: ubuntu-latest
-    # needs: [build]
+    needs: [build]
     steps:
       - name: Set up Go
         uses: actions/setup-go@v1
@@ -73,7 +73,9 @@ jobs:
           kubectl get po --show-labels | grep test-nonha | grep active=true
           kubectl get sts | grep test-nonha
           kubectl port-forward svc/test-nonha-pubsubplus 8080:8080 &
+          sleep 1
           kubectl port-forward svc/test-nonha-pubsubplus 55555:55555 &
+          sleep 1
           curl localhost:8080 | grep aurelia
           curl -O https://sftp.solace.com/download/SDKPERF_C_LINUX64
           tar -xvf SDKPERF_C_LINUX64
