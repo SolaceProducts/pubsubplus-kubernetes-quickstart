@@ -47,6 +47,12 @@ func (r *EventBrokerReconciler) serviceForEventBroker(svcName string, m *eventbr
 					Port:       8008,
 					TargetPort: intstr.IntOrString{Type: intstr.Int, IntVal: int32(8008)},
 				},
+				{
+					Name:       "tcp-smf",
+					Protocol:   corev1.ProtocolTCP,
+					Port:       55555,
+					TargetPort: intstr.IntOrString{Type: intstr.Int, IntVal: int32(55555)},
+				},
 			},
 			Selector: getServiceSelector(m.Name),
 		},
