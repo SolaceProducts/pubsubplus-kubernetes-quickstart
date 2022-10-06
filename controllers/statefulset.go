@@ -92,6 +92,10 @@ func (r *EventBrokerReconciler) statefulsetForEventBroker(stsName string, m *eve
 									ContainerPort: 8008,
 									Protocol:      corev1.ProtocolTCP,
 								},
+								{
+									ContainerPort: 55555,
+									Protocol:      corev1.ProtocolTCP,
+								},
 							},
 							Env: []corev1.EnvVar{
 								{

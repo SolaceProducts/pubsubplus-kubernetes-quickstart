@@ -33,7 +33,10 @@ kubectl apply -f config/samples/pubsubplus_v1alpha1_eventbroker.yaml
 ```sh
 kubectl get po -w --show-labels
 ```
-6. Forward services at port 8080 and 8008 to use WebAdmin and Try-me
+6. Forward services at port 8080 and 8008 to localhost to use WebAdmin and Try-me. May also forward port 55555 for SMF messaging. Example:
+```sh
+kubectl port-forward svc/<service-name> 8080:8080 &
+```
 
 ### Running on the cluster
 1. Install Instances of Custom Resources:
