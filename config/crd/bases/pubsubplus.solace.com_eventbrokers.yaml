@@ -4,7 +4,6 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.9.2
-  creationTimestamp: null
   name: eventbrokers.pubsubplus.solace.com
 spec:
   group: pubsubplus.solace.com
@@ -37,11 +36,32 @@ spec:
           spec:
             description: EventBrokerSpec defines the desired state of EventBroker
             properties:
+              developer:
+                default: false
+                description: Developer true specifies minimum footprint deployment,
+                  not for production use. Overrides SystemScaling parameters.
+                type: boolean
               redundancy:
                 default: false
                 description: Redundancy true specifies HA deployment, false specifies
                   Non-HA
                 type: boolean
+              systemScaling:
+                description: SystemScaling provides exact fine-grained specification
+                  of the event broker scaling parameters and the assigned CPU / memory
+                  resources to the Pod
+                properties:
+                  maxConnections:
+                    type: integer
+                  maxQueueMessages:
+                    type: integer
+                  maxSpoolUsage:
+                    type: integer
+                  messagingNodeCpu:
+                    type: string
+                  messagingNodeMemory:
+                    type: string
+                type: object
             type: object
           status:
             description: EventBrokerStatus defines the observed state of EventBroker

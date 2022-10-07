@@ -27,6 +27,24 @@ type EventBrokerSpec struct {
 	//+kubebuilder:default:=false
 	// Redundancy true specifies HA deployment, false specifies Non-HA
 	Redundancy bool `json:"redundancy"`
+	//+optional
+	//+kubebuilder:validation:Type:=boolean
+	//+kubebuilder:default:=false
+	// Developer true specifies minimum footprint deployment, not for production use. Overrides SystemScaling parameters.
+	Developer bool `json:"developer"`
+	//+optional
+	//+kubebuilder:validation:Type:=object
+	// SystemScaling provides exact fine-grained specification of the event broker scaling parameters
+	// and the assigned CPU / memory resources to the Pod
+	SystemScaling *SystemScaling `json:"systemScaling,omitempty"`
+}
+
+type SystemScaling struct {
+	MaxConnections int `json:"maxConnections,omitempty"`
+	MaxQueueMessages int `json:"maxQueueMessages,omitempty"`
+	MaxSpoolUsage int `json:"maxSpoolUsage,omitempty"`
+	MessagingNodeCpu string `json:"messagingNodeCpu,omitempty"`
+	MessagingNodeMemory string `json:"messagingNodeMemory,omitempty"`
 }
 
 // EventBrokerStatus defines the observed state of EventBroker

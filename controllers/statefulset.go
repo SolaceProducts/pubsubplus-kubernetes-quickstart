@@ -38,14 +38,55 @@ func (r *EventBrokerReconciler) statefulsetForEventBroker(stsName string, m *eve
 	configmapName := getObjectName("ConfigMap", m.Name)
 	serviceAccountName := getObjectName("ServiceAccount", m.Name)
 	haDeployment := m.Spec.Redundancy
-	nodeType := getBrokerNodeType(m.Name)
+	nodeType := getBrokerNodeType(stsName)
 
-	// hardcode for now
-	cpuRequests := (map[bool]string{true: "1", false: "1"})[nodeType == "monitor"]
-	cpuLimits := (map[bool]string{true: "1", false: "2"})[nodeType == "monitor"]
-	memRequests := (map[bool]string{true: "2Gi", false: "3410Mi"})[nodeType == "monitor"]
-	memLimits := (map[bool]string{true: "2Gi", false: "3410Mi"})[nodeType == "monitor"]
-	storageSize := (map[bool]string{true: "10Gi", false: "30Gi"})[nodeType == "monitor"]
+	// Determine broker sizing
+	var cpuRequests, cpuLimits string
+	var memRequests, memLimits string
+	var storageSize string
+	var maxConnections, maxQueueMessages, maxSpoolUsage int
+	if nodeType == "monitor" {
+		cpuRequests = "1"
+		cpuLimits = "1"
+		memRequests = "2Gi"
+		memLimits = "2Gi"
+		storageSize = "3Gi"
+		maxConnections = 100
+		maxQueueMessages = 100
+		maxSpoolUsage = 1000
+	} else {
+		// First determine default settings for the message routing broker nodes, depending on developer mode set
+		// refer to https://docs.solace.com/Admin-Ref/Resource-Calculator/pubsubplus-resource-calculator.html
+		cpuRequests = (map[bool]string{true: "1", false: "2"})[m.Spec.Developer]
+		cpuLimits = (map[bool]string{true: "2", false: "2"})[m.Spec.Developer]
+		memRequests = (map[bool]string{true: "3410Mi", false: "4025Mi"})[m.Spec.Developer]
+		memLimits = (map[bool]string{true: "3410Mi", false: "4025Mi"})[m.Spec.Developer]
+		storageSize = (map[bool]string{true: "7Gi", false: "17Gi"})[m.Spec.Developer]
+		maxConnections = (map[bool]int{true: 100, false: 100})[m.Spec.Developer]
+		maxQueueMessages = (map[bool]int{true: 100, false: 100})[m.Spec.Developer]
+		maxSpoolUsage = (map[bool]int{true: 1000, false: 10000})[m.Spec.Developer]
+		// Overwrite for any values defined in spec.systemScaling
+		if m.Spec.SystemScaling != nil  && !m.Spec.Developer {
+			if m.Spec.SystemScaling.MessagingNodeCpu != "" {
+				cpuRequests = m.Spec.SystemScaling.MessagingNodeCpu
+				cpuLimits = cpuRequests
+			}
+			if m.Spec.SystemScaling.MessagingNodeMemory != "" {
+				memRequests = m.Spec.SystemScaling.MessagingNodeMemory
+				memLimits = memRequests
+			}
+			if m.Spec.SystemScaling.MaxConnections > 0 {
+				maxConnections = m.Spec.SystemScaling.MaxConnections
+			}
+			if m.Spec.SystemScaling.MaxQueueMessages > 0 {
+				maxQueueMessages = m.Spec.SystemScaling.MaxQueueMessages
+			}
+			if m.Spec.SystemScaling.MaxSpoolUsage > 0 {
+				maxSpoolUsage = m.Spec.SystemScaling.MaxSpoolUsage
+			}
+		}
+	}
+
 
 	dep := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
@@ -116,15 +157,15 @@ func (r *EventBrokerReconciler) statefulsetForEventBroker(stsName string, m *eve
 								},
 								{
 									Name:  "BROKER_MAXCONNECTIONCOUNT",
-									Value: "100",
+									Value: strconv.Itoa(maxConnections),
 								},
 								{
 									Name:  "BROKER_MAXQUEUEMESSAGECOUNT",
-									Value: "100",
+									Value: strconv.Itoa(maxQueueMessages),
 								},
 								{
 									Name:  "BROKER_MAXSPOOLUSAGE",
-									Value: "1500",
+									Value: strconv.Itoa(maxSpoolUsage),
 								},
 								{
 									Name:  "BROKER_TLS_ENEBLED",
