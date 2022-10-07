@@ -4,3 +4,4 @@ metadata:
   name: test-ha
 spec:
   redundancy: true
+  developer: true

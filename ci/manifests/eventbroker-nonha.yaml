@@ -4,3 +4,4 @@ metadata:
   name: test-nonha
 spec:
   redundancy: false
+  developer: true
