@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"reflect"
+	"time"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -71,6 +72,8 @@ func (r *EventBrokerReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 	// TODO: fix timestamp format
 	log := ctrllog.FromContext(ctx)
+
+	var stsP, stsB, stsM *appsv1.StatefulSet
 
 	// Fetch the EventBroker instance
 	eventbroker := &eventbrokerv1alpha1.EventBroker{}
@@ -248,12 +251,12 @@ func (r *EventBrokerReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	}
 
 	// Check if Primary StatefulSet already exists, if not create a new one
-	stsP := &appsv1.StatefulSet{}
+	stsP = &appsv1.StatefulSet{}
 	stsPName := getStatefulsetName(eventbroker.Name, "p")
 	err = r.Get(ctx, types.NamespacedName{Name: stsPName, Namespace: eventbroker.Namespace}, stsP)
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new statefulset
-		stsP := r.statefulsetForEventBroker(stsPName, eventbroker)
+		stsP := r.createStatefulsetForEventBroker(stsPName, eventbroker)
 		log.Info("Creating a new Primary StatefulSet", "StatefulSet.Namespace", stsP.Namespace, "StatefulSet.Name", stsP.Name)
 		err = r.Create(ctx, stsP)
 		if err != nil {
@@ -266,19 +269,32 @@ func (r *EventBrokerReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		log.Error(err, "Failed to get StatefulSet")
 		return ctrl.Result{}, err
 	} else {
-		log.Info("Detected existing Primary StatefulSet", " StatefulSet.Name", stsP.Name)
+		if stsP.Spec.Template.ObjectMeta.Annotations[dependenciesSignatureAnnotationName] != hash(eventbroker.Spec) {
+			// If resource versions differ it means update is required
+			log.Info("Updating existing Primary StatefulSet", " StatefulSet.Name", stsP.Name)
+			r.updateStatefulsetForEventBroker(stsPName, eventbroker, stsP)
+			log.Info("Updating Primary StatefulSet", "StatefulSet.Namespace", stsP.Namespace, "StatefulSet.Name", stsP.Name)
+			err = r.Update(ctx, stsP)
+			if err != nil {
+				log.Error(err, "Failed to update Primary StatefulSet", "StatefulSet.Namespace", stsP.Namespace, "StatefulSet.Name", stsP.Name)
+				return ctrl.Result{}, err
+			}
+			// StatefulSet updated successfully - return and requeue
+			return ctrl.Result{Requeue: true}, nil
+		}
+		log.Info("Detected up-to-date existing Primary StatefulSet", " StatefulSet.Name", stsP.Name)
 	}
 
 	if haDeployment {
 		// Add backup and monitor statefulsets
 
 		// Check if Backup StatefulSet already exists, if not create a new one
-		stsB := &appsv1.StatefulSet{}
+		stsB = &appsv1.StatefulSet{}
 		stsBName := getStatefulsetName(eventbroker.Name, "b")
 		err = r.Get(ctx, types.NamespacedName{Name: stsBName, Namespace: eventbroker.Namespace}, stsB)
 		if err != nil && errors.IsNotFound(err) {
 			// Define a new statefulset
-			stsB := r.statefulsetForEventBroker(stsBName, eventbroker)
+			stsB := r.createStatefulsetForEventBroker(stsBName, eventbroker)
 			log.Info("Creating a new Backup StatefulSet", "StatefulSet.Namespace", stsB.Namespace, "StatefulSet.Name", stsB.Name)
 			err = r.Create(ctx, stsB)
 			if err != nil {
@@ -291,16 +307,29 @@ func (r *EventBrokerReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			log.Error(err, "Failed to get StatefulSet")
 			return ctrl.Result{}, err
 		} else {
-			log.Info("Detected existing Backup StatefulSet", " StatefulSet.Name", stsB.Name)
+			if stsB.Spec.Template.ObjectMeta.Annotations[dependenciesSignatureAnnotationName] != hash(eventbroker.Spec) {
+				// If resource versions differ it means update is required
+				log.Info("Updating existing Backup StatefulSet", " StatefulSet.Name", stsB.Name)
+				r.updateStatefulsetForEventBroker(stsBName, eventbroker, stsB)
+				log.Info("Updating Backup StatefulSet", "StatefulSet.Namespace", stsB.Namespace, "StatefulSet.Name", stsB.Name)
+				err = r.Update(ctx, stsB)
+				if err != nil {
+					log.Error(err, "Failed to update Backup StatefulSet", "StatefulSet.Namespace", stsB.Namespace, "StatefulSet.Name", stsB.Name)
+					return ctrl.Result{}, err
+				}
+				// StatefulSet updated successfully - return and requeue
+				return ctrl.Result{Requeue: true}, nil
+			}
+			log.Info("Detected up-to-date existing Backup StatefulSet", " StatefulSet.Name", stsB.Name)
 		}
 
 		// Check if Monitor StatefulSet already exists, if not create a new one
-		stsM := &appsv1.StatefulSet{}
+		stsM = &appsv1.StatefulSet{}
 		stsMName := getStatefulsetName(eventbroker.Name, "m")
 		err = r.Get(ctx, types.NamespacedName{Name: stsMName, Namespace: eventbroker.Namespace}, stsM)
 		if err != nil && errors.IsNotFound(err) {
 			// Define a new statefulset
-			stsM := r.statefulsetForEventBroker(stsMName, eventbroker)
+			stsM := r.createStatefulsetForEventBroker(stsMName, eventbroker)
 			log.Info("Creating a new Monitor StatefulSet", "StatefulSet.Namespace", stsM.Namespace, "StatefulSet.Name", stsM.Name)
 			err = r.Create(ctx, stsM)
 			if err != nil {
@@ -313,25 +342,47 @@ func (r *EventBrokerReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			log.Error(err, "Failed to get StatefulSet")
 			return ctrl.Result{}, err
 		} else {
-			log.Info("Detected existing Monitor StatefulSet", " StatefulSet.Name", stsM.Name)
+			if stsM.Spec.Template.ObjectMeta.Annotations[dependenciesSignatureAnnotationName] != hash(eventbroker.Spec) {
+				// If resource versions differ it means update is required
+				log.Info("Updating existing Monitor StatefulSet", " StatefulSet.Name", stsM.Name)
+				r.updateStatefulsetForEventBroker(stsMName, eventbroker, stsM)
+				log.Info("Updating Monitor StatefulSet", "StatefulSet.Namespace", stsM.Namespace, "StatefulSet.Name", stsM.Name)
+				err = r.Update(ctx, stsM)
+				if err != nil {
+					log.Error(err, "Failed to update Monitor StatefulSet", "StatefulSet.Namespace", stsM.Namespace, "StatefulSet.Name", stsM.Name)
+					return ctrl.Result{}, err
+				}
+				// StatefulSet updated successfully - return and requeue
+				return ctrl.Result{Requeue: true}, nil
+			}
+			log.Info("Detected up-to-date existing Monitor StatefulSet", " StatefulSet.Name", stsM.Name)
 		}
 	}
 
-	// // Ensure the StatefulSet size is the same as the spec
-	// size := eventbroker.Spec.Size
-	// if *sts.Spec.Replicas != size {
-	// 	sts.Spec.Replicas = &size
-	// 	log.Info("Detected size change, new size:", "Size:", size)
-	// 	err = r.Update(ctx, sts)
-	// 	if err != nil {
-	// 		log.Error(err, "Failed to update StatefulSet", "StatefulSet.Namespace", sts.Namespace, "StatefulSet.Name", sts.Name)
-	// 		return ctrl.Result{}, err
-	// 	}
-
-	// 	// Ask to requeue after 1 minute in order to give enough time for the
-	// 	// pods be created on the cluster side and the operand be able
-	// 	// to do the next update step accurately.
-	// 	return ctrl.Result{RequeueAfter: time.Minute}, nil
+	// Check if pods are out-of-sync and need to be restarted
+	// First check for readiness of all broker nodes to continue
+	// TODO: emit events here instead of logs
+	if stsP.Status.ReadyReplicas < 1 {
+		log.Info("Detected unready Primary StatefulSet, waiting to be ready")
+		return ctrl.Result{RequeueAfter: time.Duration(5) * time.Second}, nil
+	} else if eventbroker.Spec.Redundancy {
+		if stsB.Status.ReadyReplicas < 1 {
+			log.Info("Detected unready Backup StatefulSet, waiting to be ready")
+			return ctrl.Result{RequeueAfter: time.Duration(5) * time.Second}, nil
+		}
+		if stsM.Status.ReadyReplicas < 1 {
+			log.Info("Detected unready Monitor StatefulSet, waiting to be ready")
+			return ctrl.Result{RequeueAfter: time.Duration(5) * time.Second}, nil
+		}
+	}
+	log.Info("All broker pods are available")
+	// // Next restart any pods that don't have the statefulset's lastAppliedConfig
+	// // Must distinguish between HA and non-HA
+	// if haDeployment {
+	// 	// The algorithm is to process the Monitor, then the pod with `active=false`, finally `active=true`
+	// } else {
+	// 	// Kill the single pod if needed
+		
 	// }
 
 	// Update the EventBroker status with the pod names
@@ -381,5 +432,6 @@ func (r *EventBrokerReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&eventbrokerv1alpha1.EventBroker{}).
 		Owns(&appsv1.StatefulSet{}).
+		Owns(&corev1.ConfigMap{}).
 		Complete(r)
 }

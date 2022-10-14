@@ -42,6 +42,7 @@ type EventBrokerSpec struct {
 type SystemScaling struct {
 	MaxConnections int `json:"maxConnections,omitempty"`
 	MaxQueueMessages int `json:"maxQueueMessages,omitempty"`
+	// +kubebuilder:default:=1000
 	MaxSpoolUsage int `json:"maxSpoolUsage,omitempty"`
 	MessagingNodeCpu string `json:"messagingNodeCpu,omitempty"`
 	MessagingNodeMemory string `json:"messagingNodeMemory,omitempty"`

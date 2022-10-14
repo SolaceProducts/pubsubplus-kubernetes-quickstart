@@ -25,10 +25,6 @@ import (
 	eventbrokerv1alpha1 "github.com/SolaceProducts/pubsubplus-operator/api/v1alpha1"
 )
 
-// TODO: consider typed "sigs.k8s.io/structured-merge-diff/v4/typed"
-// 					var schemaYAML = typed.YAMLObject(`
-// for YAML
-
 func (r *EventBrokerReconciler) configmapForEventBroker(cmName string, m *eventbrokerv1alpha1.EventBroker) *corev1.ConfigMap {
 	dep := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
@@ -47,6 +43,14 @@ func (r *EventBrokerReconciler) configmapForEventBroker(cmName string, m *eventb
 	ctrl.SetControllerReference(m, dep, r.Scheme)
 	return dep
 }
+
+// TODO: following assignment will result in unstructured YAML code
+// when retreiving the resulting ConfigMap using `kubectl get cm ...`
+// Consider typed "sigs.k8s.io/structured-merge-diff/v4/typed"
+// 					var schemaYAML = typed.YAMLObject(`
+// for YAML
+// or https://github.com/kubernetes/client-go/issues/193
+// or some other solution
 
 var InitSh = `export username_admin_passwordfilepath="/mnt/disks/secrets/username_admin_password"
 export username_admin_globalaccesslevel=admin
