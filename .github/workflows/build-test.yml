@@ -68,7 +68,8 @@ jobs:
       - name: Testing the Operator - nonHA
         run: |
           kubectl apply -f ci/manifests/eventbroker-nonha.yaml | grep "test-nonha created"
-          sleep 5 ; kubectl wait pods --selector app.kubernetes.io/instance=test-nonha --for condition=Ready --timeout=120s
+          sleep 5 ; kubectl get all
+          kubectl wait pods --selector app.kubernetes.io/instance=test-nonha --for condition=Ready --timeout=120s
           kubectl get po --show-labels | grep test-nonha | grep "1/1"
           kubectl get po --show-labels | grep test-nonha | grep active=true
           kubectl get sts | grep test-nonha
@@ -80,4 +81,4 @@ jobs:
           curl -O https://sftp.solace.com/download/SDKPERF_C_LINUX64
           tar -xvf SDKPERF_C_LINUX64
           pubSubTools/sdkperf_c -cip=tcp://localhost:55555 -mn=1000 -mr=0 -ptl=t1 -stl=t1 | grep "Total Messages"
-          kubectl delete eventbroker test-nonha
+          kubectl delete eventbroker test-nonha | grep deleted

@@ -39,22 +39,13 @@ kubectl port-forward svc/<service-name> 8080:8080 &
 ```
 
 ### Running on the cluster
-1. Install Instances of Custom Resources:
-
+1. Install Custom Resources and Operator deployment:
 ```sh
-kubectl apply -f config/samples/
+make deploy
 ```
-
-2. Build and push your image to the location specified by `IMG`:
-	
+2. Use the sample `EventBroker` resource to create an HA cluster
 ```sh
-make docker-build docker-push IMG=<some-registry>/pubsubplus-v1alpha1:tag
-```
-	
-3. Deploy the controller to the cluster with the image specified by `IMG`:
-
-```sh
-make deploy IMG=<some-registry>/pubsubplus-v1alpha1:tag
+kubectl apply -f config/samples/pubsubplus_v1alpha1_eventbroker.yaml
 ```
 
 ### Uninstall CRDs
