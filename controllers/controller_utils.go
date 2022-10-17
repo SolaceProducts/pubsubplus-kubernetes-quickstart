@@ -17,11 +17,35 @@ limitations under the License.
 package controllers
 
 import (
+	"bytes"
+	"context"
+	"encoding/gob"
+	"fmt"
 	"hash/crc64"
 	"strconv"
-	"bytes"
-	"encoding/gob"
+
+	eventbrokerv1alpha1 "github.com/SolaceProducts/pubsubplus-operator/api/v1alpha1"
+	corev1 "k8s.io/api/core/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+// Returns the broker pod in the specified role
+func (r *EventBrokerReconciler) getBrokerPod(ctx context.Context, m *eventbrokerv1alpha1.EventBroker, brokerRole BrokerRole) (*corev1.Pod, error) {
+	// List the pods for this eventbroker
+	podList := &corev1.PodList{}
+	listOpts := []client.ListOption{
+		client.InNamespace(m.Namespace),
+		client.MatchingLabels(getBrokerPodSelector(m.Name, brokerRole)),
+	}
+	if err := r.List(ctx, podList, listOpts...); err != nil {
+		return nil, err
+	}
+	if podList != nil && len(podList.Items) == 1 {
+		return &podList.Items[0], nil
+	}
+	return nil, fmt.Errorf("filtered broker pod list didn't return exactly one pod")
+}
+
 
 
 func convertToByteArray(e any) []byte {

@@ -20,12 +20,20 @@ package controllers
 
 import (
 	"fmt"
+	"strconv"
 )
 
 const (
 	dependenciesSignatureAnnotationName = "lastAppliedConfig"
-	appKubernetesIoNameLabel = "pubsubpluseventbroker"
-	appKubernetesIoManagedByLabel = "solace-pubsubplus-operator"
+	appKubernetesIoNameLabel            = "pubsubpluseventbroker"
+	appKubernetesIoManagedByLabel       = "solace-pubsubplus-operator"
+)
+
+type BrokerRole int // Notice that this is about the current role, not the broker node designation
+const (
+	Active = iota
+	Standby
+	Monitor
 )
 
 // Provides the object names for the current EventBroker deployment
@@ -90,20 +98,19 @@ func getDiscoveryServiceSelector(deploymentName string) map[string]string {
 	}
 }
 
-// // Provides the Pod selector for message routing broker pods
-// func getMessagingPodSelectorByActive(deploymentName string, activeLabel string) map[string]string {
-// 	return map[string]string{
-// 		"app.kubernetes.io/instance": deploymentName,
-// 		"app.kubernetes.io/name":     appKubernetesIoNameLabel,
-// 		"active":                     activeLabel,
-// 	}
-// }
-
-// // Provides the Pod selector for monitoring broker pod
-// func getMonitoringPodSelector(deploymentName string) map[string]string {
-// 	return map[string]string{
-// 		"app.kubernetes.io/instance": deploymentName,
-// 		"app.kubernetes.io/name":     appKubernetesIoNameLabel,
-// 		"node-type":                  "monitor",
-// 	}
-// }
+// Provides the Pod selector for broker pods
+func getBrokerPodSelector(deploymentName string, brokerRole BrokerRole) map[string]string {
+	if brokerRole == Monitor {
+		return map[string]string{
+			"app.kubernetes.io/instance": deploymentName,
+			"app.kubernetes.io/name":     appKubernetesIoNameLabel,
+			"node-type":                  "monitor",
+		}
+	} else {
+		return map[string]string{
+			"app.kubernetes.io/instance": deploymentName,
+			"app.kubernetes.io/name":     appKubernetesIoNameLabel,
+			"active":                     strconv.FormatBool(brokerRole == Active),
+		}
+	}
+}
