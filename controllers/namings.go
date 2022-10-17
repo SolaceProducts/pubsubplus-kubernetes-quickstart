@@ -14,10 +14,26 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// One place for consistent naming
+
 package controllers
 
 import (
 	"fmt"
+	"strconv"
+)
+
+const (
+	dependenciesSignatureAnnotationName = "lastAppliedConfig"
+	appKubernetesIoNameLabel            = "pubsubpluseventbroker"
+	appKubernetesIoManagedByLabel       = "solace-pubsubplus-operator"
+)
+
+type BrokerRole int // Notice that this is about the current role, not the broker node designation
+const (
+	Active = iota
+	Standby
+	Monitor
 )
 
 // Provides the object names for the current EventBroker deployment
@@ -46,8 +62,8 @@ func getStatefulsetName(deploymentName string, roleSuffix string) string {
 func getObjectLabels(deploymentName string) map[string]string {
 	return map[string]string{
 		"app.kubernetes.io/instance":   deploymentName,
-		"app.kubernetes.io/name":       "eventbroker",
-		"app.kubernetes.io/managed-by": "solace-pubsubplus-operator",
+		"app.kubernetes.io/name":       appKubernetesIoNameLabel,
+		"app.kubernetes.io/managed-by": appKubernetesIoManagedByLabel,
 	}
 }
 
@@ -60,7 +76,7 @@ func getBrokerNodeType(statefulSetDeploymentName string) string {
 func getPodLabels(deploymentName string, nodeType string) map[string]string {
 	return map[string]string{
 		"app.kubernetes.io/instance": deploymentName,
-		"app.kubernetes.io/name":     "eventbroker",
+		"app.kubernetes.io/name":     appKubernetesIoNameLabel,
 		"node-type":                  nodeType,
 	}
 }
@@ -69,7 +85,7 @@ func getPodLabels(deploymentName string, nodeType string) map[string]string {
 func getServiceSelector(deploymentName string) map[string]string {
 	return map[string]string{
 		"app.kubernetes.io/instance": deploymentName,
-		"app.kubernetes.io/name":     "eventbroker",
+		"app.kubernetes.io/name":     appKubernetesIoNameLabel,
 		"active":                     "true",
 	}
 }
@@ -78,6 +94,23 @@ func getServiceSelector(deploymentName string) map[string]string {
 func getDiscoveryServiceSelector(deploymentName string) map[string]string {
 	return map[string]string{
 		"app.kubernetes.io/instance": deploymentName,
-		"app.kubernetes.io/name":     "eventbroker",
+		"app.kubernetes.io/name":     appKubernetesIoNameLabel,
+	}
+}
+
+// Provides the Pod selector for broker pods
+func getBrokerPodSelector(deploymentName string, brokerRole BrokerRole) map[string]string {
+	if brokerRole == Monitor {
+		return map[string]string{
+			"app.kubernetes.io/instance": deploymentName,
+			"app.kubernetes.io/name":     appKubernetesIoNameLabel,
+			"node-type":                  "monitor",
+		}
+	} else {
+		return map[string]string{
+			"app.kubernetes.io/instance": deploymentName,
+			"app.kubernetes.io/name":     appKubernetesIoNameLabel,
+			"active":                     strconv.FormatBool(brokerRole == Active),
+		}
 	}
 }
