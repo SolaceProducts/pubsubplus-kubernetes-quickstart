@@ -96,6 +96,7 @@ func (r *EventBrokerReconciler) updateStatefulsetForEventBroker(stsName string, 
 	var cpuRequests, cpuLimits string
 	var memRequests, memLimits string
 	var maxConnections, maxQueueMessages, maxSpoolUsage int
+	// TODO: _types.go has already defaults. Review if those indeed need to be duplicated here.
 	if nodeType == "monitor" {
 		cpuRequests = "1"
 		cpuLimits = "1"
