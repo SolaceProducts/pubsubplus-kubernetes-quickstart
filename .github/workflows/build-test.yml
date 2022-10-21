@@ -59,10 +59,10 @@ jobs:
           kubectl get pods -n kube-system
           echo "current-context:" $(kubectl config current-context)
           echo "environment-kubeconfig:" ${KUBECONFIG}
-          kubectl create ns pubsubplus-v1alpha1-system
-          kubectl create secret generic regcred --from-file=.dockerconfigjson=${HOME}/.docker/config.json --type=kubernetes.io/dockerconfigjson -n pubsubplus-v1alpha1-system
+          kubectl create ns pubsubplus-operator-system
+          kubectl create secret generic regcred --from-file=.dockerconfigjson=${HOME}/.docker/config.json --type=kubernetes.io/dockerconfigjson -n pubsubplus-operator-system
           make deploy | grep created
-          kubectl rollout status deployment pubsubplus-v1alpha1-controller-manager -n pubsubplus-v1alpha1-system --timeout=30s
+          kubectl rollout status deployment pubsubplus-operator-controller-manager -n pubsubplus-operator-system --timeout=30s
           kubectl get crd | grep eventbrokers
 
       - name: Testing the Operator - nonHA
