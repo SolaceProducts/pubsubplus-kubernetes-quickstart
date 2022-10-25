@@ -81,4 +81,6 @@ jobs:
           curl -O https://sftp.solace.com/download/SDKPERF_C_LINUX64
           tar -xvf SDKPERF_C_LINUX64
           pubSubTools/sdkperf_c -cip=tcp://localhost:55555 -mn=1000 -mr=0 -ptl=t1 -stl=t1 | grep "Total Messages"
+          kubectl port-forward svc/test-nonha-pubsubplus-prometheus-exporter-service 9628:9628 &
+          curl localhost:9628 | grep Exporter
           kubectl delete eventbroker test-nonha | grep deleted

@@ -48,7 +48,7 @@ func (r *EventBrokerReconciler) createStatefulsetForEventBroker(stsName string, 
 			Labels:    getObjectLabels(m.Name),
 		},
 		// Followings are immutable fields of the StatefulSet - cannot be part of the update
-		Spec:       appsv1.StatefulSetSpec{
+		Spec: appsv1.StatefulSetSpec{
 			Selector: &metav1.LabelSelector{ // Refers to the broker Pod labels - see template below
 				MatchLabels: getPodLabels(m.Name, nodeType),
 			},

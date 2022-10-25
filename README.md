@@ -12,28 +12,38 @@ You’ll need a Kubernetes cluster to run against. You can use [KIND](https://si
 
 Additional Prerequisites:
 
-*  go version 1.18
-*  docker version 17.03+.
-*  kubectl
+* go version 1.18
+* docker version 17.03+.
+* kubectl
 
-1. Clone this git repo, checkout to this branch
-2. Change to the project root
+Before running locally you need to configure you local environment to pull images from the Github Container Registry. For work in progress, 
+docker images are released internally and only available in the private Container Registry. This means you will need to configure your local environment to pull
+images. 
+
+1. Generate a [Personal Access Token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token). 
+2. Ensure that you have granted SSO access to the token generated.  
+3. Run the commands to set and login into Github Container Registry to download the private images.
+   1. `export GHCR_PAT=YOUR_TOKEN`
+   2. `echo GHCR_PAT | docker login ghcr.io -u USERNAME --password-stdin`
+   
+4. Clone this git repo, checkout to this branch
+5. Change to the project root
 ```sh
 cd pubsubplus-kubernetes-operator/
 ```
-3. Create Custom Resource and start the operator
+6. Create Custom Resource and start the operator
 ```sh
 make install run
 ```
-4. Use the sample `EventBroker` resource to create an HA cluster
+7. Use the sample `EventBroker` resource to create an HA cluster
 ```sh
 kubectl apply -f config/samples/pubsubplus_v1alpha1_eventbroker.yaml
 ```
-5. Wait for the pods to come up
+8. Wait for the pods to come up
 ```sh
 kubectl get po -w --show-labels
 ```
-6. Forward services at port 8080 and 8008 to localhost to use WebAdmin and Try-me. May also forward port 55555 for SMF messaging. Example:
+9. Forward services at port 8080 and 8008 to localhost to use WebAdmin and Try-me. May also forward port 55555 for SMF messaging. Example:
 ```sh
 kubectl port-forward svc/<service-name> 8080:8080 &
 ```
@@ -47,6 +57,8 @@ make deploy
 ```sh
 kubectl apply -f config/samples/pubsubplus_v1alpha1_eventbroker.yaml
 ```
+
+Note: For internal docker images only available in Github Container Registry, you have to either configure your cluster to download this images.
 
 ### Uninstall CRDs
 To delete the CRDs from the cluster:

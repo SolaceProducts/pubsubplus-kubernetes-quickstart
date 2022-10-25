@@ -46,8 +46,6 @@ func (r *EventBrokerReconciler) getBrokerPod(ctx context.Context, m *eventbroker
 	return nil, fmt.Errorf("filtered broker pod list didn't return exactly one pod")
 }
 
-
-
 func convertToByteArray(e any) []byte {
 	var network bytes.Buffer        // Stand-in for a network connection
 	enc := gob.NewEncoder(&network) // Will write to network.

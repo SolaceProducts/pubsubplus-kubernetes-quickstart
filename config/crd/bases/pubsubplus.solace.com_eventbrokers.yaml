@@ -42,11 +42,90 @@ spec:
                 description: Developer true specifies minimum footprint deployment,
                   not for production use. Overrides SystemScaling parameters.
                 type: boolean
+              monitoring:
+                description: Monitoring defines Prometheus exporter for monitoring
+                  broker
+                properties:
+                  enabled:
+                    default: false
+                    description: Enabled true enables the Exporter for use.
+                    type: boolean
+                  image:
+                    default: ghcr.io/solacedev/solace_prometheus_exporter
+                    description: Image specifies the custom image to use as prometheus
+                      exporter.
+                    type: string
+                  imagePullPolicy:
+                    default: Always
+                    description: ImagePullPolicy specifies Image Pull Policy for Exporter
+                    type: string
+                  imagePullSecrets:
+                    description: ImagePullSecrets is an optional list of references
+                      to secrets in the same namespace to use for pulling any of the
+                      images used by this PodSpec.
+                    items:
+                      description: LocalObjectReference contains enough information
+                        to let you locate the referenced object inside the same namespace.
+                      properties:
+                        name:
+                          description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            TODO: Add other useful fields. apiVersion, kind, uid?'
+                          type: string
+                      type: object
+                      x-kubernetes-map-type: atomic
+                    type: array
+                  includeRates:
+                    default: false
+                    description: Defines if Prometheus Exporter should include rates
+                    type: boolean
+                  listenTLS:
+                    default: false
+                    description: Defines if Prometheus Exporter uses TLS configuration
+                    type: boolean
+                  port:
+                    default: 9628
+                    description: Container Port for  Prometheus Exporter
+                    format: int32
+                    type: number
+                  serviceType:
+                    default: ClusterIP
+                    description: Defines if Prometheus Exporter should include rates
+                    type: string
+                  sslVerify:
+                    default: false
+                    description: Defines if Prometheus Exporter verifies SSL
+                    type: boolean
+                  tag:
+                    default: v0.0.1
+                    description: Tag specifies the tag of the image to be used
+                    type: string
+                  timeOut:
+                    default: 5
+                    description: Timeout configuration for Prometheus Exporter scrapper
+                    format: int32
+                    type: number
+                type: object
+              podDisruptionBudgetForHA:
+                default: false
+                description: Pod disruption budget for the broker in HA mode. For
+                  this to be `true` `solace.redundancy` has to also be `true`
+                type: boolean
               redundancy:
                 default: false
                 description: Redundancy true specifies HA deployment, false specifies
                   Non-HA
                 type: boolean
+              service:
+                description: Service defines service details of how broker is exposed
+                properties:
+                  type:
+                    description: Options to expose the broker. Options include ClusterIP,
+                      NodePort, LoadBalancer
+                    type: string
+                type: object
+              storage:
+                description: Storage defines storage details of the broker
+                type: object
               systemScaling:
                 description: SystemScaling provides exact fine-grained specification
                   of the event broker scaling parameters and the assigned CPU / memory
