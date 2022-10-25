@@ -84,5 +84,6 @@ jobs:
           sleep 200 ; kubectl get all
           kubectl wait pods --selector solace-prometheus-exporter=true --for condition=Ready --timeout=120s
           kubectl port-forward svc/test-nonha-pubsubplus-prometheus-exporter-service 9628:9628 &
+          sleep 1
           curl localhost:9628 | grep Exporter
           kubectl delete eventbroker test-nonha | grep deleted
