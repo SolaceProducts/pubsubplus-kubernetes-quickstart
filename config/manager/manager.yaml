@@ -12,6 +12,9 @@ metadata:
   namespace: system
   labels:
     control-plane: controller-manager
+    app.kubernetes.io/component: controller
+    app.kubernetes.io/name: solace-pubsubplus-operator
+    app.kubernetes.io/version: version
 spec:
   selector:
     matchLabels:
@@ -23,6 +26,9 @@ spec:
         kubectl.kubernetes.io/default-container: manager
       labels:
         control-plane: controller-manager
+        app.kubernetes.io/component: controller
+        app.kubernetes.io/name: solace-pubsubplus-operator
+        app.kubernetes.io/version: version
     spec:
       securityContext:
         runAsNonRoot: true
