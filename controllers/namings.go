@@ -27,6 +27,7 @@ const (
 	dependenciesSignatureAnnotationName = "lastAppliedConfig"
 	appKubernetesIoNameLabel            = "pubsubpluseventbroker"
 	appKubernetesIoManagedByLabel       = "solace-pubsubplus-operator"
+	secretKeyName                       = "username_admin_password"
 )
 
 type BrokerRole int // Notice that this is about the current role, not the broker node designation
@@ -34,19 +35,22 @@ const (
 	Active = iota
 	Standby
 	Monitor
+	PrometheusExporter
 )
 
 // Provides the object names for the current EventBroker deployment
 func getObjectName(objectType string, deploymentName string) string {
 	nameSuffix := map[string]string{
-		"ConfigMap":        "-pubsubplus",
-		"DiscoveryService": "-pubsubplus-discovery",
-		"Role":             "-pubsubplus-podtagupdater",
-		"RoleBinding":      "-pubsubplus-sa-to-podtagupdater",
-		"ServiceAccount":   "-pubsubplus-sa",
-		"Secret":           "-pubsubplus-secrets",
-		"Service":          "-pubsubplus",
-		"StatefulSet":      "-pubsubplus-%s",
+		"ConfigMap":                    "-pubsubplus",
+		"DiscoveryService":             "-pubsubplus-discovery",
+		"Role":                         "-pubsubplus-podtagupdater",
+		"RoleBinding":                  "-pubsubplus-sa-to-podtagupdater",
+		"ServiceAccount":               "-pubsubplus-sa",
+		"Secret":                       "-pubsubplus-secrets",
+		"Service":                      "-pubsubplus",
+		"StatefulSet":                  "-pubsubplus-%s",
+		"PrometheusExporterDeployment": "-pubsubplus-prometheus-exporter",
+		"PrometheusExporterService":    "-pubsubplus-prometheus-exporter-service",
 	}
 	return deploymentName + nameSuffix[objectType]
 }
@@ -105,6 +109,12 @@ func getBrokerPodSelector(deploymentName string, brokerRole BrokerRole) map[stri
 			"app.kubernetes.io/instance": deploymentName,
 			"app.kubernetes.io/name":     appKubernetesIoNameLabel,
 			"node-type":                  "monitor",
+		}
+	} else if brokerRole == PrometheusExporter {
+		return map[string]string{
+			"app.kubernetes.io/instance": deploymentName,
+			"app.kubernetes.io/name":     appKubernetesIoNameLabel,
+			"solace-prometheus-exporter": "true",
 		}
 	} else {
 		return map[string]string{

@@ -51,6 +51,7 @@ type EventBrokerReconciler struct {
 // +kubebuilder:rbac:groups="rbac.authorization.k8s.io",resources=roles,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="rbac.authorization.k8s.io",resources=rolebindings,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="apps",resources=statefulsets,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups="apps",resources=deployments,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="",resources=pods,verbs=get;list;watch;create;update;delete;patch
 // +kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch;create;update;delete;patch
 // +kubebuilder:rbac:groups="",resources=services,verbs=get;list;watch;create;update;patch;delete
@@ -485,6 +486,59 @@ func (r *EventBrokerReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			return ctrl.Result{}, err
 		}
 	}
+
+	// Check if Prometheus Exporter is enabled only after broker is running perfectly
+	prometheusExporterEnabled := eventbroker.Spec.Monitoring.Enabled
+	if prometheusExporterEnabled {
+		// Check if this Prometheus Exporter Pod already exists
+		foundPrometheusExporter := &appsv1.Deployment{}
+		prometheusExporterName := getObjectName("PrometheusExporterDeployment", eventbroker.Name)
+		err = r.Get(ctx, types.NamespacedName{Name: prometheusExporterName, Namespace: eventbroker.Namespace}, foundPrometheusExporter)
+		if err != nil && errors.IsNotFound(err) {
+
+			//exporter not available create new one
+			prometheusExporter := r.newDeploymentForPrometheusExporter(prometheusExporterName, secret, eventbroker)
+
+			log.Info("Creating new Prometheus Exporter", "Pod.Namespace", prometheusExporter.Namespace, "Pod.Name", prometheusExporterName)
+			err = r.Create(ctx, prometheusExporter)
+
+			if err != nil {
+				return ctrl.Result{}, err
+			}
+			// Deployment created successfully - return requeue
+			return ctrl.Result{Requeue: true}, nil
+		} else if err != nil {
+			return ctrl.Result{}, err
+		}
+
+		// Pod already exists - don't requeue
+		log.Info("Skip reconcile: Deployment already exists", "Pod.Namespace", foundPrometheusExporter.Namespace, "Pod.Name", foundPrometheusExporter.Name)
+
+		// Check if this Service for Prometheus Exporter Pod already exists
+		foundPrometheusExporterSvc := &corev1.Service{}
+		prometheusExporterSvcName := getObjectName("PrometheusExporterService", eventbroker.Name)
+		err = r.Get(ctx, types.NamespacedName{Name: prometheusExporterSvcName, Namespace: eventbroker.Namespace}, foundPrometheusExporterSvc)
+		if err != nil && errors.IsNotFound(err) {
+			// New service for Prometheus Exporter
+			prometheusExporterSvc := r.newServiceForPrometheusExporter(eventbroker.Spec.Monitoring, prometheusExporterSvcName, eventbroker)
+			log.Info("Creating a new Service for Prometheus Exporter", "Service.Namespace", prometheusExporterSvc.Namespace, "Service.Name", prometheusExporterSvc.Name)
+
+			err = r.Create(ctx, prometheusExporterSvc)
+			if err != nil {
+				log.Error(err, "Failed to create new Service", "Service.Namespace", svc.Namespace, "Service.Name", svc.Name)
+				return ctrl.Result{}, err
+			}
+			// Service created successfully - return and requeue
+			return ctrl.Result{Requeue: true}, nil
+		} else if err != nil {
+			log.Error(err, "Failed to get Service")
+			return ctrl.Result{}, err
+		} else {
+			log.Info("Detected existing Service", " Service.Name", svc.Name)
+		}
+		return ctrl.Result{}, nil
+	}
+
 	return ctrl.Result{}, nil
 }
 

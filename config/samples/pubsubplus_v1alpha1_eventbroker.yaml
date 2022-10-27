@@ -4,3 +4,13 @@ metadata:
   name: test1
 spec:
   redundancy: true
+  developer: true
+  tls:
+    enabled: false
+  monitoring:
+    enabled: true
+    image: ghcr.io/solacedev/solace_prometheus_exporter
+    tag: sol-76199
+    imagePullPolicy: Always
+    imagePullSecrets:
+      - name: regcred

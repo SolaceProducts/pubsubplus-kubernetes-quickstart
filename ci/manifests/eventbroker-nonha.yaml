@@ -1,3 +1,4 @@
+---
 apiVersion: pubsubplus.solace.com/v1alpha1
 kind: EventBroker
 metadata:
@@ -5,3 +6,12 @@ metadata:
 spec:
   redundancy: false
   developer: true
+  tls:
+    enabled: false
+  monitoring:
+    enabled: true
+    image: ghcr.io/solacedev/solace_prometheus_exporter
+    tag: sol-76199
+    imagePullPolicy: Always
+    imagePullSecrets:
+      - name: regcred
