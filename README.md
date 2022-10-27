@@ -109,6 +109,10 @@ make manifests
 
 More information can be found via the [Kubebuilder Documentation](https://book.kubebuilder.io/introduction.html)
 
+## Default Parameter Configuration
+// TODO(user): An in-depth details of default parameters and why we use them. Including but not limited to why we use `latest` as default parameter for the images for the broker and monitoring exporter.
+
+
 ## License
 
 Copyright 2022.
