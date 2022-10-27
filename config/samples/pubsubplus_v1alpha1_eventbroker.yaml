@@ -7,7 +7,6 @@ spec:
   developer: true
   tls:
     enabled: false
-    serverTlsConfigSecret: example-tls-secret
   monitoring:
     enabled: true
     image: ghcr.io/solacedev/solace_prometheus_exporter
