@@ -17,7 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -38,6 +38,10 @@ type EventBrokerSpec struct {
 	//+kubebuilder:default:=false
 	// Pod disruption budget for the broker in HA mode. For this to be `true` `solace.redundancy` has to also be `true`
 	PodDisruptionBudgetForHA bool `json:"podDisruptionBudgetForHA"`
+	//+optional
+	//+kubebuilder:validation:Type:=object
+	// BrokerTLS provides TLS configuration for the event broker
+	BrokerTLS *BrokerTLS `json:"tls,omitempty"`
 	//+optional
 	//+kubebuilder:validation:Type:=object
 	// SystemScaling provides exact fine-grained specification of the event broker scaling parameters
@@ -62,8 +66,8 @@ type Service struct {
 	//+optional
 	//+kubebuilder:validation:Type:=string
 	// Options to expose the broker. Options include ClusterIP, NodePort, LoadBalancer
-	ServiceType v1.ServiceType `json:"type,omitempty"`
-	//service.annotations	service.annotations allows to add provider-specific service annotations	Undefined
+	ServiceType corev1.ServiceType `json:"type,omitempty"`
+	//service.annotations	service.annotations allows adding provider-specific service annotations	Undefined
 	//service.ports	Define PubSub+ service ports exposed. servicePorts are external, mapping to cluster-local pod containerPorts	initial set of frequently used ports, refer to values.yaml
 }
 
@@ -98,6 +102,20 @@ type EventBrokerStatus struct {
 	BrokerPods []string `json:"brokerpods"`
 }
 
+// BrokerTLS defines TLS configuration for the broker EventBroker
+type BrokerTLS struct {
+	//+optional
+	//+kubebuilder:validation:Type:=boolean
+	//+kubebuilder:default:=false
+	// Enabled true enables TLS for the broker.
+	Enabled bool `json:"enabled"`
+	//+optional
+	//+kubebuilder:validation:Type:=string
+	//+kubebuilder:default:=example-tls-secret
+	// Specifies the tls configuration secret to be used for the broker
+	ServerTLsConfigSecret string `json:"serverTlsConfigSecret"`
+}
+
 // Monitoring defines parameters to use Prometheus Exporter
 type Monitoring struct {
 	//+optional
@@ -119,11 +137,11 @@ type Monitoring struct {
 	//+kubebuilder:validation:Type:=string
 	//+kubebuilder:default:=Always
 	// ImagePullPolicy specifies Image Pull Policy for Exporter
-	ImagePullPolicy v1.PullPolicy `json:"imagePullPolicy,omitempty"`
+	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
 	// ImagePullSecrets is an optional list of references to secrets in the same namespace to use for pulling any of the images used by this PodSpec.
 	// +optional
 	//+kubebuilder:validation:Type:=array
-	ImagePullSecrets []v1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
+	ImagePullSecrets []corev1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
 	//+optional
 	//+kubebuilder:validation:Type:=number
 	//+kubebuilder:default:=9628
@@ -152,8 +170,8 @@ type Monitoring struct {
 	//+optional
 	//+kubebuilder:validation:Type:=string
 	//+kubebuilder:default:=ClusterIP
-	// Defines if Prometheus Exporter should include rates
-	ServiceType v1.ServiceType `json:"serviceType,omitempty"`
+	// Defines the service type for Prometheus Exporter
+	ServiceType corev1.ServiceType `json:"serviceType,omitempty"`
 }
 
 //+kubebuilder:object:root=true

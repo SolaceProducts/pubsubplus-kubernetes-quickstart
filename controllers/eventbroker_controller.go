@@ -490,8 +490,6 @@ func (r *EventBrokerReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	// Check if Prometheus Exporter is enabled only after broker is running perfectly
 	prometheusExporterEnabled := eventbroker.Spec.Monitoring.Enabled
 	if prometheusExporterEnabled {
-		log.Info("Enabling Prometheus Exporter")
-
 		// Check if this Prometheus Exporter Pod already exists
 		foundPrometheusExporter := &appsv1.Deployment{}
 		prometheusExporterName := getObjectName("PrometheusExporterDeployment", eventbroker.Name)

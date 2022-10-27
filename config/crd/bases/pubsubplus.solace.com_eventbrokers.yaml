@@ -89,7 +89,7 @@ spec:
                     type: number
                   serviceType:
                     default: ClusterIP
-                    description: Defines if Prometheus Exporter should include rates
+                    description: Defines the service type for Prometheus Exporter
                     type: string
                   sslVerify:
                     default: false
@@ -143,6 +143,19 @@ spec:
                   messagingNodeCpu:
                     type: string
                   messagingNodeMemory:
+                    type: string
+                type: object
+              tls:
+                description: BrokerTLS provides TLS configuration for the event broker
+                properties:
+                  enabled:
+                    default: false
+                    description: Enabled true enables TLS for the broker.
+                    type: boolean
+                  serverTlsConfigSecret:
+                    default: example-tls-secret
+                    description: Specifies the tls configuration secret to be used
+                      for the broker
                     type: string
                 type: object
             type: object

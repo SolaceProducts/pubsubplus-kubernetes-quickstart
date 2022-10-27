@@ -56,11 +56,11 @@ func (r *EventBrokerReconciler) newDeploymentForPrometheusExporter(name string, 
 							Env: []corev1.EnvVar{
 								{
 									Name:  "SOLACE_WEB_LISTEN_ADDRESS",
-									Value: fmt.Sprintf("%s://%s.%s.svc.cluster.local:%d", isSSLVerify(broker.Spec.Monitoring), getObjectName("PrometheusExporterService", broker.Name), broker.Namespace, getPrometheusExporterPort(broker.Spec.Monitoring)),
+									Value: fmt.Sprintf("%s://%s.%s.svc.cluster.local:%d", getHttpProtocolType(broker.Spec.Monitoring), getObjectName("PrometheusExporterService", broker.Name), broker.Namespace, getPrometheusExporterPort(broker.Spec.Monitoring)),
 								},
 								{
 									Name:  "SOLACE_SCRAPE_URI", //hard code broker port for now.
-									Value: fmt.Sprintf("%s://%s.%s.svc.cluster.local:8080", isSSLVerify(broker.Spec.Monitoring), getObjectName("DiscoveryService", broker.Name), broker.Namespace),
+									Value: fmt.Sprintf("%s://%s.%s.svc.cluster.local:8080", getHttpProtocolTypeForBroker(broker.Spec.BrokerTLS), getObjectName("DiscoveryService", broker.Name), broker.Namespace),
 								},
 								{
 									Name:  "SOLACE_LISTEN_TLS",
@@ -139,8 +139,15 @@ func getPrometheusExporterPort(broker *eventbrokerv1alpha1.Monitoring) int32 {
 	return broker.ContainerPort
 }
 
-func isSSLVerify(broker *eventbrokerv1alpha1.Monitoring) string {
-	if broker.SSLVerify {
+func getHttpProtocolType(broker *eventbrokerv1alpha1.Monitoring) string {
+	if broker.ListenTLS {
+		return "https"
+	}
+	return "http"
+}
+
+func getHttpProtocolTypeForBroker(brokerTLS *eventbrokerv1alpha1.BrokerTLS) string {
+	if brokerTLS.Enabled {
 		return "https"
 	}
 	return "http"
