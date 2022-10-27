@@ -130,7 +130,7 @@ type Monitoring struct {
 	Image string `json:"image"`
 	//+optional
 	//+kubebuilder:validation:Type:=string
-	//+kubebuilder:default:=v0.0.1
+	//+kubebuilder:default:=latest
 	// Tag specifies the tag of the image to be used
 	Tag string `json:"tag"`
 	//+optional

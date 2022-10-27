@@ -96,7 +96,7 @@ spec:
                     description: Defines if Prometheus Exporter verifies SSL
                     type: boolean
                   tag:
-                    default: v0.0.1
+                    default: latest
                     description: Tag specifies the tag of the image to be used
                     type: string
                   timeOut:
