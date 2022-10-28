@@ -8,12 +8,12 @@ metadata:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: controller
+  name: operator
   namespace: system
   labels:
     control-plane: controller-manager
     app.kubernetes.io/component: controller
-    app.kubernetes.io/name: solace-pubsubplus-operator
+    app.kubernetes.io/name: solace-pubsubplus-eventbroker-operator
     app.kubernetes.io/version: version
 spec:
   selector:
@@ -27,7 +27,7 @@ spec:
       labels:
         control-plane: controller-manager
         app.kubernetes.io/component: controller
-        app.kubernetes.io/name: solace-pubsubplus-operator
+        app.kubernetes.io/name: solace-pubsubplus-eventbroker-operator
         app.kubernetes.io/version: version
     spec:
       securityContext:

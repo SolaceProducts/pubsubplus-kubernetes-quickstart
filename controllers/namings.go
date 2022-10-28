@@ -26,7 +26,7 @@ import (
 const (
 	dependenciesSignatureAnnotationName = "lastAppliedConfig"
 	appKubernetesIoNameLabel            = "pubsubpluseventbroker"
-	appKubernetesIoManagedByLabel       = "solace-pubsubplus-operator"
+	appKubernetesIoManagedByLabel       = "solace-pubsubplus-eventbroker-operator"
 )
 
 type BrokerRole int // Notice that this is about the current role, not the broker node designation

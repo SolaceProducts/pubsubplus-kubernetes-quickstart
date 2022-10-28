@@ -62,7 +62,7 @@ jobs:
           kubectl create ns pubsubplus-operator-system
           kubectl create secret generic regcred --from-file=.dockerconfigjson=${HOME}/.docker/config.json --type=kubernetes.io/dockerconfigjson -n pubsubplus-operator-system
           make deploy | grep created
-          kubectl rollout status deployment pubsubplus-operator-controller -n pubsubplus-operator-system --timeout=30s
+          kubectl rollout status deployment pubsubplus-eventbroker-operator -n pubsubplus-operator-system --timeout=30s
           kubectl get crd | grep eventbrokers
 
       - name: Testing the Operator - nonHA
