@@ -17,6 +17,7 @@ limitations under the License.
 package controllers
 
 import (
+	policyv1 "k8s.io/api/policy/v1"
 	"reflect"
 	"time"
 
@@ -358,6 +359,36 @@ func (r *EventBrokerReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			}
 			log.Info("Detected up-to-date existing Monitor StatefulSet", " StatefulSet.Name", stsM.Name)
 		}
+
+		// Check if Pod DisruptionBudget for HA  is Enabled, only when it is HA
+		podDisruptionBudgetHAEnabled := eventbroker.Spec.Monitoring.Enabled
+		if podDisruptionBudgetHAEnabled {
+
+			// Check if PDB for HA already exists
+			foundPodDisruptionBudgetHA := &policyv1.PodDisruptionBudget{}
+			podDisruptionBudgetHAName := getObjectName("PodDisruptionBudget", eventbroker.Name)
+			err = r.Get(ctx, types.NamespacedName{Name: podDisruptionBudgetHAName, Namespace: eventbroker.Namespace}, foundPodDisruptionBudgetHA)
+			if err != nil && errors.IsNotFound(err) {
+
+				//Pod DisruptionBudget for HA not available create new one
+
+				podDisruptionBudgetHA := r.newPodDisruptionBudgetForHADeployment(podDisruptionBudgetHAName, secret, eventbroker)
+
+				log.Info("Creating new Pod Disruption Budget", "PodDisruptionBudget.Name", podDisruptionBudgetHAName)
+
+				//TODO check PDB API before creation
+				err = r.Create(ctx, podDisruptionBudgetHA)
+
+				if err != nil {
+					return ctrl.Result{}, err
+				}
+				// Deployment created successfully - return requeue
+				return ctrl.Result{Requeue: true}, nil
+			} else if err != nil {
+				return ctrl.Result{}, err
+			}
+		}
+
 	}
 
 	// Check if pods are out-of-sync and need to be restarted

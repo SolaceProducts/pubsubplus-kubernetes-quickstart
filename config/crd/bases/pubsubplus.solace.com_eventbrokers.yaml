@@ -42,24 +42,16 @@ spec:
                 description: Developer true specifies minimum footprint deployment,
                   not for production use. Overrides SystemScaling parameters.
                 type: boolean
-              monitoring:
-                description: Monitoring defines Prometheus exporter for monitoring
-                  broker
+              image:
+                description: BrokerImage defines docker image parameters that operator
+                  uses to provision various components of the EventBroker.
                 properties:
-                  enabled:
-                    default: false
-                    description: Enabled true enables the Exporter for use.
-                    type: boolean
-                  image:
-                    default: ghcr.io/solacedev/solace_prometheus_exporter
-                    description: Image specifies the custom image to use as prometheus
-                      exporter.
+                  pullPolicy:
+                    default: IfNotPresent
+                    description: ImagePullPolicy specifies Image Pull Policy of the
+                      docker image to be used to provision the EventBroker
                     type: string
-                  imagePullPolicy:
-                    default: Always
-                    description: ImagePullPolicy specifies Image Pull Policy for Exporter
-                    type: string
-                  imagePullSecrets:
+                  pullSecretName:
                     description: ImagePullSecrets is an optional list of references
                       to secrets in the same namespace to use for pulling any of the
                       images used by this PodSpec.
@@ -74,6 +66,61 @@ spec:
                       type: object
                       x-kubernetes-map-type: atomic
                     type: array
+                  repository:
+                    default: solace/solace-pubsub-standard
+                    description: Defines the docker images that operator uses to provision
+                      various components of the EventBroker.
+                    type: string
+                  tag:
+                    default: latest
+                    description: Specifies the tag version of the docker image to
+                      be used to provision the EventBroker.
+                    type: string
+                type: object
+              monitoring:
+                description: Monitoring defines Prometheus exporter for monitoring
+                  broker
+                properties:
+                  enabled:
+                    default: false
+                    description: Enabled true enables the Exporter for use.
+                    type: boolean
+                  image:
+                    description: MonitoringImage defines docker image parameters used
+                      to provision the Monitoring component of the Prometheus Exporter.
+                    properties:
+                      pullPolicy:
+                        default: Always
+                        description: ImagePullPolicy specifies Image Pull Policy for
+                          Prometheus Exporter
+                        type: string
+                      pullSecretName:
+                        description: ImagePullSecrets is an optional list of references
+                          to secrets in the same namespace to use for pulling any
+                          of the images used by this PodSpec.
+                        items:
+                          description: LocalObjectReference contains enough information
+                            to let you locate the referenced object inside the same
+                            namespace.
+                          properties:
+                            name:
+                              description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                TODO: Add other useful fields. apiVersion, kind, uid?'
+                              type: string
+                          type: object
+                          x-kubernetes-map-type: atomic
+                        type: array
+                      repository:
+                        default: ghcr.io/solacedev/solace_prometheus_exporter
+                        description: Repository specifies the docker image repository
+                          to use as Prometheus exporter.
+                        type: string
+                      tag:
+                        default: latest
+                        description: Tag specifies the tag of the image to be used
+                          for the Prometheus Exporter.
+                        type: string
+                    type: object
                   includeRates:
                     default: false
                     description: Defines if Prometheus Exporter should include rates
@@ -95,10 +142,6 @@ spec:
                     default: false
                     description: Defines if Prometheus Exporter verifies SSL
                     type: boolean
-                  tag:
-                    default: latest
-                    description: Tag specifies the tag of the image to be used
-                    type: string
                   timeOut:
                     default: 5
                     description: Timeout configuration for Prometheus Exporter scrapper
@@ -108,16 +151,40 @@ spec:
               podDisruptionBudgetForHA:
                 default: false
                 description: Pod disruption budget for the broker in HA mode. For
-                  this to be `true` `solace.redundancy` has to also be `true`
+                  this to be `true` `redundancy` has to also be `true`
                 type: boolean
               redundancy:
                 default: false
                 description: Redundancy true specifies HA deployment, false specifies
                   Non-HA
                 type: boolean
+              securityContext:
+                description: PodSecurityContext defines the pod security context for
+                  the EventBroker
+                properties:
+                  enabled:
+                    default: true
+                    description: Enabled true will enable the Pod Security Context
+                    type: boolean
+                  fsGroup:
+                    default: 1000002
+                    description: Specifies fsGroup in pod security context
+                    format: int64
+                    type: number
+                  runAsUser:
+                    default: 1000001
+                    description: Specifies runAsUser in pod security context
+                    format: int64
+                    type: number
+                type: object
               service:
                 description: Service defines service details of how broker is exposed
                 properties:
+                  annotations:
+                    additionalProperties:
+                      type: string
+                    description: Allows adding provider-specific service annotations
+                    type: string
                   type:
                     description: Options to expose the broker. Options include ClusterIP,
                       NodePort, LoadBalancer
@@ -145,6 +212,12 @@ spec:
                   messagingNodeMemory:
                     type: string
                 type: object
+              timezone:
+                default: UTC
+                description: Define the timezone for the EventBroker container, if
+                  undefined default is UTC. Valid values are tz database time zone
+                  names.
+                type: string
               tls:
                 description: BrokerTLS provides TLS configuration for the event broker
                 properties:

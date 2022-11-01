@@ -153,7 +153,7 @@ func (r *EventBrokerReconciler) updateStatefulsetForEventBroker(stsName string, 
 			Containers: []corev1.Container{
 				{
 					Name:            "pubsubplus",
-					Image:           "solace/solace-pubsub-standard:latest",
+					Image:           m.Spec.BrokerImage.Repository + ":" + m.Spec.BrokerImage.Tag,
 					ImagePullPolicy: corev1.PullIfNotPresent,
 					Resources: corev1.ResourceRequirements{
 						Limits: map[corev1.ResourceName]resource.Quantity{
@@ -215,7 +215,7 @@ func (r *EventBrokerReconciler) updateStatefulsetForEventBroker(stsName string, 
 						},
 						{
 							Name:  "BROKER_TLS_ENEBLED",
-							Value: "false",
+							Value: strconv.FormatBool(m.Spec.BrokerTLS.Enabled),
 						},
 						{
 							Name:  "BROKER_REDUNDANCY",
@@ -223,7 +223,7 @@ func (r *EventBrokerReconciler) updateStatefulsetForEventBroker(stsName string, 
 						},
 						{
 							Name:  "TZ",
-							Value: ":/usr/share/zoneinfo/UTC",
+							Value: ":/usr/share/zoneinfo/" + m.Spec.Timezone,
 						},
 						{
 							Name:  "UMASK",
@@ -301,8 +301,8 @@ func (r *EventBrokerReconciler) updateStatefulsetForEventBroker(stsName string, 
 			ServiceAccountName:            serviceAccountName,
 			// NodeName:                      "",
 			SecurityContext: &corev1.PodSecurityContext{
-				RunAsUser: &[]int64{1000001}[0], // 1000001
-				FSGroup:   &[]int64{1000002}[0], // 1000002
+				RunAsUser: &m.Spec.PodSecurityContext.RunAsUser,
+				FSGroup:   &m.Spec.PodSecurityContext.FSGroup,
 			},
 			Volumes: []corev1.Volume{
 				{
@@ -351,7 +351,7 @@ func (r *EventBrokerReconciler) updateStatefulsetForEventBroker(stsName string, 
 					},
 				},
 			},
-			// ImagePullSecrets:              []corev1.LocalObjectReference{},
+			ImagePullSecrets: m.Spec.BrokerImage.ImagePullSecrets,
 			// NodeSelector:                  map[string]string{},
 			// Affinity:                      &corev1.Affinity{},
 			// SchedulerName:                 "",

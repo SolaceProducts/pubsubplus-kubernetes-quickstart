@@ -36,21 +36,28 @@ type EventBrokerSpec struct {
 	//+optional
 	//+kubebuilder:validation:Type:=boolean
 	//+kubebuilder:default:=false
-	// Pod disruption budget for the broker in HA mode. For this to be `true` `solace.redundancy` has to also be `true`
+	// Pod disruption budget for the broker in HA mode. For this to be `true` `redundancy` has to also be `true`
 	PodDisruptionBudgetForHA bool `json:"podDisruptionBudgetForHA"`
 	//+optional
-	//+kubebuilder:validation:Type:=object
-	// BrokerTLS provides TLS configuration for the event broker
-	BrokerTLS *BrokerTLS `json:"tls,omitempty"`
+	//+kubebuilder:validation:Type:=string
+	//+kubebuilder:default:=UTC
+	// Define the timezone for the EventBroker container, if undefined default is UTC. Valid values are tz database time zone names.
+	Timezone string `json:"timezone"`
 	//+optional
 	//+kubebuilder:validation:Type:=object
 	// SystemScaling provides exact fine-grained specification of the event broker scaling parameters
 	// and the assigned CPU / memory resources to the Pod
 	SystemScaling *SystemScaling `json:"systemScaling,omitempty"`
+	//+kubebuilder:validation:Type:=object
+	// BrokerImage defines docker image parameters that operator uses to provision various components of the EventBroker.
+	BrokerImage *BrokerImage `json:"image,omitempty"`
+	//+kubebuilder:validation:Type:=object
+	// PodSecurityContext defines the pod security context for the EventBroker
+	PodSecurityContext *PodSecurityContext `json:"securityContext,omitempty"`
 	//+optional
 	//+kubebuilder:validation:Type:=object
-	// Monitoring defines Prometheus exporter for monitoring broker
-	Monitoring *Monitoring `json:"monitoring,omitempty"`
+	// BrokerTLS provides TLS configuration for the event broker
+	BrokerTLS *BrokerTLS `json:"tls,omitempty"`
 	//+optional
 	//+kubebuilder:validation:Type:=object
 	// Service defines service details of how broker is exposed
@@ -59,6 +66,10 @@ type EventBrokerSpec struct {
 	//+kubebuilder:validation:Type:=object
 	// Storage defines storage details of the broker
 	Storage *Storage `json:"storage,omitempty"`
+	//+optional
+	//+kubebuilder:validation:Type:=object
+	// Monitoring defines Prometheus exporter for monitoring broker
+	Monitoring *Monitoring `json:"monitoring,omitempty"`
 }
 
 // Service defines parameters configure Service details for the Broker
@@ -67,7 +78,10 @@ type Service struct {
 	//+kubebuilder:validation:Type:=string
 	// Options to expose the broker. Options include ClusterIP, NodePort, LoadBalancer
 	ServiceType corev1.ServiceType `json:"type,omitempty"`
-	//service.annotations	service.annotations allows adding provider-specific service annotations	Undefined
+	//+optional
+	//+kubebuilder:validation:Type:=string
+	// Allows adding provider-specific service annotations
+	Annotations map[string]string `json:"annotations,omitempty"`
 	//service.ports	Define PubSub+ service ports exposed. servicePorts are external, mapping to cluster-local pod containerPorts	initial set of frequently used ports, refer to values.yaml
 }
 
@@ -116,6 +130,64 @@ type BrokerTLS struct {
 	ServerTLsConfigSecret string `json:"serverTlsConfigSecret"`
 }
 
+// BrokerImage defines Image details and pulling configurations
+type BrokerImage struct {
+	//+kubebuilder:validation:Type:=string
+	//+kubebuilder:default:=solace/solace-pubsub-standard
+	// Defines the docker images that operator uses to provision various components of the EventBroker.
+	Repository string `json:"repository,omitempty"`
+	//+kubebuilder:validation:Type:=string
+	//+kubebuilder:default:=latest
+	// Specifies the tag version of the docker image to be used to provision the EventBroker.
+	Tag string `json:"tag,omitempty"`
+	//+kubebuilder:validation:Type:=string
+	//+kubebuilder:default:=IfNotPresent
+	// ImagePullPolicy specifies Image Pull Policy of the docker image to be used to provision the EventBroker
+	ImagePullPolicy corev1.PullPolicy `json:"pullPolicy,omitempty"`
+	//+kubebuilder:validation:Type:=array
+	// ImagePullSecrets is an optional list of references to secrets in the same namespace to use for pulling any of the images used by this PodSpec.
+	ImagePullSecrets []corev1.LocalObjectReference `json:"pullSecretName,omitempty"`
+}
+
+// PodSecurityContext defines the pod security context for the EventBroker
+type PodSecurityContext struct {
+	//+optional
+	//+kubebuilder:validation:Type:=boolean
+	//+kubebuilder:default:=true
+	// Enabled true will enable the Pod Security Context
+	Enabled bool `json:"enabled"`
+	//+optional
+	//+kubebuilder:validation:Type:=number
+	//+kubebuilder:default:=1000002
+	// Specifies fsGroup in pod security context
+	FSGroup int64 `json:"fsGroup"`
+	//+optional
+	//+kubebuilder:validation:Type:=number
+	//+kubebuilder:default:=1000001
+	// Specifies runAsUser in pod security context
+	RunAsUser int64 `json:"runAsUser"`
+}
+
+// MonitoringImage defines Image details and pulling configurations for the Prometheus Exporter for Monitoring
+type MonitoringImage struct {
+	//+kubebuilder:validation:Type:=string
+	//+kubebuilder:default:=ghcr.io/solacedev/solace_prometheus_exporter
+	// Repository specifies the docker image repository to use as Prometheus exporter.
+	Repository string `json:"repository,omitempty"`
+	//+kubebuilder:validation:Type:=string
+	//+kubebuilder:default:=latest
+	// Tag specifies the tag of the image to be used for the Prometheus Exporter.
+	Tag string `json:"tag,omitempty"`
+	//+kubebuilder:validation:Type:=string
+	//+kubebuilder:default:=Always
+	// ImagePullPolicy specifies Image Pull Policy for Prometheus Exporter
+	ImagePullPolicy corev1.PullPolicy `json:"pullPolicy,omitempty"`
+	// ImagePullSecrets is an optional list of references to secrets in the same namespace to use for pulling any of the images used by this PodSpec.
+	// +optional
+	//+kubebuilder:validation:Type:=array
+	ImagePullSecrets []corev1.LocalObjectReference `json:"pullSecretName,omitempty"`
+}
+
 // Monitoring defines parameters to use Prometheus Exporter
 type Monitoring struct {
 	//+optional
@@ -124,24 +196,9 @@ type Monitoring struct {
 	// Enabled true enables the Exporter for use.
 	Enabled bool `json:"enabled"`
 	//+optional
-	//+kubebuilder:validation:Type:=string
-	//+kubebuilder:default:=ghcr.io/solacedev/solace_prometheus_exporter
-	// Image specifies the custom image to use as prometheus exporter.
-	Image string `json:"image"`
-	//+optional
-	//+kubebuilder:validation:Type:=string
-	//+kubebuilder:default:=latest
-	// Tag specifies the tag of the image to be used
-	Tag string `json:"tag"`
-	//+optional
-	//+kubebuilder:validation:Type:=string
-	//+kubebuilder:default:=Always
-	// ImagePullPolicy specifies Image Pull Policy for Exporter
-	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
-	// ImagePullSecrets is an optional list of references to secrets in the same namespace to use for pulling any of the images used by this PodSpec.
-	// +optional
-	//+kubebuilder:validation:Type:=array
-	ImagePullSecrets []corev1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
+	//+kubebuilder:validation:Type:=object
+	// MonitoringImage defines docker image parameters used to provision the Monitoring component of the Prometheus Exporter.
+	MonitoringImage *MonitoringImage `json:"image,omitempty"`
 	//+optional
 	//+kubebuilder:validation:Type:=number
 	//+kubebuilder:default:=9628

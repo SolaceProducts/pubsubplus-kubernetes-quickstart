@@ -36,6 +36,7 @@ const (
 	Standby
 	Monitor
 	PrometheusExporter
+	PodDisruptionBudgetHA
 )
 
 // Provides the object names for the current EventBroker deployment
@@ -49,6 +50,7 @@ func getObjectName(objectType string, deploymentName string) string {
 		"Secret":                       "-pubsubplus-secrets",
 		"Service":                      "-pubsubplus",
 		"StatefulSet":                  "-pubsubplus-%s",
+		"PodDisruptionBudget":          "-pubsubplus-poddisruptionbudget-%s",
 		"PrometheusExporterDeployment": "-pubsubplus-prometheus-exporter",
 		"PrometheusExporterService":    "-pubsubplus-prometheus-exporter-service",
 	}
@@ -115,6 +117,11 @@ func getBrokerPodSelector(deploymentName string, brokerRole BrokerRole) map[stri
 			"app.kubernetes.io/instance": deploymentName,
 			"app.kubernetes.io/name":     appKubernetesIoNameLabel,
 			"solace-prometheus-exporter": "true",
+		}
+	} else if brokerRole == PodDisruptionBudgetHA {
+		return map[string]string{
+			"app.kubernetes.io/instance": deploymentName,
+			"app.kubernetes.io/name":     appKubernetesIoNameLabel,
 		}
 	} else {
 		return map[string]string{
