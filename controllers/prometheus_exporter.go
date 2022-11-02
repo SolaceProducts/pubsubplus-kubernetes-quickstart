@@ -32,22 +32,22 @@ func (r *EventBrokerReconciler) newDeploymentForPrometheusExporter(name string, 
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: broker.Namespace,
-			Labels:    getBrokerPodSelector(broker.Name, PrometheusExporter),
+			Labels:    getObjectLabels(broker.Name),
 		},
 		Spec: appsv1.DeploymentSpec{
 			Selector: &metav1.LabelSelector{
-				MatchLabels: getBrokerPodSelector(broker.Name, PrometheusExporter),
+				MatchLabels: getMonitoringDeploymentSelector(broker.Name),
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: getBrokerPodSelector(broker.Name, PrometheusExporter),
+					Labels: getMonitoringDeploymentSelector(broker.Name),
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
 							Name:            name,
-							Image:           broker.Spec.Monitoring.Image + ":" + broker.Spec.Monitoring.Tag,
-							ImagePullPolicy: broker.Spec.Monitoring.ImagePullPolicy,
+							Image:           broker.Spec.Monitoring.MonitoringImage.Repository + ":" + broker.Spec.Monitoring.MonitoringImage.Tag,
+							ImagePullPolicy: broker.Spec.Monitoring.MonitoringImage.ImagePullPolicy,
 							Ports: []corev1.ContainerPort{{
 								Name:          "http",
 								ContainerPort: getPrometheusExporterPort(broker.Spec.Monitoring),
@@ -97,7 +97,7 @@ func (r *EventBrokerReconciler) newDeploymentForPrometheusExporter(name string, 
 							},
 						},
 					},
-					ImagePullSecrets: broker.Spec.Monitoring.ImagePullSecrets,
+					ImagePullSecrets: broker.Spec.Monitoring.MonitoringImage.ImagePullSecrets,
 				},
 			},
 		},
@@ -112,7 +112,7 @@ func (r *EventBrokerReconciler) newServiceForPrometheusExporter(exporter *eventb
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      svcName,
 			Namespace: broker.Namespace,
-			Labels:    getBrokerPodSelector(broker.Name, PrometheusExporter),
+			Labels:    getObjectLabels(broker.Name),
 		},
 		Spec: corev1.ServiceSpec{
 			Type: exporter.ServiceType,
@@ -124,7 +124,7 @@ func (r *EventBrokerReconciler) newServiceForPrometheusExporter(exporter *eventb
 					TargetPort: intstr.IntOrString{Type: intstr.Int, IntVal: int32(getPrometheusExporterPort(exporter))},
 				},
 			},
-			Selector: getBrokerPodSelector(broker.Name, PrometheusExporter),
+			Selector: getMonitoringDeploymentSelector(broker.Name),
 		},
 	}
 	// Set EventBroker instance as the owner and controller

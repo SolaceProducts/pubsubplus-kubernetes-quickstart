@@ -35,7 +35,6 @@ const (
 	Active = iota
 	Standby
 	Monitor
-	PrometheusExporter
 )
 
 // Provides the object names for the current EventBroker deployment
@@ -49,6 +48,7 @@ func getObjectName(objectType string, deploymentName string) string {
 		"Secret":                       "-pubsubplus-secrets",
 		"Service":                      "-pubsubplus",
 		"StatefulSet":                  "-pubsubplus-%s",
+		"PodDisruptionBudget":          "-pubsubplus-poddisruptionbudget-%s",
 		"PrometheusExporterDeployment": "-pubsubplus-prometheus-exporter",
 		"PrometheusExporterService":    "-pubsubplus-prometheus-exporter-service",
 	}
@@ -102,6 +102,23 @@ func getDiscoveryServiceSelector(deploymentName string) map[string]string {
 	}
 }
 
+// Provides the selector for the Pod Disruption Budget
+func getPodDisruptionBudgetSelector(deploymentName string) map[string]string {
+	return map[string]string{
+		"app.kubernetes.io/instance": deploymentName,
+		"app.kubernetes.io/name":     appKubernetesIoNameLabel,
+	}
+}
+
+// Provides the selector for the Monitoring Deployment, which is the Prometheus Exporter
+func getMonitoringDeploymentSelector(deploymentName string) map[string]string {
+	return map[string]string{
+		"app.kubernetes.io/instance": deploymentName,
+		"app.kubernetes.io/name":     appKubernetesIoNameLabel,
+		"solace-prometheus-exporter": "true",
+	}
+}
+
 // Provides the Pod selector for broker pods
 func getBrokerPodSelector(deploymentName string, brokerRole BrokerRole) map[string]string {
 	if brokerRole == Monitor {
@@ -109,12 +126,6 @@ func getBrokerPodSelector(deploymentName string, brokerRole BrokerRole) map[stri
 			"app.kubernetes.io/instance": deploymentName,
 			"app.kubernetes.io/name":     appKubernetesIoNameLabel,
 			"node-type":                  "monitor",
-		}
-	} else if brokerRole == PrometheusExporter {
-		return map[string]string{
-			"app.kubernetes.io/instance": deploymentName,
-			"app.kubernetes.io/name":     appKubernetesIoNameLabel,
-			"solace-prometheus-exporter": "true",
 		}
 	} else {
 		return map[string]string{

@@ -136,6 +136,7 @@ func (r *EventBrokerReconciler) updateStatefulsetForEventBroker(stsName string, 
 			}
 		}
 	}
+
 	// Update fields
 	dep.Spec.UpdateStrategy = appsv1.StatefulSetUpdateStrategy{
 		Type: appsv1.OnDeleteStatefulSetStrategyType,
@@ -153,8 +154,8 @@ func (r *EventBrokerReconciler) updateStatefulsetForEventBroker(stsName string, 
 			Containers: []corev1.Container{
 				{
 					Name:            "pubsubplus",
-					Image:           "solace/solace-pubsub-standard:latest",
-					ImagePullPolicy: corev1.PullIfNotPresent,
+					Image:           m.Spec.BrokerImage.Repository + ":" + m.Spec.BrokerImage.Tag,
+					ImagePullPolicy: m.Spec.BrokerImage.ImagePullPolicy,
 					Resources: corev1.ResourceRequirements{
 						Limits: map[corev1.ResourceName]resource.Quantity{
 							corev1.ResourceCPU:    resource.MustParse(cpuLimits),
@@ -215,7 +216,7 @@ func (r *EventBrokerReconciler) updateStatefulsetForEventBroker(stsName string, 
 						},
 						{
 							Name:  "BROKER_TLS_ENEBLED",
-							Value: "false",
+							Value: strconv.FormatBool(m.Spec.BrokerTLS.Enabled),
 						},
 						{
 							Name:  "BROKER_REDUNDANCY",
@@ -223,7 +224,7 @@ func (r *EventBrokerReconciler) updateStatefulsetForEventBroker(stsName string, 
 						},
 						{
 							Name:  "TZ",
-							Value: ":/usr/share/zoneinfo/UTC",
+							Value: ":/usr/share/zoneinfo/" + m.Spec.Timezone,
 						},
 						{
 							Name:  "UMASK",
@@ -300,10 +301,6 @@ func (r *EventBrokerReconciler) updateStatefulsetForEventBroker(stsName string, 
 			TerminationGracePeriodSeconds: &[]int64{1200}[0], // 1200
 			ServiceAccountName:            serviceAccountName,
 			// NodeName:                      "",
-			SecurityContext: &corev1.PodSecurityContext{
-				RunAsUser: &[]int64{1000001}[0], // 1000001
-				FSGroup:   &[]int64{1000002}[0], // 1000002
-			},
 			Volumes: []corev1.Volume{
 				{
 					Name: "podinfo",
@@ -351,7 +348,7 @@ func (r *EventBrokerReconciler) updateStatefulsetForEventBroker(stsName string, 
 					},
 				},
 			},
-			// ImagePullSecrets:              []corev1.LocalObjectReference{},
+			ImagePullSecrets: m.Spec.BrokerImage.ImagePullSecrets,
 			// NodeSelector:                  map[string]string{},
 			// Affinity:                      &corev1.Affinity{},
 			// SchedulerName:                 "",
@@ -360,4 +357,11 @@ func (r *EventBrokerReconciler) updateStatefulsetForEventBroker(stsName string, 
 		},
 	}
 
+	//Set Pod Security Context if Enabled
+	if m.Spec.PodSecurityContext.Enabled {
+		dep.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
+			RunAsUser: &m.Spec.PodSecurityContext.RunAsUser,
+			FSGroup:   &m.Spec.PodSecurityContext.FSGroup,
+		}
+	}
 }
