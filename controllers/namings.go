@@ -26,7 +26,8 @@ import (
 const (
 	dependenciesSignatureAnnotationName = "lastAppliedConfig"
 	appKubernetesIoNameLabel            = "pubsubpluseventbroker"
-	appKubernetesIoManagedByLabel       = "solace-pubsubplus-eventbroker-operator"
+	appKubernetesIoManagedByLabel       = "solace-pubsubplus-operator"
+	secretKeyName                       = "username_admin_password"
 )
 
 type BrokerRole int // Notice that this is about the current role, not the broker node designation
@@ -39,14 +40,17 @@ const (
 // Provides the object names for the current EventBroker deployment
 func getObjectName(objectType string, deploymentName string) string {
 	nameSuffix := map[string]string{
-		"ConfigMap":        "-pubsubplus",
-		"DiscoveryService": "-pubsubplus-discovery",
-		"Role":             "-pubsubplus-podtagupdater",
-		"RoleBinding":      "-pubsubplus-sa-to-podtagupdater",
-		"ServiceAccount":   "-pubsubplus-sa",
-		"Secret":           "-pubsubplus-secrets",
-		"Service":          "-pubsubplus",
-		"StatefulSet":      "-pubsubplus-%s",
+		"ConfigMap":                    "-pubsubplus",
+		"DiscoveryService":             "-pubsubplus-discovery",
+		"Role":                         "-pubsubplus-podtagupdater",
+		"RoleBinding":                  "-pubsubplus-sa-to-podtagupdater",
+		"ServiceAccount":               "-pubsubplus-sa",
+		"Secret":                       "-pubsubplus-secrets",
+		"Service":                      "-pubsubplus",
+		"StatefulSet":                  "-pubsubplus-%s",
+		"PodDisruptionBudget":          "-pubsubplus-poddisruptionbudget-%s",
+		"PrometheusExporterDeployment": "-pubsubplus-prometheus-exporter",
+		"PrometheusExporterService":    "-pubsubplus-prometheus-exporter-service",
 	}
 	return deploymentName + nameSuffix[objectType]
 }
@@ -95,6 +99,23 @@ func getDiscoveryServiceSelector(deploymentName string) map[string]string {
 	return map[string]string{
 		"app.kubernetes.io/instance": deploymentName,
 		"app.kubernetes.io/name":     appKubernetesIoNameLabel,
+	}
+}
+
+// Provides the selector for the Pod Disruption Budget
+func getPodDisruptionBudgetSelector(deploymentName string) map[string]string {
+	return map[string]string{
+		"app.kubernetes.io/instance": deploymentName,
+		"app.kubernetes.io/name":     appKubernetesIoNameLabel,
+	}
+}
+
+// Provides the selector for the Monitoring Deployment, which is the Prometheus Exporter
+func getMonitoringDeploymentSelector(deploymentName string) map[string]string {
+	return map[string]string{
+		"app.kubernetes.io/instance": deploymentName,
+		"app.kubernetes.io/name":     appKubernetesIoNameLabel,
+		"solace-prometheus-exporter": "true",
 	}
 }
 

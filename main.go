@@ -60,7 +60,7 @@ func main() {
 			"Enabling this will ensure there is only one active controller manager.")
 	// Followings are default options for the logger, can be overwritten by comand-line options
 	opts := zap.Options{
-		Development:          true,
+		Development: true,
 		TimeEncoder: zapcore.RFC3339NanoTimeEncoder,
 	}
 	opts.BindFlags(flag.CommandLine)

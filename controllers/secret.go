@@ -42,7 +42,7 @@ func (r *EventBrokerReconciler) secretForEventBroker(secretName string, m *event
 			Labels:    getObjectLabels(m.Name),
 		},
 		Data: map[string][]byte{
-			"username_admin_password": []byte(randomPassword),
+			secretKeyName: []byte(randomPassword),
 		},
 		Type: corev1.SecretTypeOpaque,
 	}

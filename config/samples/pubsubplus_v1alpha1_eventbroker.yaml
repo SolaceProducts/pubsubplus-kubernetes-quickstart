@@ -4,3 +4,23 @@ metadata:
   name: test1
 spec:
   redundancy: true
+  developer: true
+  timezone: UTC
+  tls:
+    enabled: false
+  image:
+    repository: solace/solace-pubsub-standard
+    tag: latest
+    pullPolicy: IfNotPresent
+  securityContext:
+    enabled: true
+    fsGroup: 1000002
+    runAsUser: 1000001
+  monitoring:
+    enabled: true
+    image:
+      repository: ghcr.io/solacedev/solace_prometheus_exporter
+      tag: sol-76199
+      pullPolicy: Always
+      pullSecretName:
+      - name: regcred
