@@ -24,21 +24,21 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-func (r *EventBrokerReconciler) newPodDisruptionBudgetForHADeployment(name string, broker *eventbrokerv1alpha1.EventBroker) *policyv1.PodDisruptionBudget {
+func (r *EventBrokerReconciler) newPodDisruptionBudgetForHADeployment(name string, m *eventbrokerv1alpha1.EventBroker) *policyv1.PodDisruptionBudget {
 	pdb := &policyv1.PodDisruptionBudget{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
-			Namespace: broker.Namespace,
-			Labels:    getBrokerPodSelector(broker.Name, PodDisruptionBudgetHA),
+			Namespace: m.Namespace,
+			Labels:    getObjectLabels(m.Name),
 		},
 		Spec: policyv1.PodDisruptionBudgetSpec{
-			MinAvailable: &intstr.IntOrString{Type: intstr.Int, IntVal: int32(3)},
+			MinAvailable: &intstr.IntOrString{Type: intstr.Int, IntVal: int32(2)},
 			Selector: &metav1.LabelSelector{
-				MatchLabels: getBrokerPodSelector(broker.Name, PodDisruptionBudgetHA),
+				MatchLabels: getPodDisruptionBudgetSelector(m.Name),
 			},
 		},
 	}
 	// Set EventBroker instance as the owner and controller
-	ctrl.SetControllerReference(broker, pdb, r.Scheme)
+	ctrl.SetControllerReference(m, pdb, r.Scheme)
 	return pdb
 }

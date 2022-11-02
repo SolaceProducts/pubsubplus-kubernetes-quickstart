@@ -36,7 +36,7 @@ type EventBrokerSpec struct {
 	//+optional
 	//+kubebuilder:validation:Type:=boolean
 	//+kubebuilder:default:=false
-	// Pod disruption budget for the broker in HA mode. For this to be `true` `redundancy` has to also be `true`
+	// Pod disruption budget for the broker in HA mode. For this to be `true` `redundancy` has to also be `true` so it is ignored when `redundancy` is `false`
 	PodDisruptionBudgetForHA bool `json:"podDisruptionBudgetForHA"`
 	//+optional
 	//+kubebuilder:validation:Type:=string
@@ -49,14 +49,14 @@ type EventBrokerSpec struct {
 	// and the assigned CPU / memory resources to the Pod
 	SystemScaling *SystemScaling `json:"systemScaling,omitempty"`
 	//+kubebuilder:validation:Type:=object
-	// BrokerImage defines docker image parameters that operator uses to provision various components of the EventBroker.
+	// Image defines docker image parameters that operator uses to provision various components of the EventBroker.
 	BrokerImage *BrokerImage `json:"image,omitempty"`
 	//+kubebuilder:validation:Type:=object
 	// PodSecurityContext defines the pod security context for the EventBroker
 	PodSecurityContext *PodSecurityContext `json:"securityContext,omitempty"`
 	//+optional
 	//+kubebuilder:validation:Type:=object
-	// BrokerTLS provides TLS configuration for the event broker
+	// TLS provides TLS configuration for the event broker
 	BrokerTLS *BrokerTLS `json:"tls,omitempty"`
 	//+optional
 	//+kubebuilder:validation:Type:=object
@@ -179,7 +179,7 @@ type MonitoringImage struct {
 	// Tag specifies the tag of the image to be used for the Prometheus Exporter.
 	Tag string `json:"tag,omitempty"`
 	//+kubebuilder:validation:Type:=string
-	//+kubebuilder:default:=Always
+	//+kubebuilder:default:=IfNotPresent
 	// ImagePullPolicy specifies Image Pull Policy for Prometheus Exporter
 	ImagePullPolicy corev1.PullPolicy `json:"pullPolicy,omitempty"`
 	// ImagePullSecrets is an optional list of references to secrets in the same namespace to use for pulling any of the images used by this PodSpec.
@@ -197,7 +197,7 @@ type Monitoring struct {
 	Enabled bool `json:"enabled"`
 	//+optional
 	//+kubebuilder:validation:Type:=object
-	// MonitoringImage defines docker image parameters used to provision the Monitoring component of the Prometheus Exporter.
+	// Image defines docker image parameters used to provision the Monitoring component of the Prometheus Exporter.
 	MonitoringImage *MonitoringImage `json:"image,omitempty"`
 	//+optional
 	//+kubebuilder:validation:Type:=number

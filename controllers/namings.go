@@ -36,7 +36,6 @@ const (
 	Standby
 	Monitor
 	PrometheusExporter
-	PodDisruptionBudgetHA
 )
 
 // Provides the object names for the current EventBroker deployment
@@ -104,6 +103,14 @@ func getDiscoveryServiceSelector(deploymentName string) map[string]string {
 	}
 }
 
+// Provides the selector for the Pod Disruption Budget
+func getPodDisruptionBudgetSelector(deploymentName string) map[string]string {
+	return map[string]string{
+		"app.kubernetes.io/instance": deploymentName,
+		"app.kubernetes.io/name":     appKubernetesIoNameLabel,
+	}
+}
+
 // Provides the Pod selector for broker pods
 func getBrokerPodSelector(deploymentName string, brokerRole BrokerRole) map[string]string {
 	if brokerRole == Monitor {
@@ -117,11 +124,6 @@ func getBrokerPodSelector(deploymentName string, brokerRole BrokerRole) map[stri
 			"app.kubernetes.io/instance": deploymentName,
 			"app.kubernetes.io/name":     appKubernetesIoNameLabel,
 			"solace-prometheus-exporter": "true",
-		}
-	} else if brokerRole == PodDisruptionBudgetHA {
-		return map[string]string{
-			"app.kubernetes.io/instance": deploymentName,
-			"app.kubernetes.io/name":     appKubernetesIoNameLabel,
 		}
 	} else {
 		return map[string]string{

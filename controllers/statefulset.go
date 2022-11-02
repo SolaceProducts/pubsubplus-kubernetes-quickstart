@@ -155,7 +155,7 @@ func (r *EventBrokerReconciler) updateStatefulsetForEventBroker(stsName string, 
 				{
 					Name:            "pubsubplus",
 					Image:           m.Spec.BrokerImage.Repository + ":" + m.Spec.BrokerImage.Tag,
-					ImagePullPolicy: corev1.PullIfNotPresent,
+					ImagePullPolicy: m.Spec.BrokerImage.ImagePullPolicy,
 					Resources: corev1.ResourceRequirements{
 						Limits: map[corev1.ResourceName]resource.Quantity{
 							corev1.ResourceCPU:    resource.MustParse(cpuLimits),

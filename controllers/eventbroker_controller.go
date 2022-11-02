@@ -360,33 +360,33 @@ func (r *EventBrokerReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			log.Info("Detected up-to-date existing Monitor StatefulSet", " StatefulSet.Name", stsM.Name)
 		}
 
-		// Check if Pod DisruptionBudget for HA  is Enabled, only when it is an HA deployment
-		podDisruptionBudgetHAEnabled := eventbroker.Spec.Monitoring.Enabled
-		if podDisruptionBudgetHAEnabled {
+	}
 
-			// Check if PDB for HA already exists
-			foundPodDisruptionBudgetHA := &policyv1.PodDisruptionBudget{}
-			podDisruptionBudgetHAName := getObjectName("PodDisruptionBudget", eventbroker.Name)
-			err = r.Get(ctx, types.NamespacedName{Name: podDisruptionBudgetHAName, Namespace: eventbroker.Namespace}, foundPodDisruptionBudgetHA)
-			if err != nil && errors.IsNotFound(err) {
+	// Check if Pod DisruptionBudget for HA  is Enabled, only when it is an HA deployment
+	podDisruptionBudgetHAEnabled := eventbroker.Spec.PodDisruptionBudgetForHA
+	if haDeployment && podDisruptionBudgetHAEnabled {
 
-				//Pod DisruptionBudget for HA not available create new one
-				podDisruptionBudgetHA := r.newPodDisruptionBudgetForHADeployment(podDisruptionBudgetHAName, eventbroker)
+		// Check if PDB for HA already exists
+		foundPodDisruptionBudgetHA := &policyv1.PodDisruptionBudget{}
+		podDisruptionBudgetHAName := getObjectName("PodDisruptionBudget", eventbroker.Name)
+		err = r.Get(ctx, types.NamespacedName{Name: podDisruptionBudgetHAName, Namespace: eventbroker.Namespace}, foundPodDisruptionBudgetHA)
+		if err != nil && errors.IsNotFound(err) {
 
-				log.Info("Creating new Pod Disruption Budget", "PodDisruptionBudget.Name", podDisruptionBudgetHAName)
+			//Pod DisruptionBudget for HA not available create new one
+			podDisruptionBudgetHA := r.newPodDisruptionBudgetForHADeployment(podDisruptionBudgetHAName, eventbroker)
 
-				err = r.Create(ctx, podDisruptionBudgetHA)
+			log.Info("Creating new Pod Disruption Budget", "PodDisruptionBudget.Name", podDisruptionBudgetHAName)
 
-				if err != nil {
-					return ctrl.Result{}, err
-				}
-				// Deployment created successfully - return requeue
-				return ctrl.Result{Requeue: true}, nil
-			} else if err != nil {
+			err = r.Create(ctx, podDisruptionBudgetHA)
+
+			if err != nil {
 				return ctrl.Result{}, err
 			}
+			// Pod Disruption Budget created successfully - return requeue
+			return ctrl.Result{Requeue: true}, nil
+		} else if err != nil {
+			return ctrl.Result{}, err
 		}
-
 	}
 
 	// Check if pods are out-of-sync and need to be restarted

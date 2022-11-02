@@ -43,8 +43,8 @@ spec:
                   not for production use. Overrides SystemScaling parameters.
                 type: boolean
               image:
-                description: BrokerImage defines docker image parameters that operator
-                  uses to provision various components of the EventBroker.
+                description: Image defines docker image parameters that operator uses
+                  to provision various components of the EventBroker.
                 properties:
                   pullPolicy:
                     default: IfNotPresent
@@ -86,11 +86,11 @@ spec:
                     description: Enabled true enables the Exporter for use.
                     type: boolean
                   image:
-                    description: MonitoringImage defines docker image parameters used
-                      to provision the Monitoring component of the Prometheus Exporter.
+                    description: Image defines docker image parameters used to provision
+                      the Monitoring component of the Prometheus Exporter.
                     properties:
                       pullPolicy:
-                        default: Always
+                        default: IfNotPresent
                         description: ImagePullPolicy specifies Image Pull Policy for
                           Prometheus Exporter
                         type: string
@@ -151,7 +151,8 @@ spec:
               podDisruptionBudgetForHA:
                 default: false
                 description: Pod disruption budget for the broker in HA mode. For
-                  this to be `true` `redundancy` has to also be `true`
+                  this to be `true` `redundancy` has to also be `true` so it is ignored
+                  if `redundancy` is `false`
                 type: boolean
               redundancy:
                 default: false
@@ -219,7 +220,7 @@ spec:
                   names.
                 type: string
               tls:
-                description: BrokerTLS provides TLS configuration for the event broker
+                description: TLS provides TLS configuration for the event broker
                 properties:
                   enabled:
                     default: false
