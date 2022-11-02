@@ -19,9 +19,9 @@ package controllers
 import (
 	eventbrokerv1alpha1 "github.com/SolaceProducts/pubsubplus-operator/api/v1alpha1"
 	policyv1 "k8s.io/api/policy/v1"
-	"k8s.io/api/policy/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 func (r *EventBrokerReconciler) newPodDisruptionBudgetForHADeployment(name string, broker *eventbrokerv1alpha1.EventBroker) *policyv1.PodDisruptionBudget {
@@ -38,15 +38,7 @@ func (r *EventBrokerReconciler) newPodDisruptionBudgetForHADeployment(name strin
 			},
 		},
 	}
+	// Set EventBroker instance as the owner and controller
+	ctrl.SetControllerReference(broker, pdb, r.Scheme)
 	return pdb
-}
-
-// convertToPodDisruptionBudgetBeta1 converts policyv1 version of the PodDisruptionBudget resource to v1beta1
-func convertToPodDisruptionBudgetBeta1(toConvert *policyv1.PodDisruptionBudget) *v1beta1.PodDisruptionBudget {
-	v1beta1 := &v1beta1.PodDisruptionBudget{}
-	v1beta1.ObjectMeta = toConvert.ObjectMeta
-	v1beta1.Spec.MinAvailable = toConvert.Spec.MinAvailable
-	v1beta1.Spec.Selector = toConvert.Spec.Selector
-	v1beta1.Spec.MaxUnavailable = toConvert.Spec.MaxUnavailable
-	return v1beta1
 }

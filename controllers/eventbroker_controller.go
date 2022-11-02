@@ -360,11 +360,9 @@ func (r *EventBrokerReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			log.Info("Detected up-to-date existing Monitor StatefulSet", " StatefulSet.Name", stsM.Name)
 		}
 
-		// Check if Pod DisruptionBudget for HA  is Enabled, only when it is HA
+		// Check if Pod DisruptionBudget for HA  is Enabled, only when it is an HA deployment
 		podDisruptionBudgetHAEnabled := eventbroker.Spec.Monitoring.Enabled
 		if podDisruptionBudgetHAEnabled {
-
-			//TODO check PDB API version before creation
 
 			// Check if PDB for HA already exists
 			foundPodDisruptionBudgetHA := &policyv1.PodDisruptionBudget{}
@@ -373,7 +371,6 @@ func (r *EventBrokerReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			if err != nil && errors.IsNotFound(err) {
 
 				//Pod DisruptionBudget for HA not available create new one
-
 				podDisruptionBudgetHA := r.newPodDisruptionBudgetForHADeployment(podDisruptionBudgetHAName, eventbroker)
 
 				log.Info("Creating new Pod Disruption Budget", "PodDisruptionBudget.Name", podDisruptionBudgetHAName)
