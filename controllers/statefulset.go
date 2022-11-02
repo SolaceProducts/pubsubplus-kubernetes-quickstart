@@ -136,6 +136,7 @@ func (r *EventBrokerReconciler) updateStatefulsetForEventBroker(stsName string, 
 			}
 		}
 	}
+
 	// Update fields
 	dep.Spec.UpdateStrategy = appsv1.StatefulSetUpdateStrategy{
 		Type: appsv1.OnDeleteStatefulSetStrategyType,
@@ -300,10 +301,6 @@ func (r *EventBrokerReconciler) updateStatefulsetForEventBroker(stsName string, 
 			TerminationGracePeriodSeconds: &[]int64{1200}[0], // 1200
 			ServiceAccountName:            serviceAccountName,
 			// NodeName:                      "",
-			SecurityContext: &corev1.PodSecurityContext{
-				RunAsUser: &m.Spec.PodSecurityContext.RunAsUser,
-				FSGroup:   &m.Spec.PodSecurityContext.FSGroup,
-			},
 			Volumes: []corev1.Volume{
 				{
 					Name: "podinfo",
@@ -360,4 +357,11 @@ func (r *EventBrokerReconciler) updateStatefulsetForEventBroker(stsName string, 
 		},
 	}
 
+	//Set Pod Security Context if Enabled
+	if m.Spec.PodSecurityContext.Enabled {
+		dep.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
+			RunAsUser: &m.Spec.PodSecurityContext.RunAsUser,
+			FSGroup:   &m.Spec.PodSecurityContext.FSGroup,
+		}
+	}
 }

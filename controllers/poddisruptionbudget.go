@@ -18,14 +18,13 @@ package controllers
 
 import (
 	eventbrokerv1alpha1 "github.com/SolaceProducts/pubsubplus-operator/api/v1alpha1"
-	corev1 "k8s.io/api/core/v1"
 	policyv1 "k8s.io/api/policy/v1"
 	"k8s.io/api/policy/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func (r *EventBrokerReconciler) newPodDisruptionBudgetForHADeployment(name string, secret *corev1.Secret, broker *eventbrokerv1alpha1.EventBroker) *policyv1.PodDisruptionBudget {
+func (r *EventBrokerReconciler) newPodDisruptionBudgetForHADeployment(name string, broker *eventbrokerv1alpha1.EventBroker) *policyv1.PodDisruptionBudget {
 	pdb := &policyv1.PodDisruptionBudget{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,

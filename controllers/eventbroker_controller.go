@@ -364,6 +364,8 @@ func (r *EventBrokerReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		podDisruptionBudgetHAEnabled := eventbroker.Spec.Monitoring.Enabled
 		if podDisruptionBudgetHAEnabled {
 
+			//TODO check PDB API version before creation
+
 			// Check if PDB for HA already exists
 			foundPodDisruptionBudgetHA := &policyv1.PodDisruptionBudget{}
 			podDisruptionBudgetHAName := getObjectName("PodDisruptionBudget", eventbroker.Name)
@@ -372,11 +374,10 @@ func (r *EventBrokerReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 				//Pod DisruptionBudget for HA not available create new one
 
-				podDisruptionBudgetHA := r.newPodDisruptionBudgetForHADeployment(podDisruptionBudgetHAName, secret, eventbroker)
+				podDisruptionBudgetHA := r.newPodDisruptionBudgetForHADeployment(podDisruptionBudgetHAName, eventbroker)
 
 				log.Info("Creating new Pod Disruption Budget", "PodDisruptionBudget.Name", podDisruptionBudgetHAName)
 
-				//TODO check PDB API before creation
 				err = r.Create(ctx, podDisruptionBudgetHA)
 
 				if err != nil {
