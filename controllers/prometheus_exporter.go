@@ -32,7 +32,7 @@ func (r *EventBrokerReconciler) newDeploymentForPrometheusExporter(name string, 
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: broker.Namespace,
-			Labels:    getMonitoringDeploymentSelector(broker.Name),
+			Labels:    getObjectLabels(broker.Name),
 		},
 		Spec: appsv1.DeploymentSpec{
 			Selector: &metav1.LabelSelector{
@@ -112,7 +112,7 @@ func (r *EventBrokerReconciler) newServiceForPrometheusExporter(exporter *eventb
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      svcName,
 			Namespace: broker.Namespace,
-			Labels:    getMonitoringDeploymentSelector(broker.Name),
+			Labels:    getObjectLabels(broker.Name),
 		},
 		Spec: corev1.ServiceSpec{
 			Type: exporter.ServiceType,
