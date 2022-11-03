@@ -41,17 +41,18 @@ spec:
             properties:
               developer:
                 default: false
-                description: Developer true specifies minimum footprint deployment,
-                  not for production use. Overrides SystemScaling parameters.
+                description: Developer true specifies a minimum footprint scaled-down
+                  deployment, not for production use. If set to true it overrides
+                  SystemScaling parameters.
                 type: boolean
               image:
-                description: Image defines docker image parameters that operator uses
-                  to provision various components of the PubSubPlusEventBroker.
+                description: Image defines container image parameters for the event
+                  broker.
                 properties:
                   pullPolicy:
                     default: IfNotPresent
-                    description: ImagePullPolicy specifies Image Pull Policy of the
-                      docker image to be used to provision the PubSubPlusEventBroker
+                    description: Specifies ImagePullPolicy of the container image
+                      for the event broker.
                     type: string
                   pullSecretName:
                     description: ImagePullSecrets is an optional list of references
@@ -70,31 +71,32 @@ spec:
                     type: array
                   repository:
                     default: solace/solace-pubsub-standard
-                    description: Defines the docker images that operator uses to provision
-                      various components of the PubSubPlusEventBroker.
+                    description: Defines the container image repo where the event
+                      broker image is pulled from
                     type: string
                   tag:
                     default: latest
-                    description: Specifies the tag version of the docker image to
-                      be used to provision the PubSubPlusEventBroker.
+                    description: Specifies the tag of the container image to be used
+                      for the event broker.
                     type: string
                 type: object
               monitoring:
-                description: Monitoring defines Prometheus exporter for monitoring
-                  broker
+                description: Monitoring specifies a Prometheus monitoring endpoint
+                  for the event broker
                 properties:
                   enabled:
                     default: false
-                    description: Enabled true enables the Exporter for use.
+                    description: Enabled true enables the setup of the Prometheus
+                      Exporter.
                     type: boolean
                   image:
-                    description: Image defines docker image parameters used to provision
-                      the Monitoring component of the Prometheus Exporter.
+                    description: Image defines container image parameters for the
+                      Prometheus Exporter.
                     properties:
                       pullPolicy:
                         default: IfNotPresent
-                        description: ImagePullPolicy specifies Image Pull Policy for
-                          Prometheus Exporter
+                        description: Specifies ImagePullPolicy of the container image
+                          for the Prometheus Exporter.
                         type: string
                       pullSecretName:
                         description: ImagePullSecrets is an optional list of references
@@ -114,13 +116,13 @@ spec:
                         type: array
                       repository:
                         default: ghcr.io/solacedev/solace_prometheus_exporter
-                        description: Repository specifies the docker image repository
-                          to use as Prometheus exporter.
+                        description: Defines the container image repo where the Prometheus
+                          Exporter image is pulled from
                         type: string
                       tag:
                         default: latest
-                        description: Tag specifies the tag of the image to be used
-                          for the Prometheus Exporter.
+                        description: Specifies the tag of the container image to be
+                          used for the Prometheus Exporter.
                         type: string
                     type: object
                   includeRates:
@@ -152,36 +154,36 @@ spec:
                 type: object
               podDisruptionBudgetForHA:
                 default: false
-                description: Pod disruption budget for the broker in HA mode. For
-                  this to be `true` `redundancy` has to also be `true` so it is ignored
-                  when `redundancy` is `false`
+                description: Enables setting up PodDisruptionBudget for the broker
+                  pods in HA deployment. This parameter is ignored for non-HA deployments
+                  (if redundancy is false).
                 type: boolean
               redundancy:
                 default: false
                 description: Redundancy true specifies HA deployment, false specifies
-                  Non-HA
+                  Non-HA.
                 type: boolean
               securityContext:
                 description: PodSecurityContext defines the pod security context for
-                  the PubSubPlusEventBroker
+                  the event broker.
                 properties:
                   enabled:
                     default: true
-                    description: Enabled true will enable the Pod Security Context
+                    description: Enabled true will enable the Pod Security Context.
                     type: boolean
                   fsGroup:
                     default: 1000002
-                    description: Specifies fsGroup in pod security context
+                    description: Specifies fsGroup in pod security context.
                     format: int64
                     type: number
                   runAsUser:
                     default: 1000001
-                    description: Specifies runAsUser in pod security context
+                    description: Specifies runAsUser in pod security context.
                     format: int64
                     type: number
                 type: object
               service:
-                description: Service defines service details of how broker is exposed
+                description: Service defines broker service details.
                 properties:
                   annotations:
                     additionalProperties:
@@ -189,17 +191,18 @@ spec:
                     description: Allows adding provider-specific service annotations
                     type: string
                   type:
-                    description: Options to expose the broker. Options include ClusterIP,
-                      NodePort, LoadBalancer
+                    default: LoadBalancer
+                    description: ServiceType specifies how to expose the broker services.
+                      Options include ClusterIP, NodePort, LoadBalancer (default).
                     type: string
                 type: object
               storage:
-                description: Storage defines storage details of the broker
+                description: Storage defines storage details for the broker.
                 type: object
               systemScaling:
                 description: SystemScaling provides exact fine-grained specification
                   of the event broker scaling parameters and the assigned CPU / memory
-                  resources to the Pod
+                  resources to the Pod.
                 properties:
                   maxConnections:
                     default: 100
@@ -211,18 +214,20 @@ spec:
                     default: 1000
                     type: integer
                   messagingNodeCpu:
+                    default: "2"
                     type: string
                   messagingNodeMemory:
+                    default: 4025Mi
                     type: string
                 type: object
               timezone:
                 default: UTC
-                description: Define the timezone for the PubSubPlusEventBroker container,
+                description: Defines the timezone for the event broker container,
                   if undefined default is UTC. Valid values are tz database time zone
                   names.
                 type: string
               tls:
-                description: TLS provides TLS configuration for the event broker
+                description: TLS provides TLS configuration for the event broker.
                 properties:
                   enabled:
                     default: false
@@ -236,7 +241,8 @@ spec:
                 type: object
             type: object
           status:
-            description: EventBrokerStatus defines the observed state of PubSubPlusEventBroker
+            description: EventBrokerStatus defines the observed state of the event
+              PubSubPlusEventBroker
             properties:
               brokerpods:
                 description: BrokerPods are the names of the eventbroker pods
