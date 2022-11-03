@@ -31,7 +31,7 @@ import (
 )
 
 // statefulsetForEventBroker returns a new pubsubpluseventbroker StatefulSet object
-func (r *EventBrokerReconciler) createStatefulsetForEventBroker(stsName string, m *eventbrokerv1alpha1.PubSubPlusEventBroker) *appsv1.StatefulSet {
+func (r *PubSubPlusEventBrokerReconciler) createStatefulsetForEventBroker(stsName string, m *eventbrokerv1alpha1.PubSubPlusEventBroker) *appsv1.StatefulSet {
 	nodeType := getBrokerNodeType(stsName)
 
 	// Determine broker sizing
@@ -84,7 +84,7 @@ func (r *EventBrokerReconciler) createStatefulsetForEventBroker(stsName string, 
 }
 
 // statefulsetForEventBroker returns an updated pubsubpluseventbroker StatefulSet object
-func (r *EventBrokerReconciler) updateStatefulsetForEventBroker(stsName string, m *eventbrokerv1alpha1.PubSubPlusEventBroker, dep *appsv1.StatefulSet) {
+func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(stsName string, m *eventbrokerv1alpha1.PubSubPlusEventBroker, dep *appsv1.StatefulSet) {
 	brokerServicesName := getObjectName("Service", m.Name)
 	secretName := getObjectName("Secret", m.Name)
 	configmapName := getObjectName("ConfigMap", m.Name)

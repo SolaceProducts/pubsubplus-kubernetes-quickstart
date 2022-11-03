@@ -26,7 +26,7 @@ import (
 )
 
 // serviceaccountForEventBroker returns an pubsubpluseventbroker ServiceAccount object
-func (r *EventBrokerReconciler) serviceaccountForEventBroker(saName string, m *eventbrokerv1alpha1.PubSubPlusEventBroker) *corev1.ServiceAccount {
+func (r *PubSubPlusEventBrokerReconciler) serviceaccountForEventBroker(saName string, m *eventbrokerv1alpha1.PubSubPlusEventBroker) *corev1.ServiceAccount {
 	dep := &corev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      saName,

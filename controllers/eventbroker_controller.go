@@ -38,8 +38,8 @@ import (
 	eventbrokerv1alpha1 "github.com/SolaceProducts/pubsubplus-operator/api/v1alpha1"
 )
 
-// EventBrokerReconciler reconciles a PubSubPlusEventBroker object
-type EventBrokerReconciler struct {
+// PubSubPlusEventBrokerReconciler reconciles a PubSubPlusEventBroker object
+type PubSubPlusEventBrokerReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 }
@@ -71,7 +71,7 @@ type EventBrokerReconciler struct {
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.12.2/pkg/reconcile
-func (r *EventBrokerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 
 	// Format is set in main.go
 	log := ctrllog.FromContext(ctx)
@@ -592,7 +592,7 @@ func getPodNames(pods []corev1.Pod) []string {
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *EventBrokerReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *PubSubPlusEventBrokerReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&eventbrokerv1alpha1.PubSubPlusEventBroker{}).
 		Owns(&appsv1.StatefulSet{}).

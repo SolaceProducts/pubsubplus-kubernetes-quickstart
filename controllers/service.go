@@ -25,7 +25,7 @@ import (
 	eventbrokerv1alpha1 "github.com/SolaceProducts/pubsubplus-operator/api/v1alpha1"
 )
 
-func (r *EventBrokerReconciler) serviceForEventBroker(svcName string, m *eventbrokerv1alpha1.PubSubPlusEventBroker) *corev1.Service {
+func (r *PubSubPlusEventBrokerReconciler) serviceForEventBroker(svcName string, m *eventbrokerv1alpha1.PubSubPlusEventBroker) *corev1.Service {
 	dep := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      svcName,

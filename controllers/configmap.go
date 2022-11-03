@@ -25,7 +25,7 @@ import (
 	eventbrokerv1alpha1 "github.com/SolaceProducts/pubsubplus-operator/api/v1alpha1"
 )
 
-func (r *EventBrokerReconciler) configmapForEventBroker(cmName string, m *eventbrokerv1alpha1.PubSubPlusEventBroker) *corev1.ConfigMap {
+func (r *PubSubPlusEventBrokerReconciler) configmapForEventBroker(cmName string, m *eventbrokerv1alpha1.PubSubPlusEventBroker) *corev1.ConfigMap {
 	dep := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      cmName,

@@ -26,7 +26,7 @@ import (
 )
 
 // rolebindingForEventBroker returns an pubsubpluseventbroker RoleBinding object
-func (r *EventBrokerReconciler) rolebindingForEventBroker(rbName string, m *eventbrokerv1alpha1.PubSubPlusEventBroker) *rbacv1.RoleBinding {
+func (r *PubSubPlusEventBrokerReconciler) rolebindingForEventBroker(rbName string, m *eventbrokerv1alpha1.PubSubPlusEventBroker) *rbacv1.RoleBinding {
 	dep := &rbacv1.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rbName,

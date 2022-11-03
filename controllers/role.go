@@ -26,7 +26,7 @@ import (
 )
 
 // roleForEventBroker returns an pubsubpluseventbroker Role object
-func (r *EventBrokerReconciler) roleForEventBroker(roleName string, m *eventbrokerv1alpha1.PubSubPlusEventBroker) *rbacv1.Role {
+func (r *PubSubPlusEventBrokerReconciler) roleForEventBroker(roleName string, m *eventbrokerv1alpha1.PubSubPlusEventBroker) *rbacv1.Role {
 	dep := &rbacv1.Role{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      roleName,

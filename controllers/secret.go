@@ -30,7 +30,7 @@ import (
 )
 
 // secretForEventBroker returns an pubsubpluseventbroker Secret object
-func (r *EventBrokerReconciler) secretForEventBroker(secretName string, m *eventbrokerv1alpha1.PubSubPlusEventBroker) *corev1.Secret {
+func (r *PubSubPlusEventBrokerReconciler) secretForEventBroker(secretName string, m *eventbrokerv1alpha1.PubSubPlusEventBroker) *corev1.Secret {
 
 	// TODO: Replace with more serious generator
 	randomPassword := generateSimplePassword(8)

@@ -28,7 +28,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-func (r *EventBrokerReconciler) newDeploymentForPrometheusExporter(name string, secret *corev1.Secret, broker *eventbrokerv1alpha1.PubSubPlusEventBroker) *appsv1.Deployment {
+func (r *PubSubPlusEventBrokerReconciler) newDeploymentForPrometheusExporter(name string, secret *corev1.Secret, broker *eventbrokerv1alpha1.PubSubPlusEventBroker) *appsv1.Deployment {
 	dep := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
@@ -108,7 +108,7 @@ func (r *EventBrokerReconciler) newDeploymentForPrometheusExporter(name string, 
 	return dep
 }
 
-func (r *EventBrokerReconciler) newServiceForPrometheusExporter(exporter *eventbrokerv1alpha1.Monitoring, svcName string, broker *eventbrokerv1alpha1.PubSubPlusEventBroker) *corev1.Service {
+func (r *PubSubPlusEventBrokerReconciler) newServiceForPrometheusExporter(exporter *eventbrokerv1alpha1.Monitoring, svcName string, broker *eventbrokerv1alpha1.PubSubPlusEventBroker) *corev1.Service {
 	dep := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      svcName,

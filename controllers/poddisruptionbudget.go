@@ -24,7 +24,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-func (r *EventBrokerReconciler) newPodDisruptionBudgetForHADeployment(name string, m *eventbrokerv1alpha1.PubSubPlusEventBroker) *policyv1.PodDisruptionBudget {
+func (r *PubSubPlusEventBrokerReconciler) newPodDisruptionBudgetForHADeployment(name string, m *eventbrokerv1alpha1.PubSubPlusEventBroker) *policyv1.PodDisruptionBudget {
 	pdb := &policyv1.PodDisruptionBudget{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
