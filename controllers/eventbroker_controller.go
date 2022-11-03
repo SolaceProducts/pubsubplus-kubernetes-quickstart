@@ -45,9 +45,9 @@ type EventBrokerReconciler struct {
 }
 
 // TODO: review and revise to minimum at the end of the dev cycle!
-//+kubebuilder:rbac:groups=pubsubplus.solace.com,resources=eventbrokers,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=pubsubplus.solace.com,resources=eventbrokers/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=pubsubplus.solace.com,resources=eventbrokers/finalizers,verbs=update
+//+kubebuilder:rbac:groups=pubsubplus.solace.com,resources=pubsubpluseventbrokers,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=pubsubplus.solace.com,resources=pubsubpluseventbrokers/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=pubsubplus.solace.com,resources=pubsubpluseventbrokers/finalizers,verbs=update
 
 // +kubebuilder:rbac:groups="",resources=serviceaccounts,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="rbac.authorization.k8s.io",resources=roles,verbs=get;list;watch;create;update;patch;delete
