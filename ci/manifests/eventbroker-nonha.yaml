@@ -1,6 +1,6 @@
 ---
 apiVersion: pubsubplus.solace.com/v1alpha1
-kind: EventBroker
+kind: PubSubPlusEventBroker
 metadata:
   name: test-nonha
 spec:

@@ -24,7 +24,7 @@ import (
 	eventbrokerv1alpha1 "github.com/SolaceProducts/pubsubplus-operator/api/v1alpha1"
 )
 
-func (r *EventBrokerReconciler) discoveryserviceForEventBroker(dsvcName string, m *eventbrokerv1alpha1.EventBroker) *corev1.Service {
+func (r *PubSubPlusEventBrokerReconciler) discoveryserviceForEventBroker(dsvcName string, m *eventbrokerv1alpha1.PubSubPlusEventBroker) *corev1.Service {
 	dep := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      dsvcName,
@@ -59,7 +59,7 @@ func (r *EventBrokerReconciler) discoveryserviceForEventBroker(dsvcName string, 
 			PublishNotReadyAddresses: true,
 		},
 	}
-	// Set EventBroker instance as the owner and controller
+	// Set PubSubPlusEventBroker instance as the owner and controller
 	ctrl.SetControllerReference(m, dep, r.Scheme)
 	return dep
 }

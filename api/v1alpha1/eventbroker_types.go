@@ -21,54 +21,56 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EventBrokerSpec defines the desired state of EventBroker
+// EventBrokerSpec defines the desired state of PubSubPlusEventBroker
 type EventBrokerSpec struct {
 	//+optional
 	//+kubebuilder:validation:Type:=boolean
 	//+kubebuilder:default:=false
-	// Redundancy true specifies HA deployment, false specifies Non-HA
+	// Redundancy true specifies HA deployment, false specifies Non-HA.
 	Redundancy bool `json:"redundancy"`
 	//+optional
 	//+kubebuilder:validation:Type:=boolean
 	//+kubebuilder:default:=false
-	// Developer true specifies minimum footprint deployment, not for production use. Overrides SystemScaling parameters.
+	// Developer true specifies a minimum footprint scaled-down deployment, not for production use.
+	// If set to true it overrides SystemScaling parameters.
 	Developer bool `json:"developer"`
 	//+optional
 	//+kubebuilder:validation:Type:=boolean
 	//+kubebuilder:default:=false
-	// Pod disruption budget for the broker in HA mode. For this to be `true` `redundancy` has to also be `true` so it is ignored when `redundancy` is `false`
+	// Enables setting up PodDisruptionBudget for the broker pods in HA deployment.
+	// This parameter is ignored for non-HA deployments (if redundancy is false).
 	PodDisruptionBudgetForHA bool `json:"podDisruptionBudgetForHA"`
 	//+optional
 	//+kubebuilder:validation:Type:=string
-	//+kubebuilder:default:=UTC
-	// Define the timezone for the EventBroker container, if undefined default is UTC. Valid values are tz database time zone names.
+	//+kubebuilder:default:="UTC"
+	// Defines the timezone for the event broker container, if undefined default is UTC. Valid values are tz database time zone names.
 	Timezone string `json:"timezone"`
 	//+optional
 	//+kubebuilder:validation:Type:=object
 	// SystemScaling provides exact fine-grained specification of the event broker scaling parameters
-	// and the assigned CPU / memory resources to the Pod
+	// and the assigned CPU / memory resources to the Pod.
 	SystemScaling *SystemScaling `json:"systemScaling,omitempty"`
 	//+kubebuilder:validation:Type:=object
-	// Image defines docker image parameters that operator uses to provision various components of the EventBroker.
+	// Image defines container image parameters for the event broker.
 	BrokerImage *BrokerImage `json:"image,omitempty"`
 	//+kubebuilder:validation:Type:=object
-	// PodSecurityContext defines the pod security context for the EventBroker
+	// PodSecurityContext defines the pod security context for the event broker.
 	PodSecurityContext *PodSecurityContext `json:"securityContext,omitempty"`
 	//+optional
 	//+kubebuilder:validation:Type:=object
-	// TLS provides TLS configuration for the event broker
+	// TLS provides TLS configuration for the event broker.
 	BrokerTLS *BrokerTLS `json:"tls,omitempty"`
 	//+optional
 	//+kubebuilder:validation:Type:=object
-	// Service defines service details of how broker is exposed
+	// Service defines broker service details.
 	Service *Service `json:"service,omitempty"`
 	//+optional
 	//+kubebuilder:validation:Type:=object
-	// Storage defines storage details of the broker
+	// Storage defines storage details for the broker.
 	Storage *Storage `json:"storage,omitempty"`
 	//+optional
 	//+kubebuilder:validation:Type:=object
-	// Monitoring defines Prometheus exporter for monitoring broker
+	// Monitoring specifies a Prometheus monitoring endpoint for the event broker
 	Monitoring *Monitoring `json:"monitoring,omitempty"`
 }
 
@@ -76,7 +78,8 @@ type EventBrokerSpec struct {
 type Service struct {
 	//+optional
 	//+kubebuilder:validation:Type:=string
-	// Options to expose the broker. Options include ClusterIP, NodePort, LoadBalancer
+	//+kubebuilder:default:=LoadBalancer
+	// ServiceType specifies how to expose the broker services. Options include ClusterIP, NodePort, LoadBalancer (default).
 	ServiceType corev1.ServiceType `json:"type,omitempty"`
 	//+optional
 	//+kubebuilder:validation:Type:=string
@@ -103,11 +106,13 @@ type SystemScaling struct {
 	MaxQueueMessages int `json:"maxQueueMessages,omitempty"`
 	// +kubebuilder:default:=1000
 	MaxSpoolUsage       int    `json:"maxSpoolUsage,omitempty"`
+	// +kubebuilder:default:="2"
 	MessagingNodeCpu    string `json:"messagingNodeCpu,omitempty"`
+	// +kubebuilder:default:="4025Mi"
 	MessagingNodeMemory string `json:"messagingNodeMemory,omitempty"`
 }
 
-// EventBrokerStatus defines the observed state of EventBroker
+// EventBrokerStatus defines the observed state of the event PubSubPlusEventBroker
 type EventBrokerStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
@@ -116,7 +121,7 @@ type EventBrokerStatus struct {
 	BrokerPods []string `json:"brokerpods"`
 }
 
-// BrokerTLS defines TLS configuration for the broker EventBroker
+// BrokerTLS defines TLS configuration for the PubSubPlusEventBroker
 type BrokerTLS struct {
 	//+optional
 	//+kubebuilder:validation:Type:=boolean
@@ -133,38 +138,38 @@ type BrokerTLS struct {
 // BrokerImage defines Image details and pulling configurations
 type BrokerImage struct {
 	//+kubebuilder:validation:Type:=string
-	//+kubebuilder:default:=solace/solace-pubsub-standard
-	// Defines the docker images that operator uses to provision various components of the EventBroker.
+	//+kubebuilder:default:="solace/solace-pubsub-standard"
+	// Defines the container image repo where the event broker image is pulled from
 	Repository string `json:"repository,omitempty"`
 	//+kubebuilder:validation:Type:=string
-	//+kubebuilder:default:=latest
-	// Specifies the tag version of the docker image to be used to provision the EventBroker.
+	//+kubebuilder:default:="latest"
+	// Specifies the tag of the container image to be used for the event broker.
 	Tag string `json:"tag,omitempty"`
 	//+kubebuilder:validation:Type:=string
-	//+kubebuilder:default:=IfNotPresent
-	// ImagePullPolicy specifies Image Pull Policy of the docker image to be used to provision the EventBroker
+	//+kubebuilder:default:="IfNotPresent"
+	// Specifies ImagePullPolicy of the container image for the event broker.
 	ImagePullPolicy corev1.PullPolicy `json:"pullPolicy,omitempty"`
 	//+kubebuilder:validation:Type:=array
 	// ImagePullSecrets is an optional list of references to secrets in the same namespace to use for pulling any of the images used by this PodSpec.
 	ImagePullSecrets []corev1.LocalObjectReference `json:"pullSecretName,omitempty"`
 }
 
-// PodSecurityContext defines the pod security context for the EventBroker
+// PodSecurityContext defines the pod security context for the PubSubPlusEventBroker
 type PodSecurityContext struct {
 	//+optional
 	//+kubebuilder:validation:Type:=boolean
 	//+kubebuilder:default:=true
-	// Enabled true will enable the Pod Security Context
+	// Enabled true will enable the Pod Security Context.
 	Enabled bool `json:"enabled"`
 	//+optional
 	//+kubebuilder:validation:Type:=number
 	//+kubebuilder:default:=1000002
-	// Specifies fsGroup in pod security context
+	// Specifies fsGroup in pod security context.
 	FSGroup int64 `json:"fsGroup"`
 	//+optional
 	//+kubebuilder:validation:Type:=number
 	//+kubebuilder:default:=1000001
-	// Specifies runAsUser in pod security context
+	// Specifies runAsUser in pod security context.
 	RunAsUser int64 `json:"runAsUser"`
 }
 
@@ -172,15 +177,15 @@ type PodSecurityContext struct {
 type MonitoringImage struct {
 	//+kubebuilder:validation:Type:=string
 	//+kubebuilder:default:=ghcr.io/solacedev/solace_prometheus_exporter
-	// Repository specifies the docker image repository to use as Prometheus exporter.
+	// Defines the container image repo where the Prometheus Exporter image is pulled from
 	Repository string `json:"repository,omitempty"`
 	//+kubebuilder:validation:Type:=string
 	//+kubebuilder:default:=latest
-	// Tag specifies the tag of the image to be used for the Prometheus Exporter.
+	// Specifies the tag of the container image to be used for the Prometheus Exporter.
 	Tag string `json:"tag,omitempty"`
 	//+kubebuilder:validation:Type:=string
 	//+kubebuilder:default:=IfNotPresent
-	// ImagePullPolicy specifies Image Pull Policy for Prometheus Exporter
+	// Specifies ImagePullPolicy of the container image for the Prometheus Exporter.
 	ImagePullPolicy corev1.PullPolicy `json:"pullPolicy,omitempty"`
 	// ImagePullSecrets is an optional list of references to secrets in the same namespace to use for pulling any of the images used by this PodSpec.
 	// +optional
@@ -193,11 +198,11 @@ type Monitoring struct {
 	//+optional
 	//+kubebuilder:validation:Type:=boolean
 	//+kubebuilder:default:=false
-	// Enabled true enables the Exporter for use.
+	// Enabled true enables the setup of the Prometheus Exporter.
 	Enabled bool `json:"enabled"`
 	//+optional
 	//+kubebuilder:validation:Type:=object
-	// Image defines docker image parameters used to provision the Monitoring component of the Prometheus Exporter.
+	// Image defines container image parameters for the Prometheus Exporter.
 	MonitoringImage *MonitoringImage `json:"image,omitempty"`
 	//+optional
 	//+kubebuilder:validation:Type:=number
@@ -233,10 +238,10 @@ type Monitoring struct {
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
-//+kubebuilder:resource:path=eventbrokers,shortName=eb
+//+kubebuilder:resource:path=pubsubpluseventbrokers,shortName=eb;eventbroker
 
-// EventBroker is the Schema for the eventbrokers API
-type EventBroker struct {
+// PubSubPlusEventBroker is the Schema for the pubsubpluseventbrokers API
+type PubSubPlusEventBroker struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
@@ -246,13 +251,13 @@ type EventBroker struct {
 
 //+kubebuilder:object:root=true
 
-// EventBrokerList contains a list of EventBroker
-type EventBrokerList struct {
+// PubSubPlusEventBrokerList contains a list of PubSubPlusEventBroker
+type PubSubPlusEventBrokerList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []EventBroker `json:"items"`
+	Items           []PubSubPlusEventBroker `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&EventBroker{}, &EventBrokerList{})
+	SchemeBuilder.Register(&PubSubPlusEventBroker{}, &PubSubPlusEventBrokerList{})
 }

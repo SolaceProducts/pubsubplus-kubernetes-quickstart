@@ -35,7 +35,7 @@ cd pubsubplus-kubernetes-operator/
 ```sh
 make install run
 ```
-7. Use the sample `EventBroker` resource to create an HA cluster
+7. Use the sample `PubSubPlusEventBroker` resource to create an HA cluster
 ```sh
 kubectl apply -f config/samples/pubsubplus_v1alpha1_eventbroker.yaml
 ```
@@ -53,7 +53,7 @@ kubectl port-forward svc/<service-name> 8080:8080 &
 ```sh
 make deploy
 ```
-2. Use the sample `EventBroker` resource to create an HA cluster
+2. Use the sample `PubSubPlusEventBroker` resource to create an HA cluster
 ```sh
 kubectl apply -f config/samples/pubsubplus_v1alpha1_eventbroker.yaml
 ```
