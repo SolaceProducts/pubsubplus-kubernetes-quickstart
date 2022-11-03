@@ -25,8 +25,8 @@ import (
 	eventbrokerv1alpha1 "github.com/SolaceProducts/pubsubplus-operator/api/v1alpha1"
 )
 
-// roleForEventBroker returns an eventbroker Role object
-func (r *EventBrokerReconciler) roleForEventBroker(roleName string, m *eventbrokerv1alpha1.EventBroker) *rbacv1.Role {
+// roleForEventBroker returns an pubsubpluseventbroker Role object
+func (r *EventBrokerReconciler) roleForEventBroker(roleName string, m *eventbrokerv1alpha1.PubSubPlusEventBroker) *rbacv1.Role {
 	dep := &rbacv1.Role{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      roleName,

@@ -17,9 +17,10 @@ limitations under the License.
 package controllers
 
 import (
-	policyv1 "k8s.io/api/policy/v1"
 	"reflect"
 	"time"
+
+	policyv1 "k8s.io/api/policy/v1"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -37,7 +38,7 @@ import (
 	eventbrokerv1alpha1 "github.com/SolaceProducts/pubsubplus-operator/api/v1alpha1"
 )
 
-// EventBrokerReconciler reconciles a EventBroker object
+// EventBrokerReconciler reconciles a PubSubPlusEventBroker object
 type EventBrokerReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
@@ -64,7 +65,7 @@ type EventBrokerReconciler struct {
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
 // TODO(user): Modify the Reconcile function to compare the state specified by
-// the EventBroker object against the actual cluster state, and then
+// the PubSubPlusEventBroker object against the actual cluster state, and then
 // perform operations to make the cluster state reflect the state specified by
 // the user.
 //
@@ -77,31 +78,31 @@ func (r *EventBrokerReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 	var stsP, stsB, stsM *appsv1.StatefulSet
 
-	// Fetch the EventBroker instance
-	eventbroker := &eventbrokerv1alpha1.EventBroker{}
-	err := r.Get(ctx, req.NamespacedName, eventbroker)
+	// Fetch the PubSubPlusEventBroker instance
+	pubsubpluseventbroker := &eventbrokerv1alpha1.PubSubPlusEventBroker{}
+	err := r.Get(ctx, req.NamespacedName, pubsubpluseventbroker)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.
 			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
 			// Return and don't requeue
-			log.Info("EventBroker resource not found. Ignoring since object must be deleted")
+			log.Info("PubSubPlusEventBroker resource not found. Ignoring since object must be deleted")
 			return ctrl.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
-		log.Error(err, "Failed to get EventBroker")
+		log.Error(err, "Failed to get PubSubPlusEventBroker")
 		return ctrl.Result{}, err
 	} else {
-		log.Info("Detected existing eventbroker", " eventbroker.Name", eventbroker.Name)
+		log.Info("Detected existing pubsubpluseventbroker", " pubsubpluseventbroker.Name", pubsubpluseventbroker.Name)
 	}
 
 	// Check if ServiceAccount already exists, if not create a new one
 	sa := &corev1.ServiceAccount{}
-	saName := getObjectName("ServiceAccount", eventbroker.Name)
-	err = r.Get(ctx, types.NamespacedName{Name: saName, Namespace: eventbroker.Namespace}, sa)
+	saName := getObjectName("ServiceAccount", pubsubpluseventbroker.Name)
+	err = r.Get(ctx, types.NamespacedName{Name: saName, Namespace: pubsubpluseventbroker.Namespace}, sa)
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new ServiceAccount
-		sa := r.serviceaccountForEventBroker(saName, eventbroker)
+		sa := r.serviceaccountForEventBroker(saName, pubsubpluseventbroker)
 		log.Info("Creating a new ServiceAccount", "ServiceAccount.Namespace", sa.Namespace, "ServiceAccount.Name", sa.Name)
 		err = r.Create(ctx, sa)
 		if err != nil {
@@ -120,11 +121,11 @@ func (r *EventBrokerReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 	// Check if podtagupdater Role already exists, if not create a new one
 	role := &rbacv1.Role{}
-	roleName := getObjectName("Role", eventbroker.Name)
-	err = r.Get(ctx, types.NamespacedName{Name: roleName, Namespace: eventbroker.Namespace}, role)
+	roleName := getObjectName("Role", pubsubpluseventbroker.Name)
+	err = r.Get(ctx, types.NamespacedName{Name: roleName, Namespace: pubsubpluseventbroker.Namespace}, role)
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new Role
-		role := r.roleForEventBroker(roleName, eventbroker)
+		role := r.roleForEventBroker(roleName, pubsubpluseventbroker)
 		log.Info("Creating a new Role", "Role.Namespace", role.Namespace, "Role.Name", role.Name)
 		err = r.Create(ctx, role)
 		if err != nil {
@@ -142,11 +143,11 @@ func (r *EventBrokerReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 	// Check if RoleBinding already exists, if not create a new one
 	rb := &rbacv1.RoleBinding{}
-	rbName := getObjectName("RoleBinding", eventbroker.Name)
-	err = r.Get(ctx, types.NamespacedName{Name: rbName, Namespace: eventbroker.Namespace}, rb)
+	rbName := getObjectName("RoleBinding", pubsubpluseventbroker.Name)
+	err = r.Get(ctx, types.NamespacedName{Name: rbName, Namespace: pubsubpluseventbroker.Namespace}, rb)
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new RoleBinding
-		rb := r.rolebindingForEventBroker(rbName, eventbroker)
+		rb := r.rolebindingForEventBroker(rbName, pubsubpluseventbroker)
 		log.Info("Creating a new RoleBinding", "RoleBinding.Namespace", rb.Namespace, "RoleBinding.Name", rb.Name)
 		err = r.Create(ctx, rb)
 		if err != nil {
@@ -164,11 +165,11 @@ func (r *EventBrokerReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 	// Check if the ConfigMap already exists, if not create a new one
 	cm := &corev1.ConfigMap{}
-	cmName := getObjectName("ConfigMap", eventbroker.Name)
-	err = r.Get(ctx, types.NamespacedName{Name: cmName, Namespace: eventbroker.Namespace}, cm)
+	cmName := getObjectName("ConfigMap", pubsubpluseventbroker.Name)
+	err = r.Get(ctx, types.NamespacedName{Name: cmName, Namespace: pubsubpluseventbroker.Namespace}, cm)
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new configmap
-		cm := r.configmapForEventBroker(cmName, eventbroker)
+		cm := r.configmapForEventBroker(cmName, pubsubpluseventbroker)
 		log.Info("Creating a new ConfigMap", "Configmap.Namespace", cm.Namespace, "Configmap.Name", cm.Name)
 		err = r.Create(ctx, cm)
 		if err != nil {
@@ -186,11 +187,11 @@ func (r *EventBrokerReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 	// Check if the Service already exists, if not create a new one
 	svc := &corev1.Service{}
-	svcName := getObjectName("Service", eventbroker.Name)
-	err = r.Get(ctx, types.NamespacedName{Name: svcName, Namespace: eventbroker.Namespace}, svc)
+	svcName := getObjectName("Service", pubsubpluseventbroker.Name)
+	err = r.Get(ctx, types.NamespacedName{Name: svcName, Namespace: pubsubpluseventbroker.Namespace}, svc)
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new service
-		svc := r.serviceForEventBroker(svcName, eventbroker)
+		svc := r.serviceForEventBroker(svcName, pubsubpluseventbroker)
 		log.Info("Creating a new Service", "Service.Namespace", svc.Namespace, "Service.Name", svc.Name)
 		err = r.Create(ctx, svc)
 		if err != nil {
@@ -206,15 +207,15 @@ func (r *EventBrokerReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		log.Info("Detected existing Service", " Service.Name", svc.Name)
 	}
 
-	haDeployment := eventbroker.Spec.Redundancy
+	haDeployment := pubsubpluseventbroker.Spec.Redundancy
 	if haDeployment {
 		// Check if the Discovery Service already exists, if not create a new one
 		dsvc := &corev1.Service{}
-		dsvcName := getObjectName("DiscoveryService", eventbroker.Name)
-		err = r.Get(ctx, types.NamespacedName{Name: dsvcName, Namespace: eventbroker.Namespace}, dsvc)
+		dsvcName := getObjectName("DiscoveryService", pubsubpluseventbroker.Name)
+		err = r.Get(ctx, types.NamespacedName{Name: dsvcName, Namespace: pubsubpluseventbroker.Namespace}, dsvc)
 		if err != nil && errors.IsNotFound(err) {
 			// Define a new service
-			svc := r.discoveryserviceForEventBroker(dsvcName, eventbroker)
+			svc := r.discoveryserviceForEventBroker(dsvcName, pubsubpluseventbroker)
 			log.Info("Creating a new Service", "Service.Namespace", svc.Namespace, "Service.Name", svc.Name)
 			err = r.Create(ctx, svc)
 			if err != nil {
@@ -233,11 +234,11 @@ func (r *EventBrokerReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 	// Check Secret
 	secret := &corev1.Secret{}
-	secretName := getObjectName("Secret", eventbroker.Name)
-	err = r.Get(ctx, types.NamespacedName{Name: secretName, Namespace: eventbroker.Namespace}, secret)
+	secretName := getObjectName("Secret", pubsubpluseventbroker.Name)
+	err = r.Get(ctx, types.NamespacedName{Name: secretName, Namespace: pubsubpluseventbroker.Namespace}, secret)
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new Secret
-		secret := r.secretForEventBroker(secretName, eventbroker)
+		secret := r.secretForEventBroker(secretName, pubsubpluseventbroker)
 		log.Info("Creating a new Secret", "Secret.Namespace", secret.Namespace, "Secret.Name", secret.Name)
 		err = r.Create(ctx, secret)
 		if err != nil {
@@ -255,11 +256,11 @@ func (r *EventBrokerReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 	// Check if Primary StatefulSet already exists, if not create a new one
 	stsP = &appsv1.StatefulSet{}
-	stsPName := getStatefulsetName(eventbroker.Name, "p")
-	err = r.Get(ctx, types.NamespacedName{Name: stsPName, Namespace: eventbroker.Namespace}, stsP)
+	stsPName := getStatefulsetName(pubsubpluseventbroker.Name, "p")
+	err = r.Get(ctx, types.NamespacedName{Name: stsPName, Namespace: pubsubpluseventbroker.Namespace}, stsP)
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new statefulset
-		stsP := r.createStatefulsetForEventBroker(stsPName, eventbroker)
+		stsP := r.createStatefulsetForEventBroker(stsPName, pubsubpluseventbroker)
 		log.Info("Creating a new Primary StatefulSet", "StatefulSet.Namespace", stsP.Namespace, "StatefulSet.Name", stsP.Name)
 		err = r.Create(ctx, stsP)
 		if err != nil {
@@ -272,10 +273,10 @@ func (r *EventBrokerReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		log.Error(err, "Failed to get StatefulSet")
 		return ctrl.Result{}, err
 	} else {
-		if stsP.Spec.Template.ObjectMeta.Annotations[dependenciesSignatureAnnotationName] != hash(eventbroker.Spec) {
+		if stsP.Spec.Template.ObjectMeta.Annotations[dependenciesSignatureAnnotationName] != hash(pubsubpluseventbroker.Spec) {
 			// If resource versions differ it means update is required
 			log.Info("Updating existing Primary StatefulSet", " StatefulSet.Name", stsP.Name)
-			r.updateStatefulsetForEventBroker(stsPName, eventbroker, stsP)
+			r.updateStatefulsetForEventBroker(stsPName, pubsubpluseventbroker, stsP)
 			log.Info("Updating Primary StatefulSet", "StatefulSet.Namespace", stsP.Namespace, "StatefulSet.Name", stsP.Name)
 			err = r.Update(ctx, stsP)
 			if err != nil {
@@ -292,11 +293,11 @@ func (r *EventBrokerReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		// Add backup and monitor statefulsets
 		// == Check if Backup StatefulSet already exists, if not create a new one
 		stsB = &appsv1.StatefulSet{}
-		stsBName := getStatefulsetName(eventbroker.Name, "b")
-		err = r.Get(ctx, types.NamespacedName{Name: stsBName, Namespace: eventbroker.Namespace}, stsB)
+		stsBName := getStatefulsetName(pubsubpluseventbroker.Name, "b")
+		err = r.Get(ctx, types.NamespacedName{Name: stsBName, Namespace: pubsubpluseventbroker.Namespace}, stsB)
 		if err != nil && errors.IsNotFound(err) {
 			// Define a new statefulset
-			stsB := r.createStatefulsetForEventBroker(stsBName, eventbroker)
+			stsB := r.createStatefulsetForEventBroker(stsBName, pubsubpluseventbroker)
 			log.Info("Creating a new Backup StatefulSet", "StatefulSet.Namespace", stsB.Namespace, "StatefulSet.Name", stsB.Name)
 			err = r.Create(ctx, stsB)
 			if err != nil {
@@ -309,10 +310,10 @@ func (r *EventBrokerReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			log.Error(err, "Failed to get StatefulSet")
 			return ctrl.Result{}, err
 		} else {
-			if stsB.Spec.Template.ObjectMeta.Annotations[dependenciesSignatureAnnotationName] != hash(eventbroker.Spec) {
+			if stsB.Spec.Template.ObjectMeta.Annotations[dependenciesSignatureAnnotationName] != hash(pubsubpluseventbroker.Spec) {
 				// If resource versions differ it means update is required
 				log.Info("Updating existing Backup StatefulSet", " StatefulSet.Name", stsB.Name)
-				r.updateStatefulsetForEventBroker(stsBName, eventbroker, stsB)
+				r.updateStatefulsetForEventBroker(stsBName, pubsubpluseventbroker, stsB)
 				log.Info("Updating Backup StatefulSet", "StatefulSet.Namespace", stsB.Namespace, "StatefulSet.Name", stsB.Name)
 				err = r.Update(ctx, stsB)
 				if err != nil {
@@ -327,11 +328,11 @@ func (r *EventBrokerReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 		// == Check if Monitor StatefulSet already exists, if not create a new one
 		stsM = &appsv1.StatefulSet{}
-		stsMName := getStatefulsetName(eventbroker.Name, "m")
-		err = r.Get(ctx, types.NamespacedName{Name: stsMName, Namespace: eventbroker.Namespace}, stsM)
+		stsMName := getStatefulsetName(pubsubpluseventbroker.Name, "m")
+		err = r.Get(ctx, types.NamespacedName{Name: stsMName, Namespace: pubsubpluseventbroker.Namespace}, stsM)
 		if err != nil && errors.IsNotFound(err) {
 			// Define a new statefulset
-			stsM := r.createStatefulsetForEventBroker(stsMName, eventbroker)
+			stsM := r.createStatefulsetForEventBroker(stsMName, pubsubpluseventbroker)
 			log.Info("Creating a new Monitor StatefulSet", "StatefulSet.Namespace", stsM.Namespace, "StatefulSet.Name", stsM.Name)
 			err = r.Create(ctx, stsM)
 			if err != nil {
@@ -344,10 +345,10 @@ func (r *EventBrokerReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			log.Error(err, "Failed to get StatefulSet")
 			return ctrl.Result{}, err
 		} else {
-			if stsM.Spec.Template.ObjectMeta.Annotations[dependenciesSignatureAnnotationName] != hash(eventbroker.Spec) {
+			if stsM.Spec.Template.ObjectMeta.Annotations[dependenciesSignatureAnnotationName] != hash(pubsubpluseventbroker.Spec) {
 				// If resource versions differ it means update is required
 				log.Info("Updating existing Monitor StatefulSet", " StatefulSet.Name", stsM.Name)
-				r.updateStatefulsetForEventBroker(stsMName, eventbroker, stsM)
+				r.updateStatefulsetForEventBroker(stsMName, pubsubpluseventbroker, stsM)
 				log.Info("Updating Monitor StatefulSet", "StatefulSet.Namespace", stsM.Namespace, "StatefulSet.Name", stsM.Name)
 				err = r.Update(ctx, stsM)
 				if err != nil {
@@ -363,17 +364,17 @@ func (r *EventBrokerReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	}
 
 	// Check if Pod DisruptionBudget for HA  is Enabled, only when it is an HA deployment
-	podDisruptionBudgetHAEnabled := eventbroker.Spec.PodDisruptionBudgetForHA
+	podDisruptionBudgetHAEnabled := pubsubpluseventbroker.Spec.PodDisruptionBudgetForHA
 	if haDeployment && podDisruptionBudgetHAEnabled {
 
 		// Check if PDB for HA already exists
 		foundPodDisruptionBudgetHA := &policyv1.PodDisruptionBudget{}
-		podDisruptionBudgetHAName := getObjectName("PodDisruptionBudget", eventbroker.Name)
-		err = r.Get(ctx, types.NamespacedName{Name: podDisruptionBudgetHAName, Namespace: eventbroker.Namespace}, foundPodDisruptionBudgetHA)
+		podDisruptionBudgetHAName := getObjectName("PodDisruptionBudget", pubsubpluseventbroker.Name)
+		err = r.Get(ctx, types.NamespacedName{Name: podDisruptionBudgetHAName, Namespace: pubsubpluseventbroker.Namespace}, foundPodDisruptionBudgetHA)
 		if err != nil && errors.IsNotFound(err) {
 
 			//Pod DisruptionBudget for HA not available create new one
-			podDisruptionBudgetHA := r.newPodDisruptionBudgetForHADeployment(podDisruptionBudgetHAName, eventbroker)
+			podDisruptionBudgetHA := r.newPodDisruptionBudgetForHADeployment(podDisruptionBudgetHAName, pubsubpluseventbroker)
 
 			log.Info("Creating new Pod Disruption Budget", "PodDisruptionBudget.Name", podDisruptionBudgetHAName)
 
@@ -395,7 +396,7 @@ func (r *EventBrokerReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	if stsP.Status.ReadyReplicas < 1 {
 		log.Info("Detected unready Primary StatefulSet, waiting to be ready")
 		return ctrl.Result{RequeueAfter: time.Duration(5) * time.Second}, nil
-	} else if eventbroker.Spec.Redundancy {
+	} else if pubsubpluseventbroker.Spec.Redundancy {
 		if stsB.Status.ReadyReplicas < 1 {
 			log.Info("Detected unready Backup StatefulSet, waiting to be ready")
 			return ctrl.Result{RequeueAfter: time.Duration(5) * time.Second}, nil
@@ -408,14 +409,14 @@ func (r *EventBrokerReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	log.Info("All broker pods are available")
 
 	// Next restart any pods to sync with their config dependencies
-	expectedConfigSignature := hash(eventbroker.Spec)
+	expectedConfigSignature := hash(pubsubpluseventbroker.Spec)
 	var brokerPod *corev1.Pod
 	// Must distinguish between HA and non-HA
 	if haDeployment {
 		// The algorithm is to process the Monitor, then the pod with `active=false`, finally `active=true`
 		// == Monitor
-		if brokerPod, err = r.getBrokerPod(ctx, eventbroker, Monitor); err != nil {
-			log.Error(err, "Failed to list pods", "EventBroker.Namespace", eventbroker.Namespace, "EventBroker.Name", eventbroker.Name)
+		if brokerPod, err = r.getBrokerPod(ctx, pubsubpluseventbroker, Monitor); err != nil {
+			log.Error(err, "Failed to list pods", "PubSubPlusEventBroker.Namespace", pubsubpluseventbroker.Namespace, "PubSubPlusEventBroker.Name", pubsubpluseventbroker.Name)
 			return ctrl.Result{}, err
 		}
 		if brokerPod.ObjectMeta.Annotations[dependenciesSignatureAnnotationName] != expectedConfigSignature {
@@ -432,8 +433,8 @@ func (r *EventBrokerReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			return ctrl.Result{RequeueAfter: time.Duration(5) * time.Second}, nil
 		}
 		// == Standby
-		if brokerPod, err = r.getBrokerPod(ctx, eventbroker, Standby); err != nil {
-			log.Error(err, "Failed to list pods", "EventBroker.Namespace", eventbroker.Namespace, "EventBroker.Name", eventbroker.Name)
+		if brokerPod, err = r.getBrokerPod(ctx, pubsubpluseventbroker, Standby); err != nil {
+			log.Error(err, "Failed to list pods", "PubSubPlusEventBroker.Namespace", pubsubpluseventbroker.Namespace, "PubSubPlusEventBroker.Name", pubsubpluseventbroker.Name)
 			return ctrl.Result{}, err
 		}
 		if brokerPod.ObjectMeta.Annotations[dependenciesSignatureAnnotationName] != expectedConfigSignature {
@@ -451,8 +452,8 @@ func (r *EventBrokerReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		}
 	}
 	// At this point, HA or not, check the active pod for restart
-	if brokerPod, err = r.getBrokerPod(ctx, eventbroker, Active); err != nil {
-		log.Error(err, "Failed to list pods", "EventBroker.Namespace", eventbroker.Namespace, "EventBroker.Name", eventbroker.Name)
+	if brokerPod, err = r.getBrokerPod(ctx, pubsubpluseventbroker, Active); err != nil {
+		log.Error(err, "Failed to list pods", "PubSubPlusEventBroker.Namespace", pubsubpluseventbroker.Namespace, "PubSubPlusEventBroker.Name", pubsubpluseventbroker.Name)
 		return ctrl.Result{}, err
 	}
 	if brokerPod.ObjectMeta.Annotations[dependenciesSignatureAnnotationName] != expectedConfigSignature {
@@ -469,14 +470,14 @@ func (r *EventBrokerReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		return ctrl.Result{RequeueAfter: time.Duration(5) * time.Second}, nil
 	}
 
-	// List the pods for this eventbroker
+	// List the pods for this pubsubpluseventbroker
 	// podList := &corev1.PodList{}
 	// listOpts := []client.ListOption{
-	// 	client.InNamespace(eventbroker.Namespace),
-	// 	client.MatchingLabels(getMessagingPodSelectorByActive(eventbroker.Name, "true")),
+	// 	client.InNamespace(pubsubpluseventbroker.Namespace),
+	// 	client.MatchingLabels(getMessagingPodSelectorByActive(pubsubpluseventbroker.Name, "true")),
 	// }
 	// if err = r.List(ctx, podList, listOpts...); err != nil {
-	// 	log.Error(err, "Failed to list pods", "EventBroker.Namespace", eventbroker.Namespace, "EventBroker.Name", eventbroker.Name)
+	// 	log.Error(err, "Failed to list pods", "PubSubPlusEventBroker.Namespace", pubsubpluseventbroker.Namespace, "PubSubPlusEventBroker.Name", pubsubpluseventbroker.Name)
 	// 	return ctrl.Result{}, err
 	// }
 	// if (podList != nil && len(podList.Items) > 0 &&
@@ -493,40 +494,40 @@ func (r *EventBrokerReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	// 	return ctrl.Result{RequeueAfter: time.Duration(5) * time.Second}, nil
 	// }
 
-	// Update the EventBroker status with the pod names
+	// Update the PubSubPlusEventBroker status with the pod names
 	// TODO: this is an example. It would make sense to update status with broker ready for messaging, config update on progress, etc.
-	// List the pods for this eventbroker's StatefulSet
+	// List the pods for this pubsubpluseventbroker's StatefulSet
 	podList := &corev1.PodList{}
 	listOpts := []client.ListOption{
-		client.InNamespace(eventbroker.Namespace),
-		client.MatchingLabels(baseLabels(eventbroker.Name)),
+		client.InNamespace(pubsubpluseventbroker.Namespace),
+		client.MatchingLabels(baseLabels(pubsubpluseventbroker.Name)),
 	}
 	if err = r.List(ctx, podList, listOpts...); err != nil {
-		log.Error(err, "Failed to list pods", "EventBroker.Namespace", eventbroker.Namespace, "EventBroker.Name", eventbroker.Name)
+		log.Error(err, "Failed to list pods", "PubSubPlusEventBroker.Namespace", pubsubpluseventbroker.Namespace, "PubSubPlusEventBroker.Name", pubsubpluseventbroker.Name)
 		return ctrl.Result{}, err
 	}
 	podNames := getPodNames(podList.Items)
 	// Update status.BrokerPods if needed
-	if !reflect.DeepEqual(podNames, eventbroker.Status.BrokerPods) {
-		eventbroker.Status.BrokerPods = podNames
-		err := r.Status().Update(ctx, eventbroker)
+	if !reflect.DeepEqual(podNames, pubsubpluseventbroker.Status.BrokerPods) {
+		pubsubpluseventbroker.Status.BrokerPods = podNames
+		err := r.Status().Update(ctx, pubsubpluseventbroker)
 		if err != nil {
-			log.Error(err, "Failed to update EventBroker status")
+			log.Error(err, "Failed to update PubSubPlusEventBroker status")
 			return ctrl.Result{}, err
 		}
 	}
 
 	// Check if Prometheus Exporter is enabled only after broker is running perfectly
-	prometheusExporterEnabled := eventbroker.Spec.Monitoring.Enabled
+	prometheusExporterEnabled := pubsubpluseventbroker.Spec.Monitoring.Enabled
 	if prometheusExporterEnabled {
 		// Check if this Prometheus Exporter Pod already exists
 		foundPrometheusExporter := &appsv1.Deployment{}
-		prometheusExporterName := getObjectName("PrometheusExporterDeployment", eventbroker.Name)
-		err = r.Get(ctx, types.NamespacedName{Name: prometheusExporterName, Namespace: eventbroker.Namespace}, foundPrometheusExporter)
+		prometheusExporterName := getObjectName("PrometheusExporterDeployment", pubsubpluseventbroker.Name)
+		err = r.Get(ctx, types.NamespacedName{Name: prometheusExporterName, Namespace: pubsubpluseventbroker.Namespace}, foundPrometheusExporter)
 		if err != nil && errors.IsNotFound(err) {
 
 			//exporter not available create new one
-			prometheusExporter := r.newDeploymentForPrometheusExporter(prometheusExporterName, secret, eventbroker)
+			prometheusExporter := r.newDeploymentForPrometheusExporter(prometheusExporterName, secret, pubsubpluseventbroker)
 
 			log.Info("Creating new Prometheus Exporter", "Pod.Namespace", prometheusExporter.Namespace, "Pod.Name", prometheusExporterName)
 			err = r.Create(ctx, prometheusExporter)
@@ -545,11 +546,11 @@ func (r *EventBrokerReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 		// Check if this Service for Prometheus Exporter Pod already exists
 		foundPrometheusExporterSvc := &corev1.Service{}
-		prometheusExporterSvcName := getObjectName("PrometheusExporterService", eventbroker.Name)
-		err = r.Get(ctx, types.NamespacedName{Name: prometheusExporterSvcName, Namespace: eventbroker.Namespace}, foundPrometheusExporterSvc)
+		prometheusExporterSvcName := getObjectName("PrometheusExporterService", pubsubpluseventbroker.Name)
+		err = r.Get(ctx, types.NamespacedName{Name: prometheusExporterSvcName, Namespace: pubsubpluseventbroker.Namespace}, foundPrometheusExporterSvc)
 		if err != nil && errors.IsNotFound(err) {
 			// New service for Prometheus Exporter
-			prometheusExporterSvc := r.newServiceForPrometheusExporter(eventbroker.Spec.Monitoring, prometheusExporterSvcName, eventbroker)
+			prometheusExporterSvc := r.newServiceForPrometheusExporter(pubsubpluseventbroker.Spec.Monitoring, prometheusExporterSvcName, pubsubpluseventbroker)
 			log.Info("Creating a new Service for Prometheus Exporter", "Service.Namespace", prometheusExporterSvc.Namespace, "Service.Name", prometheusExporterSvc.Name)
 
 			err = r.Create(ctx, prometheusExporterSvc)
@@ -573,7 +574,7 @@ func (r *EventBrokerReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 // TODO: if still needed move it to namings
 // baseLabels returns the labels for selecting the resources
-// belonging to the given eventbroker CR name.
+// belonging to the given pubsubpluseventbroker CR name.
 func baseLabels(name string) map[string]string {
 	return map[string]string{
 		"app.kubernetes.io/instance": name,
@@ -593,7 +594,7 @@ func getPodNames(pods []corev1.Pod) []string {
 // SetupWithManager sets up the controller with the Manager.
 func (r *EventBrokerReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&eventbrokerv1alpha1.EventBroker{}).
+		For(&eventbrokerv1alpha1.PubSubPlusEventBroker{}).
 		Owns(&appsv1.StatefulSet{}).
 		Owns(&corev1.ConfigMap{}).
 		Complete(r)

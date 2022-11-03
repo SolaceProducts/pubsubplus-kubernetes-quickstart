@@ -30,8 +30,8 @@ import (
 )
 
 // Returns the broker pod in the specified role
-func (r *EventBrokerReconciler) getBrokerPod(ctx context.Context, m *eventbrokerv1alpha1.EventBroker, brokerRole BrokerRole) (*corev1.Pod, error) {
-	// List the pods for this eventbroker
+func (r *EventBrokerReconciler) getBrokerPod(ctx context.Context, m *eventbrokerv1alpha1.PubSubPlusEventBroker, brokerRole BrokerRole) (*corev1.Pod, error) {
+	// List the pods for this pubsubpluseventbroker
 	podList := &corev1.PodList{}
 	listOpts := []client.ListOption{
 		client.InNamespace(m.Namespace),

@@ -28,8 +28,8 @@ BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 # This variable is used to construct full image tags for bundle and catalog images.
 #
 # For example, running 'make bundle-build bundle-push catalog-build catalog-push' will build and push both
-# solace.com/pubsubplus-operator-bundle:$VERSION and solace.com/pubsubplus-operator-catalog:$VERSION.
-IMAGE_TAG_BASE ?= solace.com/pubsubplus-operator-v1alpha1
+# solace.com/pubsubplus-eventbroker-operator-bundle:$VERSION and solace.com/pubsubplus-eventbroker-operator-catalog:$VERSION.
+IMAGE_TAG_BASE ?= solace.com/pubsubplus-eventbroker-operator-v1alpha1
 
 # BUNDLE_IMG defines the image:tag used for the bundle.
 # You can use it as an arg. (E.g make bundle-build BUNDLE_IMG=<some-registry>/<project-name-bundle>:<tag>)

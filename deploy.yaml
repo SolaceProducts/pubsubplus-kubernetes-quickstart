@@ -15,18 +15,18 @@ metadata:
 spec:
   group: pubsubplus.solace.com
   names:
-    kind: EventBroker
-    listKind: EventBrokerList
+    kind: PubSubPlusEventBroker
+    listKind: PubSubPlusEventBrokerList
     plural: eventbrokers
     shortNames:
     - eb
-    singular: eventbroker
+    singular: pubsubpluseventbroker
   scope: Namespaced
   versions:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: EventBroker is the Schema for the eventbrokers API
+        description: PubSubPlusEventBroker is the Schema for the eventbrokers API
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
@@ -37,16 +37,141 @@ spec:
           metadata:
             type: object
           spec:
-            description: EventBrokerSpec defines the desired state of EventBroker
+            description: EventBrokerSpec defines the desired state of PubSubPlusEventBroker
             properties:
               developer:
                 default: false
                 description: Developer true specifies minimum footprint deployment, not for production use. Overrides SystemScaling parameters.
                 type: boolean
+              image:
+                description: Image defines docker image parameters that operator uses to provision various components of the PubSubPlusEventBroker.
+                properties:
+                  pullPolicy:
+                    default: IfNotPresent
+                    description: ImagePullPolicy specifies Image Pull Policy of the docker image to be used to provision the PubSubPlusEventBroker
+                    type: string
+                  pullSecretName:
+                    description: ImagePullSecrets is an optional list of references to secrets in the same namespace to use for pulling any of the images used by this PodSpec.
+                    items:
+                      description: LocalObjectReference contains enough information to let you locate the referenced object inside the same namespace.
+                      properties:
+                        name:
+                          description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?'
+                          type: string
+                      type: object
+                      x-kubernetes-map-type: atomic
+                    type: array
+                  repository:
+                    default: solace/solace-pubsub-standard
+                    description: Defines the docker images that operator uses to provision various components of the PubSubPlusEventBroker.
+                    type: string
+                  tag:
+                    default: latest
+                    description: Specifies the tag version of the docker image to be used to provision the PubSubPlusEventBroker.
+                    type: string
+                type: object
+              monitoring:
+                description: Monitoring defines Prometheus exporter for monitoring broker
+                properties:
+                  enabled:
+                    default: false
+                    description: Enabled true enables the Exporter for use.
+                    type: boolean
+                  image:
+                    description: Image defines docker image parameters used to provision the Monitoring component of the Prometheus Exporter.
+                    properties:
+                      pullPolicy:
+                        default: IfNotPresent
+                        description: ImagePullPolicy specifies Image Pull Policy for Prometheus Exporter
+                        type: string
+                      pullSecretName:
+                        description: ImagePullSecrets is an optional list of references to secrets in the same namespace to use for pulling any of the images used by this PodSpec.
+                        items:
+                          description: LocalObjectReference contains enough information to let you locate the referenced object inside the same namespace.
+                          properties:
+                            name:
+                              description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?'
+                              type: string
+                          type: object
+                          x-kubernetes-map-type: atomic
+                        type: array
+                      repository:
+                        default: ghcr.io/solacedev/solace_prometheus_exporter
+                        description: Repository specifies the docker image repository to use as Prometheus exporter.
+                        type: string
+                      tag:
+                        default: latest
+                        description: Tag specifies the tag of the image to be used for the Prometheus Exporter.
+                        type: string
+                    type: object
+                  includeRates:
+                    default: false
+                    description: Defines if Prometheus Exporter should include rates
+                    type: boolean
+                  listenTLS:
+                    default: false
+                    description: Defines if Prometheus Exporter uses TLS configuration
+                    type: boolean
+                  port:
+                    default: 9628
+                    description: Container Port for  Prometheus Exporter
+                    format: int32
+                    type: number
+                  serviceType:
+                    default: ClusterIP
+                    description: Defines the service type for Prometheus Exporter
+                    type: string
+                  sslVerify:
+                    default: false
+                    description: Defines if Prometheus Exporter verifies SSL
+                    type: boolean
+                  timeOut:
+                    default: 5
+                    description: Timeout configuration for Prometheus Exporter scrapper
+                    format: int32
+                    type: number
+                type: object
+              podDisruptionBudgetForHA:
+                default: false
+                description: Pod disruption budget for the broker in HA mode. For this to be `true` `redundancy` has to also be `true` so it is ignored when `redundancy` is `false`
+                type: boolean
               redundancy:
                 default: false
                 description: Redundancy true specifies HA deployment, false specifies Non-HA
                 type: boolean
+              securityContext:
+                description: PodSecurityContext defines the pod security context for the PubSubPlusEventBroker
+                properties:
+                  enabled:
+                    default: true
+                    description: Enabled true will enable the Pod Security Context
+                    type: boolean
+                  fsGroup:
+                    default: 1000002
+                    description: Specifies fsGroup in pod security context
+                    format: int64
+                    type: number
+                  runAsUser:
+                    default: 1000001
+                    description: Specifies runAsUser in pod security context
+                    format: int64
+                    type: number
+                type: object
+              service:
+                description: Service defines service details of how broker is exposed
+                properties:
+                  annotations:
+                    additionalProperties:
+                      type: string
+                    description: Allows adding provider-specific service annotations
+                    type: string
+                  type:
+                    description: Options to expose the broker. Options include ClusterIP, NodePort, LoadBalancer
+                    type: string
+                type: object
+              storage:
+                description: Storage defines storage details of the broker
+                type: object
               systemScaling:
                 description: SystemScaling provides exact fine-grained specification of the event broker scaling parameters and the assigned CPU / memory resources to the Pod
                 properties:
@@ -64,12 +189,28 @@ spec:
                   messagingNodeMemory:
                     type: string
                 type: object
+              timezone:
+                default: UTC
+                description: Define the timezone for the PubSubPlusEventBroker container, if undefined default is UTC. Valid values are tz database time zone names.
+                type: string
+              tls:
+                description: TLS provides TLS configuration for the event broker
+                properties:
+                  enabled:
+                    default: false
+                    description: Enabled true enables TLS for the broker.
+                    type: boolean
+                  serverTlsConfigSecret:
+                    default: example-tls-secret
+                    description: Specifies the tls configuration secret to be used for the broker
+                    type: string
+                type: object
             type: object
           status:
-            description: EventBrokerStatus defines the observed state of EventBroker
+            description: EventBrokerStatus defines the observed state of PubSubPlusEventBroker
             properties:
               brokerpods:
-                description: BrokerPods are the names of the eventbroker pods
+                description: BrokerPods are the names of the pubsubpluseventbroker pods
                 items:
                   type: string
                 type: array
@@ -85,13 +226,13 @@ spec:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: pubsubplus-operator-controller
+  name: pubsubplus-eventbroker-operator
   namespace: pubsubplus-operator-system
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: pubsubplus-operator-leader-election-role
+  name: pubsubplus-eventbroker-operator-leader-election-role
   namespace: pubsubplus-operator-system
 rules:
 - apiGroups:
@@ -129,8 +270,36 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
+  name: pubsubplus-eventbroker-operator-metrics-reader
+rules:
+- nonResourceURLs:
+  - /metrics
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: pubsubplus-eventbroker-operator-proxy-role
+rules:
+- apiGroups:
+  - authentication.k8s.io
+  resources:
+  - tokenreviews
+  verbs:
+  - create
+- apiGroups:
+  - authorization.k8s.io
+  resources:
+  - subjectaccessreviews
+  verbs:
+  - create
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
   creationTimestamp: null
-  name: pubsubplus-operator-controller-role
+  name: pubsubplus-eventbroker-operator-role
 rules:
 - apiGroups:
   - ""
@@ -192,6 +361,18 @@ rules:
   - ""
   resources:
   - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
   verbs:
   - create
   - delete
@@ -276,71 +457,43 @@ rules:
   - watch
 ---
 apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: pubsubplus-operator-metrics-reader
-rules:
-- nonResourceURLs:
-  - /metrics
-  verbs:
-  - get
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: pubsubplus-operator-proxy-role
-rules:
-- apiGroups:
-  - authentication.k8s.io
-  resources:
-  - tokenreviews
-  verbs:
-  - create
-- apiGroups:
-  - authorization.k8s.io
-  resources:
-  - subjectaccessreviews
-  verbs:
-  - create
----
-apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: pubsubplus-operator-leader-election-rolebinding
+  name: pubsubplus-eventbroker-operator-leader-election-rolebinding
   namespace: pubsubplus-operator-system
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: pubsubplus-operator-leader-election-role
+  name: pubsubplus-eventbroker-operator-leader-election-role
 subjects:
 - kind: ServiceAccount
-  name: pubsubplus-operator-controller
+  name: pubsubplus-eventbroker-operator
   namespace: pubsubplus-operator-system
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: pubsubplus-operator-controller-rolebinding
+  name: pubsubplus-eventbroker-operator-proxy-rolebinding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: pubsubplus-operator-controller-role
+  name: proxy-role
 subjects:
 - kind: ServiceAccount
-  name: pubsubplus-operator-controller
+  name: pubsubplus-eventbroker-operator
   namespace: pubsubplus-operator-system
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: pubsubplus-operator-proxy-rolebinding
+  name: pubsubplus-eventbroker-operator-rolebinding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: pubsubplus-operator-proxy-role
+  name: pubsubplus-eventbroker-operator-role
 subjects:
 - kind: ServiceAccount
-  name: pubsubplus-operator-controller
+  name: pubsubplus-eventbroker-operator
   namespace: pubsubplus-operator-system
 ---
 apiVersion: v1
@@ -348,7 +501,7 @@ data:
   controller_manager_config.yaml: "apiVersion: controller-runtime.sigs.k8s.io/v1alpha1\r\nkind: ControllerManagerConfig\r\nhealth:\r\n  healthProbeBindAddress: :8081\r\nmetrics:\r\n  bindAddress: 127.0.0.1:8080\r\nwebhook:\r\n  port: 9443\r\nleaderElection:\r\n  leaderElect: true\r\n  resourceName: cb271b96.solace.com\r\n# leaderElectionReleaseOnCancel defines if the leader should step down volume\r\n# when the Manager ends. This requires the binary to immediately end when the\r\n# Manager is stopped, otherwise, this setting is unsafe. Setting this significantly\r\n# speeds up voluntary leader transitions as the new leader don't have to wait\r\n# LeaseDuration time first.\r\n# In the default scaffold provided, the program ends immediately after\r\n# the manager stops, so would be fine to enable this option. However,\r\n# if you are doing or is intended to do any operation such as perform cleanups\r\n# after the manager stops then its usage might be unsafe.\r\n# leaderElectionReleaseOnCancel: true\r\n"
 kind: ConfigMap
 metadata:
-  name: pubsubplus-operator-controller-config
+  name: pubsubplus-eventbroker-operator-config
   namespace: pubsubplus-operator-system
 ---
 apiVersion: v1
@@ -356,7 +509,7 @@ kind: Service
 metadata:
   labels:
     control-plane: controller-manager
-  name: pubsubplus-operator-controller-metrics-service
+  name: pubsubplus-eventbroker-operator-metrics-service
   namespace: pubsubplus-operator-system
 spec:
   ports:
@@ -372,10 +525,10 @@ kind: Deployment
 metadata:
   labels:
     app.kubernetes.io/component: controller
-    app.kubernetes.io/name: solace-pubsubplus-operator
+    app.kubernetes.io/name: solace-pubsubplus-eventbroker-operator
     app.kubernetes.io/version: version
     control-plane: controller-manager
-  name: pubsubplus-operator-controller
+  name: pubsubplus-eventbroker-operator
   namespace: pubsubplus-operator-system
 spec:
   replicas: 1
@@ -388,7 +541,7 @@ spec:
         kubectl.kubernetes.io/default-container: manager
       labels:
         app.kubernetes.io/component: controller
-        app.kubernetes.io/name: solace-pubsubplus-operator
+        app.kubernetes.io/name: solace-pubsubplus-eventbroker-operator
         app.kubernetes.io/version: version
         control-plane: controller-manager
     spec:
@@ -453,5 +606,5 @@ spec:
       - name: regcred
       securityContext:
         runAsNonRoot: true
-      serviceAccountName: pubsubplus-operator-controller
+      serviceAccountName: pubsubplus-eventbroker-operator
       terminationGracePeriodSeconds: 10

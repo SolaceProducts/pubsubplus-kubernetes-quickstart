@@ -29,8 +29,8 @@ import (
 	eventbrokerv1alpha1 "github.com/SolaceProducts/pubsubplus-operator/api/v1alpha1"
 )
 
-// secretForEventBroker returns an eventbroker Secret object
-func (r *EventBrokerReconciler) secretForEventBroker(secretName string, m *eventbrokerv1alpha1.EventBroker) *corev1.Secret {
+// secretForEventBroker returns an pubsubpluseventbroker Secret object
+func (r *EventBrokerReconciler) secretForEventBroker(secretName string, m *eventbrokerv1alpha1.PubSubPlusEventBroker) *corev1.Secret {
 
 	// TODO: Replace with more serious generator
 	randomPassword := generateSimplePassword(8)
@@ -48,7 +48,7 @@ func (r *EventBrokerReconciler) secretForEventBroker(secretName string, m *event
 	}
 
 	// FOR NOW. May be reconsidered.
-	// Set EventBroker instance as the owner and controller
+	// Set PubSubPlusEventBroker instance as the owner and controller
 	ctrl.SetControllerReference(m, dep, r.Scheme)
 	return dep
 }

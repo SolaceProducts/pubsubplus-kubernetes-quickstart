@@ -30,8 +30,8 @@ import (
 	eventbrokerv1alpha1 "github.com/SolaceProducts/pubsubplus-operator/api/v1alpha1"
 )
 
-// statefulsetForEventBroker returns a new eventbroker StatefulSet object
-func (r *EventBrokerReconciler) createStatefulsetForEventBroker(stsName string, m *eventbrokerv1alpha1.EventBroker) *appsv1.StatefulSet {
+// statefulsetForEventBroker returns a new pubsubpluseventbroker StatefulSet object
+func (r *EventBrokerReconciler) createStatefulsetForEventBroker(stsName string, m *eventbrokerv1alpha1.PubSubPlusEventBroker) *appsv1.StatefulSet {
 	nodeType := getBrokerNodeType(stsName)
 
 	// Determine broker sizing
@@ -78,13 +78,13 @@ func (r *EventBrokerReconciler) createStatefulsetForEventBroker(stsName string, 
 	}
 
 	r.updateStatefulsetForEventBroker(stsName, m, dep)
-	// Set EventBroker instance as the owner and controller
+	// Set PubSubPlusEventBroker instance as the owner and controller
 	ctrl.SetControllerReference(m, dep, r.Scheme)
 	return dep
 }
 
-// statefulsetForEventBroker returns an updated eventbroker StatefulSet object
-func (r *EventBrokerReconciler) updateStatefulsetForEventBroker(stsName string, m *eventbrokerv1alpha1.EventBroker, dep *appsv1.StatefulSet) {
+// statefulsetForEventBroker returns an updated pubsubpluseventbroker StatefulSet object
+func (r *EventBrokerReconciler) updateStatefulsetForEventBroker(stsName string, m *eventbrokerv1alpha1.PubSubPlusEventBroker, dep *appsv1.StatefulSet) {
 	brokerServicesName := getObjectName("Service", m.Name)
 	secretName := getObjectName("Secret", m.Name)
 	configmapName := getObjectName("ConfigMap", m.Name)

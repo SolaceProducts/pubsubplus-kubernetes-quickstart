@@ -25,7 +25,7 @@ import (
 	eventbrokerv1alpha1 "github.com/SolaceProducts/pubsubplus-operator/api/v1alpha1"
 )
 
-func (r *EventBrokerReconciler) configmapForEventBroker(cmName string, m *eventbrokerv1alpha1.EventBroker) *corev1.ConfigMap {
+func (r *EventBrokerReconciler) configmapForEventBroker(cmName string, m *eventbrokerv1alpha1.PubSubPlusEventBroker) *corev1.ConfigMap {
 	dep := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      cmName,
@@ -39,7 +39,7 @@ func (r *EventBrokerReconciler) configmapForEventBroker(cmName string, m *eventb
 			"semp_query.sh":      SempQuerySh,
 		},
 	}
-	// Set EventBroker instance as the owner and controller
+	// Set PubSubPlusEventBroker instance as the owner and controller
 	ctrl.SetControllerReference(m, dep, r.Scheme)
 	return dep
 }

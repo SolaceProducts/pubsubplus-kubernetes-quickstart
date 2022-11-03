@@ -21,7 +21,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EventBrokerSpec defines the desired state of EventBroker
+// EventBrokerSpec defines the desired state of PubSubPlusEventBroker
 type EventBrokerSpec struct {
 	//+optional
 	//+kubebuilder:validation:Type:=boolean
@@ -41,7 +41,7 @@ type EventBrokerSpec struct {
 	//+optional
 	//+kubebuilder:validation:Type:=string
 	//+kubebuilder:default:=UTC
-	// Define the timezone for the EventBroker container, if undefined default is UTC. Valid values are tz database time zone names.
+	// Define the timezone for the PubSubPlusEventBroker container, if undefined default is UTC. Valid values are tz database time zone names.
 	Timezone string `json:"timezone"`
 	//+optional
 	//+kubebuilder:validation:Type:=object
@@ -49,10 +49,10 @@ type EventBrokerSpec struct {
 	// and the assigned CPU / memory resources to the Pod
 	SystemScaling *SystemScaling `json:"systemScaling,omitempty"`
 	//+kubebuilder:validation:Type:=object
-	// Image defines docker image parameters that operator uses to provision various components of the EventBroker.
+	// Image defines docker image parameters that operator uses to provision various components of the PubSubPlusEventBroker.
 	BrokerImage *BrokerImage `json:"image,omitempty"`
 	//+kubebuilder:validation:Type:=object
-	// PodSecurityContext defines the pod security context for the EventBroker
+	// PodSecurityContext defines the pod security context for the PubSubPlusEventBroker
 	PodSecurityContext *PodSecurityContext `json:"securityContext,omitempty"`
 	//+optional
 	//+kubebuilder:validation:Type:=object
@@ -107,7 +107,7 @@ type SystemScaling struct {
 	MessagingNodeMemory string `json:"messagingNodeMemory,omitempty"`
 }
 
-// EventBrokerStatus defines the observed state of EventBroker
+// EventBrokerStatus defines the observed state of PubSubPlusEventBroker
 type EventBrokerStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
@@ -116,7 +116,7 @@ type EventBrokerStatus struct {
 	BrokerPods []string `json:"brokerpods"`
 }
 
-// BrokerTLS defines TLS configuration for the broker EventBroker
+// BrokerTLS defines TLS configuration for the PubSubPlusEventBroker
 type BrokerTLS struct {
 	//+optional
 	//+kubebuilder:validation:Type:=boolean
@@ -134,22 +134,22 @@ type BrokerTLS struct {
 type BrokerImage struct {
 	//+kubebuilder:validation:Type:=string
 	//+kubebuilder:default:=solace/solace-pubsub-standard
-	// Defines the docker images that operator uses to provision various components of the EventBroker.
+	// Defines the docker images that operator uses to provision various components of the PubSubPlusEventBroker.
 	Repository string `json:"repository,omitempty"`
 	//+kubebuilder:validation:Type:=string
 	//+kubebuilder:default:=latest
-	// Specifies the tag version of the docker image to be used to provision the EventBroker.
+	// Specifies the tag version of the docker image to be used to provision the PubSubPlusEventBroker.
 	Tag string `json:"tag,omitempty"`
 	//+kubebuilder:validation:Type:=string
 	//+kubebuilder:default:=IfNotPresent
-	// ImagePullPolicy specifies Image Pull Policy of the docker image to be used to provision the EventBroker
+	// ImagePullPolicy specifies Image Pull Policy of the docker image to be used to provision the PubSubPlusEventBroker
 	ImagePullPolicy corev1.PullPolicy `json:"pullPolicy,omitempty"`
 	//+kubebuilder:validation:Type:=array
 	// ImagePullSecrets is an optional list of references to secrets in the same namespace to use for pulling any of the images used by this PodSpec.
 	ImagePullSecrets []corev1.LocalObjectReference `json:"pullSecretName,omitempty"`
 }
 
-// PodSecurityContext defines the pod security context for the EventBroker
+// PodSecurityContext defines the pod security context for the PubSubPlusEventBroker
 type PodSecurityContext struct {
 	//+optional
 	//+kubebuilder:validation:Type:=boolean
@@ -233,10 +233,10 @@ type Monitoring struct {
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
-//+kubebuilder:resource:path=eventbrokers,shortName=eb
+//+kubebuilder:resource:path=pubsubpluseventbrokers,shortName=eb;eventbroker
 
-// EventBroker is the Schema for the eventbrokers API
-type EventBroker struct {
+// PubSubPlusEventBroker is the Schema for the pubsubpluseventbrokers API
+type PubSubPlusEventBroker struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
@@ -246,13 +246,13 @@ type EventBroker struct {
 
 //+kubebuilder:object:root=true
 
-// EventBrokerList contains a list of EventBroker
-type EventBrokerList struct {
+// PubSubPlusEventBrokerList contains a list of PubSubPlusEventBroker
+type PubSubPlusEventBrokerList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []EventBroker `json:"items"`
+	Items           []PubSubPlusEventBroker `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&EventBroker{}, &EventBrokerList{})
+	SchemeBuilder.Register(&PubSubPlusEventBroker{}, &PubSubPlusEventBrokerList{})
 }

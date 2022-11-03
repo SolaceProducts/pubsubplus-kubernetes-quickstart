@@ -37,7 +37,7 @@ const (
 	Monitor
 )
 
-// Provides the object names for the current EventBroker deployment
+// Provides the object names for the current PubSubPlusEventBroker deployment
 func getObjectName(objectType string, deploymentName string) string {
 	nameSuffix := map[string]string{
 		"ConfigMap":                    "-pubsubplus",
@@ -61,7 +61,7 @@ func getStatefulsetName(deploymentName string, roleSuffix string) string {
 	return fmt.Sprintf(getObjectName("StatefulSet", deploymentName), roleSuffix)
 }
 
-// Provides the labels for an object in the current EventBroker deployment
+// Provides the labels for an object in the current PubSubPlusEventBroker deployment
 // These labels are used for all the objects except for Pods
 func getObjectLabels(deploymentName string) map[string]string {
 	return map[string]string{
@@ -76,7 +76,7 @@ func getBrokerNodeType(statefulSetDeploymentName string) string {
 	return (map[string]string{"p": "message-routing-primary", "b": "message-routing-backup", "m": "monitor"})[nodeTypeSymbol]
 }
 
-// Provides the labels for a broker Pod in the current EventBroker deployment
+// Provides the labels for a broker Pod in the current PubSubPlusEventBroker deployment
 func getPodLabels(deploymentName string, nodeType string) map[string]string {
 	return map[string]string{
 		"app.kubernetes.io/instance": deploymentName,

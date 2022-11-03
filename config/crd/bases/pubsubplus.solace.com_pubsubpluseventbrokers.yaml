@@ -5,22 +5,24 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.9.2
   creationTimestamp: null
-  name: eventbrokers.pubsubplus.solace.com
+  name: pubsubpluseventbrokers.pubsubplus.solace.com
 spec:
   group: pubsubplus.solace.com
   names:
-    kind: EventBroker
-    listKind: EventBrokerList
-    plural: eventbrokers
+    kind: PubSubPlusEventBroker
+    listKind: PubSubPlusEventBrokerList
+    plural: pubsubpluseventbrokers
     shortNames:
     - eb
-    singular: eventbroker
+    - eventbroker
+    singular: pubsubpluseventbroker
   scope: Namespaced
   versions:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: EventBroker is the Schema for the eventbrokers API
+        description: PubSubPlusEventBroker is the Schema for the pubsubpluseventbrokers
+          API
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -35,7 +37,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: EventBrokerSpec defines the desired state of EventBroker
+            description: EventBrokerSpec defines the desired state of PubSubPlusEventBroker
             properties:
               developer:
                 default: false
@@ -44,12 +46,12 @@ spec:
                 type: boolean
               image:
                 description: Image defines docker image parameters that operator uses
-                  to provision various components of the EventBroker.
+                  to provision various components of the PubSubPlusEventBroker.
                 properties:
                   pullPolicy:
                     default: IfNotPresent
                     description: ImagePullPolicy specifies Image Pull Policy of the
-                      docker image to be used to provision the EventBroker
+                      docker image to be used to provision the PubSubPlusEventBroker
                     type: string
                   pullSecretName:
                     description: ImagePullSecrets is an optional list of references
@@ -69,12 +71,12 @@ spec:
                   repository:
                     default: solace/solace-pubsub-standard
                     description: Defines the docker images that operator uses to provision
-                      various components of the EventBroker.
+                      various components of the PubSubPlusEventBroker.
                     type: string
                   tag:
                     default: latest
                     description: Specifies the tag version of the docker image to
-                      be used to provision the EventBroker.
+                      be used to provision the PubSubPlusEventBroker.
                     type: string
                 type: object
               monitoring:
@@ -161,7 +163,7 @@ spec:
                 type: boolean
               securityContext:
                 description: PodSecurityContext defines the pod security context for
-                  the EventBroker
+                  the PubSubPlusEventBroker
                 properties:
                   enabled:
                     default: true
@@ -215,8 +217,8 @@ spec:
                 type: object
               timezone:
                 default: UTC
-                description: Define the timezone for the EventBroker container, if
-                  undefined default is UTC. Valid values are tz database time zone
+                description: Define the timezone for the PubSubPlusEventBroker container,
+                  if undefined default is UTC. Valid values are tz database time zone
                   names.
                 type: string
               tls:
@@ -234,7 +236,7 @@ spec:
                 type: object
             type: object
           status:
-            description: EventBrokerStatus defines the observed state of EventBroker
+            description: EventBrokerStatus defines the observed state of PubSubPlusEventBroker
             properties:
               brokerpods:
                 description: BrokerPods are the names of the eventbroker pods
