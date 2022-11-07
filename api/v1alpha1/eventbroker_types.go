@@ -113,12 +113,14 @@ type Service struct {
 	//+kubebuilder:default:=LoadBalancer
 	// ServiceType specifies how to expose the broker services. Options include ClusterIP, NodePort, LoadBalancer (default).
 	ServiceType corev1.ServiceType `json:"type"`
+	//+optional
 	//+kubebuilder:validation:Type:=object
 	//+kubebuilder:default:={}
 	// Annotations allows adding provider-specific service annotations
 	Annotations map[string]string `json:"annotations"`
+	//+optional
 	//+kubebuilder:validation:Type:=array
-	//+kubebuilder:default:={{name:"tcp-semp",protocol:"TCP",containerPort:8080,servicePort:8080},{name:"tcp-web",protocol:"TCP",containerPort:8008,servicePort:8008},{name:"tcp-smf",protocol:"TCP",containerPort:55555,servicePort:55555}}
+	//+kubebuilder:default:={{name:"tcp-ssh",protocol:"TCP",containerPort:2222,servicePort:2222},{name:"tcp-semp",protocol:"TCP",containerPort:8080,servicePort:8080},{name:"tls-semp",protocol:"TCP",containerPort:1943,servicePort:1943},{name:"tcp-smf",protocol:"TCP",containerPort:55555,servicePort:55555},{name:"tcp-smfcomp",protocol:"TCP",containerPort:55003,servicePort:55003},{name:"tls-smf",protocol:"TCP",containerPort:55443,servicePort:55443},{name:"tcp-smfroute",protocol:"TCP",containerPort:55556,servicePort:55556},{name:"tcp-web",protocol:"TCP",containerPort:8008,servicePort:8008},{name:"tls-web",protocol:"TCP",containerPort:1443,servicePort:1443},{name:"tcp-rest",protocol:"TCP",containerPort:9000,servicePort:9000},{name:"tls-rest",protocol:"TCP",containerPort:9443,servicePort:9443},{name:"tcp-amqp",protocol:"TCP",containerPort:5672,servicePort:5672},{name:"tls-amqp",protocol:"TCP",containerPort:5671,servicePort:5671},{name:"tcp-mqtt",protocol:"TCP",containerPort:1883,servicePort:1883},{name:"tls-mqtt",protocol:"TCP",containerPort:8883,servicePort:8883},{name:"tcp-mqttweb",protocol:"TCP",containerPort:8000,servicePort:8000},{name:"tls-mqttweb",protocol:"TCP",containerPort:8443,servicePort:8443}}
 	// Ports specifies the ports to expose PubSubPlusEventBroker services.
 	Ports []*BrokerPort `json:"ports"`
 }

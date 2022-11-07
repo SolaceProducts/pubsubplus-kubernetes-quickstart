@@ -407,27 +407,28 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(stsNam
 		dep.Spec.Template.Spec.Containers[0].Env = allEnv
 	}
 
-	//Set Extra configmap environment variables
-	if len(strings.TrimSpace(m.Spec.ExtraEnvVarsCM)) > 0 {
-		dep.Spec.Template.Spec.Containers[0].EnvFrom = []corev1.EnvFromSource{{
-			ConfigMapRef: &corev1.ConfigMapEnvSource{
-				LocalObjectReference: corev1.LocalObjectReference{
-					Name: m.Spec.ExtraEnvVarsCM,
-				},
-			},
-		},
-		}
-	}
-
+	allEnvFrom := []corev1.EnvFromSource{}
 	//Set Extra secret environment variables
 	if len(strings.TrimSpace(m.Spec.ExtraEnvVarsSecret)) > 0 {
-		dep.Spec.Template.Spec.Containers[0].EnvFrom = []corev1.EnvFromSource{{
+		allEnvFrom = append(allEnvFrom, corev1.EnvFromSource{
 			SecretRef: &corev1.SecretEnvSource{
 				LocalObjectReference: corev1.LocalObjectReference{
 					Name: m.Spec.ExtraEnvVarsSecret,
 				},
 			},
-		},
-		}
+		})
 	}
+
+	//Set Extra configmap environment variables
+	if len(strings.TrimSpace(m.Spec.ExtraEnvVarsCM)) > 0 {
+		allEnvFrom = append(allEnvFrom, corev1.EnvFromSource{
+			ConfigMapRef: &corev1.ConfigMapEnvSource{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: m.Spec.ExtraEnvVarsCM,
+				},
+			},
+		})
+	}
+
+	dep.Spec.Template.Spec.Containers[0].EnvFrom = allEnvFrom
 }
