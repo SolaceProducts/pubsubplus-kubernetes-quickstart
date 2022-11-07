@@ -61,7 +61,7 @@ export service_semp_tlsport='1943'
 export logging_debug_output=all
 export system_scaling_maxconnectioncount=${BROKER_MAXCONNECTIONCOUNT}
 if [ "${BROKER_TLS_ENEBLED}" = "true" ]; then
-  cat /mnt/disks/certs/server/$(BROKER_CERT_FILENAME) /mnt/disks/certs/server/$(BROKER_CERTKEY_FILENAME) > /dev/shm/server.cert
+  cat /mnt/disks/certs/server/${BROKER_CERT_FILENAME} /mnt/disks/certs/server/${BROKER_CERTKEY_FILENAME} > /dev/shm/server.cert
   export tls_servercertificate_filepath="/dev/shm/server.cert"
 fi
 if [ "${BROKER_REDUNDANCY}" = "true" ]; then

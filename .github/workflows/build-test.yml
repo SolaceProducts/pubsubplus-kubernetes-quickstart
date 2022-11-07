@@ -67,6 +67,8 @@ jobs:
 
       - name: Testing the Operator - nonHA
         run: |
+          openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout tls.key -out tls.crt -subj "/CN=*"
+          kubectl create secret tls test-tls --key="tls.key" --cert="tls.crt"
           kubectl apply -f ci/manifests/eventbroker-nonha.yaml | grep "test-nonha created"
           sleep 5 ; kubectl get all
           kubectl wait pods --selector app.kubernetes.io/instance=test-nonha --for condition=Ready --timeout=120s
