@@ -105,9 +105,9 @@ type SystemScaling struct {
 	// +kubebuilder:default:=100
 	MaxQueueMessages int `json:"maxQueueMessages,omitempty"`
 	// +kubebuilder:default:=1000
-	MaxSpoolUsage       int    `json:"maxSpoolUsage,omitempty"`
+	MaxSpoolUsage int `json:"maxSpoolUsage,omitempty"`
 	// +kubebuilder:default:="2"
-	MessagingNodeCpu    string `json:"messagingNodeCpu,omitempty"`
+	MessagingNodeCpu string `json:"messagingNodeCpu,omitempty"`
 	// +kubebuilder:default:="4025Mi"
 	MessagingNodeMemory string `json:"messagingNodeMemory,omitempty"`
 }
