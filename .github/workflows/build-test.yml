@@ -75,11 +75,11 @@ jobs:
           kubectl get po --show-labels | grep test-nonha | grep "1/1"
           kubectl get po --show-labels | grep test-nonha | grep active=true
           kubectl get sts | grep test-nonha
-          kubectl port-forward svc/test-nonha-pubsubplus 8008:8008 &
+          kubectl port-forward svc/test-nonha-pubsubplus 8080:8080 &
           kubectl port-forward svc/test-nonha-pubsubplus 55555:55555 &
           kubectl port-forward svc/test-nonha-pubsubplus 55443:55443 &
-          sleep 2
-          curl localhost:8008 | grep aurelia
+          sleep 5
+          curl localhost:8080 | grep aurelia
           curl -O https://sftp.solace.com/download/SDKPERF_C_LINUX64
           tar -xvf SDKPERF_C_LINUX64
           pubSubTools/sdkperf_c -cip=tcp://localhost:55555 -mn=1000 -mr=0 -ptl=t1 -stl=t1 | grep "Total Messages"
