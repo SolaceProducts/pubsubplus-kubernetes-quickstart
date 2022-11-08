@@ -76,11 +76,9 @@ jobs:
           kubectl get po --show-labels | grep test-nonha | grep active=true
           kubectl get sts | grep test-nonha
           kubectl port-forward svc/test-nonha-pubsubplus 8080:8080 &
-          sleep 1
           kubectl port-forward svc/test-nonha-pubsubplus 55555:55555 &
-          sleep 1
           kubectl port-forward svc/test-nonha-pubsubplus 55443:55443 &
-          sleep 1
+          sleep 2
           curl localhost:8080 | grep aurelia
           curl -O https://sftp.solace.com/download/SDKPERF_C_LINUX64
           tar -xvf SDKPERF_C_LINUX64
