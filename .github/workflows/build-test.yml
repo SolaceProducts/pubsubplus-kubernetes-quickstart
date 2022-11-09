@@ -75,16 +75,16 @@ jobs:
           kubectl get po --show-labels | grep test-nonha | grep "1/1"
           kubectl get po --show-labels | grep test-nonha | grep active=true
           kubectl get sts | grep test-nonha
-          kubectl port-forward svc/test-nonha-pubsubplus 1443:1443 &
           kubectl port-forward svc/test-nonha-pubsubplus 55555:55555 &
           kubectl port-forward svc/test-nonha-pubsubplus 55443:55443 &
           sleep 5
-          curl --insecure -I http://localhost:1443
-          curl --insecure -I https://localhost:1443
           curl -O https://sftp.solace.com/download/SDKPERF_C_LINUX64
           tar -xvf SDKPERF_C_LINUX64
           pubSubTools/sdkperf_c -cip=tcp://localhost:55555 -mn=1000 -mr=0 -ptl=t1 -stl=t1 | grep "Total Messages"
           pubSubTools/sdkperf_c -cip=tcps://localhost:55443 -mn=10000 -mr=0 -ptl=t1 -stl=t1 | grep "Total Messages"
+          # TODO extract secret BROKER_PASSWORD=$(kubectl get secret test-nonha-pubsubplus-secrets  -o "jsonpath={.data.username_admin_password}" -n default | base64 -d )
+          # verify SEMP over TLS
+          # Example: curl -k -sS -u admin:$BROKER_PASSWORD https://$url:1943/SEMP -d "<rpc><show><config-sync></config-sync></show></rpc>
           sleep 50 ; kubectl get all
           kubectl wait pods --selector solace-prometheus-exporter=true --for condition=Ready --timeout=120s
           kubectl port-forward svc/test-nonha-pubsubplus-prometheus-exporter-service 9628:9628 &
