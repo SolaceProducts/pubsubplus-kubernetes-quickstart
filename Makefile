@@ -33,7 +33,7 @@ BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 #
 # For example, running 'make bundle-build bundle-push catalog-build catalog-push' will build and push both
 # solace.com/pubsubplus-eventbroker-operator-bundle:$VERSION and solace.com/pubsubplus-eventbroker-operator-catalog:$VERSION.
-IMAGE_TAG_BASE ?= $(CONTAINER_REPO)/pubsubplus-eventbroker-operator-v1alpha1
+IMAGE_TAG_BASE ?= $(OLM_CONTAINER_REPO)/pubsubplus-eventbroker-operator-v1alpha1
 
 # BUNDLE_IMG defines the image:tag used for the bundle.
 # You can use it as an arg. (E.g make bundle-build BUNDLE_IMG=<some-registry>/<project-name-bundle>:<tag>)
@@ -129,7 +129,7 @@ docker-push: ## Push docker image with the manager.
 
 .PHONY: kind-docker-push
 kind-docker-push: ## Push docker image with the manager.
-	kind load docker-image ${IMG}
+	kind load docker-image ${IMG} --name `kind get clusters`
 
 ##@ Deployment
 
