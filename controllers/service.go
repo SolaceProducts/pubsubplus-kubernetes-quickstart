@@ -33,29 +33,25 @@ func (r *PubSubPlusEventBrokerReconciler) serviceForEventBroker(svcName string, 
 			Labels:    getObjectLabels(m.Name),
 		},
 		Spec: corev1.ServiceSpec{
-			Type: corev1.ServiceTypeLoadBalancer,
-			Ports: []corev1.ServicePort{
-				{
-					Name:       "tcp-semp",
-					Protocol:   corev1.ProtocolTCP,
-					Port:       8080,
-					TargetPort: intstr.IntOrString{Type: intstr.Int, IntVal: int32(8080)},
-				},
-				{
-					Name:       "tcp-web",
-					Protocol:   corev1.ProtocolTCP,
-					Port:       8008,
-					TargetPort: intstr.IntOrString{Type: intstr.Int, IntVal: int32(8008)},
-				},
-				{
-					Name:       "tcp-smf",
-					Protocol:   corev1.ProtocolTCP,
-					Port:       55555,
-					TargetPort: intstr.IntOrString{Type: intstr.Int, IntVal: int32(55555)},
-				},
-			},
+			Type:     m.Spec.Service.ServiceType,
 			Selector: getServiceSelector(m.Name),
 		},
+	}
+	if len(m.Spec.Service.Ports) > 0 {
+		ports := make([]corev1.ServicePort, len(m.Spec.Service.Ports))
+		for idx, pbPort := range m.Spec.Service.Ports {
+			ports[idx] = corev1.ServicePort{
+				Name:       pbPort.Name,
+				Protocol:   pbPort.Protocol,
+				Port:       pbPort.ServicePort,
+				TargetPort: intstr.IntOrString{Type: intstr.Int, IntVal: pbPort.ContainerPort},
+			}
+		}
+		dep.Spec.Ports = ports
+	}
+
+	if m.Spec.Service.Annotations != nil || len(m.Spec.Service.Annotations) > 0 {
+		dep.Annotations = m.Spec.Service.Annotations
 	}
 	// Set PubSubPlusEventBroker instance as the owner and controller
 	ctrl.SetControllerReference(m, dep, r.Scheme)

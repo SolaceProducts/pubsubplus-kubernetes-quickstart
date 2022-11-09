@@ -17,6 +17,7 @@ limitations under the License.
 package controllers
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -25,8 +26,8 @@ import (
 	eventbrokerv1alpha1 "github.com/SolaceProducts/pubsubplus-operator/api/v1alpha1"
 )
 
-// rolebindingForEventBroker returns an pubsubpluseventbroker RoleBinding object
-func (r *PubSubPlusEventBrokerReconciler) rolebindingForEventBroker(rbName string, m *eventbrokerv1alpha1.PubSubPlusEventBroker) *rbacv1.RoleBinding {
+// roleBindingForEventBroker returns an pubsubpluseventbroker RoleBinding object
+func (r *PubSubPlusEventBrokerReconciler) roleBindingForEventBroker(rbName string, m *eventbrokerv1alpha1.PubSubPlusEventBroker, sa *corev1.ServiceAccount) *rbacv1.RoleBinding {
 	dep := &rbacv1.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rbName,
@@ -36,7 +37,7 @@ func (r *PubSubPlusEventBrokerReconciler) rolebindingForEventBroker(rbName strin
 		Subjects: []rbacv1.Subject{
 			{
 				Kind: rbacv1.ServiceAccountKind,
-				Name: getObjectName("ServiceAccount", m.Name),
+				Name: sa.Name,
 			},
 		},
 		RoleRef: rbacv1.RoleRef{

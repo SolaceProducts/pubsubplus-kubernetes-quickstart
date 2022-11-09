@@ -45,6 +45,36 @@ spec:
                   deployment, not for production use. If set to true it overrides
                   SystemScaling parameters.
                 type: boolean
+              extraEnvVars:
+                description: List of extra environment variables to be added to the
+                  PubSubPlusEventBroker container. A primary use case is to specify
+                  configuration keys, although the variables defined here will not
+                  override the ones defined in ConfigMap
+                items:
+                  description: ExtraEnvVar defines environment variables to be added
+                    to the PubSubPlusEventBroker container
+                  properties:
+                    name:
+                      description: Specifies the Name of an environment variable to
+                        be added to the PubSubPlusEventBroker container
+                      type: string
+                    value:
+                      description: Specifies the Value of an environment variable
+                        to be added to the PubSubPlusEventBroker container
+                      type: string
+                  required:
+                  - name
+                  - value
+                  type: object
+                type: array
+              extraEnvVarsCM:
+                description: List of extra environment variables to be added to the
+                  PubSubPlusEventBroker container from an existing ConfigMap
+                type: string
+              extraEnvVarsSecret:
+                description: List of extra environment variables to be added to the
+                  PubSubPlusEventBroker container from an existing Secret
+                type: string
               image:
                 description: Image defines container image parameters for the event
                   broker.
@@ -151,6 +181,9 @@ spec:
                     description: Timeout configuration for Prometheus Exporter scrapper
                     format: int32
                     type: number
+                  tlsSecretName:
+                    description: Defines TLS secret name to set up TLS configuration
+                    type: string
                 type: object
               podDisruptionBudgetForHA:
                 default: false
@@ -188,13 +221,125 @@ spec:
                   annotations:
                     additionalProperties:
                       type: string
-                    description: Allows adding provider-specific service annotations
-                    type: string
+                    description: Annotations allows adding provider-specific service
+                      annotations
+                    type: object
+                  ports:
+                    default:
+                    - containerPort: 2222
+                      name: tcp-ssh
+                      protocol: TCP
+                      servicePort: 2222
+                    - containerPort: 8080
+                      name: tcp-semp
+                      protocol: TCP
+                      servicePort: 8080
+                    - containerPort: 1943
+                      name: tls-semp
+                      protocol: TCP
+                      servicePort: 1943
+                    - containerPort: 55555
+                      name: tcp-smf
+                      protocol: TCP
+                      servicePort: 55555
+                    - containerPort: 55003
+                      name: tcp-smfcomp
+                      protocol: TCP
+                      servicePort: 55003
+                    - containerPort: 55443
+                      name: tls-smf
+                      protocol: TCP
+                      servicePort: 55443
+                    - containerPort: 55556
+                      name: tcp-smfroute
+                      protocol: TCP
+                      servicePort: 55556
+                    - containerPort: 8008
+                      name: tcp-web
+                      protocol: TCP
+                      servicePort: 8008
+                    - containerPort: 1443
+                      name: tls-web
+                      protocol: TCP
+                      servicePort: 1443
+                    - containerPort: 9000
+                      name: tcp-rest
+                      protocol: TCP
+                      servicePort: 9000
+                    - containerPort: 9443
+                      name: tls-rest
+                      protocol: TCP
+                      servicePort: 9443
+                    - containerPort: 5672
+                      name: tcp-amqp
+                      protocol: TCP
+                      servicePort: 5672
+                    - containerPort: 5671
+                      name: tls-amqp
+                      protocol: TCP
+                      servicePort: 5671
+                    - containerPort: 1883
+                      name: tcp-mqtt
+                      protocol: TCP
+                      servicePort: 1883
+                    - containerPort: 8883
+                      name: tls-mqtt
+                      protocol: TCP
+                      servicePort: 8883
+                    - containerPort: 8000
+                      name: tcp-mqttweb
+                      protocol: TCP
+                      servicePort: 8000
+                    - containerPort: 8443
+                      name: tls-mqttweb
+                      protocol: TCP
+                      servicePort: 8443
+                    description: Ports specifies the ports to expose PubSubPlusEventBroker
+                      services.
+                    items:
+                      description: Port defines parameters configure Service details
+                        for the Broker
+                      properties:
+                        containerPort:
+                          description: Number of port to expose on the pod.
+                          format: int32
+                          type: number
+                        name:
+                          description: Unique name for the port that can be referred
+                            to by services.
+                          type: string
+                        protocol:
+                          default: TCP
+                          description: Protocol for port. Must be UDP, TCP, or SCTP.
+                          type: string
+                        servicePort:
+                          description: Number of port to expose on the service
+                          format: int32
+                          type: number
+                      required:
+                      - containerPort
+                      - name
+                      - protocol
+                      - servicePort
+                      type: object
+                    type: array
                   type:
                     default: LoadBalancer
                     description: ServiceType specifies how to expose the broker services.
                       Options include ClusterIP, NodePort, LoadBalancer (default).
                     type: string
+                type: object
+              serviceAccount:
+                description: ServiceAccount defines a ServiceAccount dedicated to
+                  the PubSubPlusEventBroker
+                properties:
+                  name:
+                    description: Name specifies the name of an existing ServiceAccount
+                      dedicated to the PubSubPlusEventBroker. If this value is missing
+                      a new ServiceAccount will be created.
+                    type: string
+                required:
+                - name
                 type: object
               storage:
                 description: Storage defines storage details for the broker.
@@ -229,6 +374,14 @@ spec:
               tls:
                 description: TLS provides TLS configuration for the event broker.
                 properties:
+                  certFilename:
+                    default: tls.key
+                    description: Name of the Certificate file in the `serverCertificatesSecret`
+                    type: string
+                  certKeyFilename:
+                    default: tls.crt
+                    description: Name of the Key file in the `serverCertificatesSecret`
+                    type: string
                   enabled:
                     default: false
                     description: Enabled true enables TLS for the broker.

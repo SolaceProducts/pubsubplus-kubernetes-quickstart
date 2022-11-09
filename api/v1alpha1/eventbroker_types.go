@@ -35,6 +35,19 @@ type EventBrokerSpec struct {
 	// If set to true it overrides SystemScaling parameters.
 	Developer bool `json:"developer"`
 	//+optional
+	//+kubebuilder:validation:Type:=array
+	// List of extra environment variables to be added to the PubSubPlusEventBroker container.
+	// A primary use case is to specify configuration keys, although the variables defined here will not override the ones defined in ConfigMap
+	ExtraEnvVars []*ExtraEnvVar `json:"extraEnvVars"`
+	//+optional
+	//+kubebuilder:validation:Type:=string
+	// List of extra environment variables to be added to the PubSubPlusEventBroker container from an existing ConfigMap
+	ExtraEnvVarsCM string `json:"extraEnvVarsCM,omitempty"`
+	//+optional
+	//+kubebuilder:validation:Type:=string
+	// List of extra environment variables to be added to the PubSubPlusEventBroker container from an existing Secret
+	ExtraEnvVarsSecret string `json:"extraEnvVarsSecret,omitempty"`
+	//+optional
 	//+kubebuilder:validation:Type:=boolean
 	//+kubebuilder:default:=false
 	// Enables setting up PodDisruptionBudget for the broker pods in HA deployment.
@@ -56,6 +69,9 @@ type EventBrokerSpec struct {
 	//+kubebuilder:validation:Type:=object
 	// PodSecurityContext defines the pod security context for the event broker.
 	PodSecurityContext *PodSecurityContext `json:"securityContext,omitempty"`
+	//+kubebuilder:validation:Type:=object
+	// ServiceAccount defines a ServiceAccount dedicated to the PubSubPlusEventBroker
+	ServiceAccount BrokerServiceAccount `json:"serviceAccount,omitempty"`
 	//+optional
 	//+kubebuilder:validation:Type:=object
 	// TLS provides TLS configuration for the event broker.
@@ -74,18 +90,39 @@ type EventBrokerSpec struct {
 	Monitoring *Monitoring `json:"monitoring,omitempty"`
 }
 
+// Port defines parameters configure Service details for the Broker
+type BrokerPort struct {
+	//+kubebuilder:validation:Type:=string
+	// Unique name for the port that can be referred to by services.
+	Name string `json:"name"`
+	//+kubebuilder:validation:Type:=string
+	// Protocol for port. Must be UDP, TCP, or SCTP.
+	Protocol corev1.Protocol `json:"protocol"`
+	//+kubebuilder:validation:Type:=number
+	// Number of port to expose on the pod.
+	ContainerPort int32 `json:"containerPort"`
+	//+kubebuilder:validation:Type:=number
+	// Number of port to expose on the service
+	ServicePort int32 `json:"servicePort"`
+}
+
 // Service defines parameters configure Service details for the Broker
 type Service struct {
 	//+optional
 	//+kubebuilder:validation:Type:=string
 	//+kubebuilder:default:=LoadBalancer
 	// ServiceType specifies how to expose the broker services. Options include ClusterIP, NodePort, LoadBalancer (default).
-	ServiceType corev1.ServiceType `json:"type,omitempty"`
+	ServiceType corev1.ServiceType `json:"type"`
 	//+optional
-	//+kubebuilder:validation:Type:=string
-	// Allows adding provider-specific service annotations
-	Annotations map[string]string `json:"annotations,omitempty"`
-	//service.ports	Define PubSub+ service ports exposed. servicePorts are external, mapping to cluster-local pod containerPorts	initial set of frequently used ports, refer to values.yaml
+	//+kubebuilder:validation:Type:=object
+	//+kubebuilder:default:={}
+	// Annotations allows adding provider-specific service annotations
+	Annotations map[string]string `json:"annotations"`
+	//+optional
+	//+kubebuilder:validation:Type:=array
+	//+kubebuilder:default:={{name:"tcp-ssh",protocol:"TCP",containerPort:2222,servicePort:2222},{name:"tcp-semp",protocol:"TCP",containerPort:8080,servicePort:8080},{name:"tls-semp",protocol:"TCP",containerPort:1943,servicePort:1943},{name:"tcp-smf",protocol:"TCP",containerPort:55555,servicePort:55555},{name:"tcp-smfcomp",protocol:"TCP",containerPort:55003,servicePort:55003},{name:"tls-smf",protocol:"TCP",containerPort:55443,servicePort:55443},{name:"tcp-smfroute",protocol:"TCP",containerPort:55556,servicePort:55556},{name:"tcp-web",protocol:"TCP",containerPort:8008,servicePort:8008},{name:"tls-web",protocol:"TCP",containerPort:1443,servicePort:1443},{name:"tcp-rest",protocol:"TCP",containerPort:9000,servicePort:9000},{name:"tls-rest",protocol:"TCP",containerPort:9443,servicePort:9443},{name:"tcp-amqp",protocol:"TCP",containerPort:5672,servicePort:5672},{name:"tls-amqp",protocol:"TCP",containerPort:5671,servicePort:5671},{name:"tcp-mqtt",protocol:"TCP",containerPort:1883,servicePort:1883},{name:"tls-mqtt",protocol:"TCP",containerPort:8883,servicePort:8883},{name:"tcp-mqttweb",protocol:"TCP",containerPort:8000,servicePort:8000},{name:"tls-mqttweb",protocol:"TCP",containerPort:8443,servicePort:8443}}
+	// Ports specifies the ports to expose PubSubPlusEventBroker services.
+	Ports []*BrokerPort `json:"ports"`
 }
 
 // Storage defines parameters configure Storage details for the Broker
@@ -105,9 +142,9 @@ type SystemScaling struct {
 	// +kubebuilder:default:=100
 	MaxQueueMessages int `json:"maxQueueMessages,omitempty"`
 	// +kubebuilder:default:=1000
-	MaxSpoolUsage       int    `json:"maxSpoolUsage,omitempty"`
+	MaxSpoolUsage int `json:"maxSpoolUsage,omitempty"`
 	// +kubebuilder:default:="2"
-	MessagingNodeCpu    string `json:"messagingNodeCpu,omitempty"`
+	MessagingNodeCpu string `json:"messagingNodeCpu,omitempty"`
 	// +kubebuilder:default:="4025Mi"
 	MessagingNodeMemory string `json:"messagingNodeMemory,omitempty"`
 }
@@ -133,6 +170,34 @@ type BrokerTLS struct {
 	//+kubebuilder:default:=example-tls-secret
 	// Specifies the tls configuration secret to be used for the broker
 	ServerTLsConfigSecret string `json:"serverTlsConfigSecret"`
+	//+optional
+	//+kubebuilder:validation:Type:=string
+	//+kubebuilder:default:=tls.key
+	// Name of the Certificate file in the `serverCertificatesSecret`
+	TLSCertName string `json:"certFilename"`
+	//+optional
+	//+kubebuilder:validation:Type:=string
+	//+kubebuilder:default:=tls.crt
+	// Name of the Key file in the `serverCertificatesSecret`
+	TLSCertKeyName string `json:"certKeyFilename"`
+}
+
+// ServiceAccount defines a ServiceAccount dedicated to the PubSubPlusEventBroker
+type BrokerServiceAccount struct {
+	//+kubebuilder:validation:Type:=string
+	// Name specifies the name of an existing ServiceAccount dedicated to the PubSubPlusEventBroker.
+	// If this value is missing a new ServiceAccount will be created.
+	Name string `json:"name"`
+}
+
+// ExtraEnvVar defines environment variables to be added to the PubSubPlusEventBroker container
+type ExtraEnvVar struct {
+	//+kubebuilder:validation:Type:=string
+	// Specifies the Name of an environment variable to be added to the PubSubPlusEventBroker container
+	Name string `json:"name"`
+	//+kubebuilder:validation:Type:=string
+	// Specifies the Value of an environment variable to be added to the PubSubPlusEventBroker container
+	Value string `json:"value"`
 }
 
 // BrokerImage defines Image details and pulling configurations
@@ -219,6 +284,10 @@ type Monitoring struct {
 	//+kubebuilder:default:=false
 	// Defines if Prometheus Exporter uses TLS configuration
 	ListenTLS bool `json:"listenTLS,omitempty"`
+	//+optional
+	//+kubebuilder:validation:Type:=string
+	// Defines TLS secret name to set up TLS configuration
+	TLSSecret string `json:"tlsSecretName,omitempty"`
 	//+optional
 	//+kubebuilder:validation:Type:=boolean
 	//+kubebuilder:default:=false
