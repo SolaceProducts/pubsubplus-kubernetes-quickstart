@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"reflect"
+	"strings"
 	"time"
 
 	policyv1 "k8s.io/api/policy/v1"
@@ -96,27 +97,37 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 		log.Info("Detected existing pubsubpluseventbroker", " pubsubpluseventbroker.Name", pubsubpluseventbroker.Name)
 	}
 
-	// Check if ServiceAccount already exists, if not create a new one
+	// Check if new ServiceAccount needs to created or an existing one needs to be used
 	sa := &corev1.ServiceAccount{}
-	saName := getObjectName("ServiceAccount", pubsubpluseventbroker.Name)
-	err = r.Get(ctx, types.NamespacedName{Name: saName, Namespace: pubsubpluseventbroker.Namespace}, sa)
-	if err != nil && errors.IsNotFound(err) {
-		// Define a new ServiceAccount
-		sa := r.serviceaccountForEventBroker(saName, pubsubpluseventbroker)
-		log.Info("Creating a new ServiceAccount", "ServiceAccount.Namespace", sa.Namespace, "ServiceAccount.Name", sa.Name)
-		err = r.Create(ctx, sa)
-		if err != nil {
-			log.Error(err, "Failed to create new ServiceAccount", "ServiceAccount.Namespace", sa.Namespace, "ServiceAccount.Name", sa.Name)
+	if len(strings.TrimSpace(pubsubpluseventbroker.Spec.ServiceAccount.Name)) > 0 {
+		err = r.Get(ctx, types.NamespacedName{Name: pubsubpluseventbroker.Spec.ServiceAccount.Name, Namespace: pubsubpluseventbroker.Namespace}, sa)
+		if err != nil && errors.IsNotFound(err) {
+			log.Error(err, "Failed to find existing ServiceAccount", "ServiceAccount.Namespace", sa.Namespace, "ServiceAccount.Name", pubsubpluseventbroker.Spec.ServiceAccount.Name)
 			return ctrl.Result{}, err
 		}
-		// ServiceAccount created successfully - return and requeue
-		return ctrl.Result{Requeue: true}, nil
-	} else if err != nil {
-		log.Error(err, "Failed to get ServiceAccount")
-		return ctrl.Result{}, err
+		log.Info("Found existing ServiceAccount", "ServiceAccount.Namespace", sa.Namespace, "ServiceAccount.Name", sa.Name)
 	} else {
-		// TODO: this should be Debug level... but it seems there is no log.Debug ! Need to investigate how to do Debug log
-		log.Info("Detected existing ServiceAccount", " ServiceAccount.Name", sa.Name)
+		// Check if ServiceAccount already exists, if not create a new one
+		saName := getObjectName("ServiceAccount", pubsubpluseventbroker.Name)
+		err = r.Get(ctx, types.NamespacedName{Name: saName, Namespace: pubsubpluseventbroker.Namespace}, sa)
+		if err != nil && errors.IsNotFound(err) {
+			// Define a new ServiceAccount
+			sa := r.serviceAccountForEventBroker(saName, pubsubpluseventbroker)
+			log.Info("Creating a new ServiceAccount", "ServiceAccount.Namespace", sa.Namespace, "ServiceAccount.Name", sa.Name)
+			err = r.Create(ctx, sa)
+			if err != nil {
+				log.Error(err, "Failed to create new ServiceAccount", "ServiceAccount.Namespace", sa.Namespace, "ServiceAccount.Name", sa.Name)
+				return ctrl.Result{}, err
+			}
+			// ServiceAccount created successfully - return and requeue
+			return ctrl.Result{Requeue: true}, nil
+		} else if err != nil {
+			log.Error(err, "Failed to get ServiceAccount")
+			return ctrl.Result{}, err
+		} else {
+			// TODO: this should be Debug level... but it seems there is no log.Debug ! Need to investigate how to do Debug log
+			log.Info("Detected existing ServiceAccount", " ServiceAccount.Name", sa.Name)
+		}
 	}
 
 	// Check if podtagupdater Role already exists, if not create a new one
@@ -147,7 +158,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 	err = r.Get(ctx, types.NamespacedName{Name: rbName, Namespace: pubsubpluseventbroker.Namespace}, rb)
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new RoleBinding
-		rb := r.rolebindingForEventBroker(rbName, pubsubpluseventbroker)
+		rb := r.roleBindingForEventBroker(rbName, pubsubpluseventbroker, sa)
 		log.Info("Creating a new RoleBinding", "RoleBinding.Namespace", rb.Namespace, "RoleBinding.Name", rb.Name)
 		err = r.Create(ctx, rb)
 		if err != nil {
@@ -260,7 +271,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 	err = r.Get(ctx, types.NamespacedName{Name: stsPName, Namespace: pubsubpluseventbroker.Namespace}, stsP)
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new statefulset
-		stsP := r.createStatefulsetForEventBroker(stsPName, pubsubpluseventbroker)
+		stsP := r.createStatefulsetForEventBroker(stsPName, pubsubpluseventbroker, sa)
 		log.Info("Creating a new Primary StatefulSet", "StatefulSet.Namespace", stsP.Namespace, "StatefulSet.Name", stsP.Name)
 		err = r.Create(ctx, stsP)
 		if err != nil {
@@ -276,7 +287,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 		if stsP.Spec.Template.ObjectMeta.Annotations[dependenciesSignatureAnnotationName] != hash(pubsubpluseventbroker.Spec) {
 			// If resource versions differ it means update is required
 			log.Info("Updating existing Primary StatefulSet", " StatefulSet.Name", stsP.Name)
-			r.updateStatefulsetForEventBroker(stsPName, pubsubpluseventbroker, stsP)
+			r.updateStatefulsetForEventBroker(stsPName, pubsubpluseventbroker, stsP, sa)
 			log.Info("Updating Primary StatefulSet", "StatefulSet.Namespace", stsP.Namespace, "StatefulSet.Name", stsP.Name)
 			err = r.Update(ctx, stsP)
 			if err != nil {
@@ -297,7 +308,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 		err = r.Get(ctx, types.NamespacedName{Name: stsBName, Namespace: pubsubpluseventbroker.Namespace}, stsB)
 		if err != nil && errors.IsNotFound(err) {
 			// Define a new statefulset
-			stsB := r.createStatefulsetForEventBroker(stsBName, pubsubpluseventbroker)
+			stsB := r.createStatefulsetForEventBroker(stsBName, pubsubpluseventbroker, sa)
 			log.Info("Creating a new Backup StatefulSet", "StatefulSet.Namespace", stsB.Namespace, "StatefulSet.Name", stsB.Name)
 			err = r.Create(ctx, stsB)
 			if err != nil {
@@ -313,7 +324,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 			if stsB.Spec.Template.ObjectMeta.Annotations[dependenciesSignatureAnnotationName] != hash(pubsubpluseventbroker.Spec) {
 				// If resource versions differ it means update is required
 				log.Info("Updating existing Backup StatefulSet", " StatefulSet.Name", stsB.Name)
-				r.updateStatefulsetForEventBroker(stsBName, pubsubpluseventbroker, stsB)
+				r.updateStatefulsetForEventBroker(stsBName, pubsubpluseventbroker, stsB, sa)
 				log.Info("Updating Backup StatefulSet", "StatefulSet.Namespace", stsB.Namespace, "StatefulSet.Name", stsB.Name)
 				err = r.Update(ctx, stsB)
 				if err != nil {
@@ -332,7 +343,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 		err = r.Get(ctx, types.NamespacedName{Name: stsMName, Namespace: pubsubpluseventbroker.Namespace}, stsM)
 		if err != nil && errors.IsNotFound(err) {
 			// Define a new statefulset
-			stsM := r.createStatefulsetForEventBroker(stsMName, pubsubpluseventbroker)
+			stsM := r.createStatefulsetForEventBroker(stsMName, pubsubpluseventbroker, sa)
 			log.Info("Creating a new Monitor StatefulSet", "StatefulSet.Namespace", stsM.Namespace, "StatefulSet.Name", stsM.Name)
 			err = r.Create(ctx, stsM)
 			if err != nil {
@@ -348,7 +359,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 			if stsM.Spec.Template.ObjectMeta.Annotations[dependenciesSignatureAnnotationName] != hash(pubsubpluseventbroker.Spec) {
 				// If resource versions differ it means update is required
 				log.Info("Updating existing Monitor StatefulSet", " StatefulSet.Name", stsM.Name)
-				r.updateStatefulsetForEventBroker(stsMName, pubsubpluseventbroker, stsM)
+				r.updateStatefulsetForEventBroker(stsMName, pubsubpluseventbroker, stsM, sa)
 				log.Info("Updating Monitor StatefulSet", "StatefulSet.Namespace", stsM.Namespace, "StatefulSet.Name", stsM.Name)
 				err = r.Update(ctx, stsM)
 				if err != nil {

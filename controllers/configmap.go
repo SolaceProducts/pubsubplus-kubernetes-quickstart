@@ -61,7 +61,7 @@ export service_semp_tlsport='1943'
 export logging_debug_output=all
 export system_scaling_maxconnectioncount=${BROKER_MAXCONNECTIONCOUNT}
 if [ "${BROKER_TLS_ENEBLED}" = "true" ]; then
-  cat /mnt/disks/certs/server/$(BROKER_CERT_FILENAME) /mnt/disks/certs/server/$(BROKER_CERTKEY_FILENAME) > /dev/shm/server.cert
+  cat /mnt/disks/certs/server/${BROKER_CERT_FILENAME} /mnt/disks/certs/server/${BROKER_CERTKEY_FILENAME} > /dev/shm/server.cert
   export tls_servercertificate_filepath="/dev/shm/server.cert"
 fi
 if [ "${BROKER_REDUNDANCY}" = "true" ]; then
@@ -132,7 +132,7 @@ if [ "${BROKER_TLS_ENEBLED}" = "true" ]; then
   rm /dev/shm/server.cert # remove as soon as possible
   cert_results=$(curl --write-out '%{http_code}' --silent --output /dev/null -k -X PATCH -u admin:${password} https://localhost:1943/SEMP/v2/config/ \
 	-H "content-type: application/json" \
-	-d "{\"tlsServerCertContent\":\"$(cat /mnt/disks/certs/server/$(BROKER_CERT_FILENAME) /mnt/disks/certs/server/$(BROKER_CERTKEY_FILENAME) | awk '{printf "%s\\n", $0}')\"}")
+	-d "{\"tlsServerCertContent\":\"$(cat /mnt/disks/certs/server/${BROKER_CERT_FILENAME} /mnt/disks/certs/server/${BROKER_CERTKEY_FILENAME} | awk '{printf "%s\\n", $0}')\"}")
   if [ "${cert_results}" != "200" ]; then
 	echo "$(date) ERROR: ${APP}-Unable to set the server certificate, exiting"  >&2
 	exit 1 

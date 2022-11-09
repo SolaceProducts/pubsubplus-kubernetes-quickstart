@@ -7,12 +7,22 @@ spec:
   redundancy: false
   developer: true
   timezone: UTC
-  tls:
-    enabled: false
+  extraEnvVars:
+    - name: TestType
+      value: "GithubAction"
+  extraEnvVarsCM: ""
+  extraEnvVarsSecret: ""
+  podDisruptionBudgetForHA: false
   image: {}
+#  nodeAssignment: {}
   securityContext: {}
+  tls:
+    enabled: true
+    serverTlsConfigSecret: test-tls
+  service: {}
   monitoring:
     enabled: true
+    listenTLS: false
     image:
       repository: ghcr.io/solacedev/solace_prometheus_exporter
       tag: sol-76199

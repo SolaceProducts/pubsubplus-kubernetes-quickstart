@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"strconv"
+	"strings"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -31,7 +32,7 @@ import (
 )
 
 // statefulsetForEventBroker returns a new pubsubpluseventbroker StatefulSet object
-func (r *PubSubPlusEventBrokerReconciler) createStatefulsetForEventBroker(stsName string, m *eventbrokerv1alpha1.PubSubPlusEventBroker) *appsv1.StatefulSet {
+func (r *PubSubPlusEventBrokerReconciler) createStatefulsetForEventBroker(stsName string, m *eventbrokerv1alpha1.PubSubPlusEventBroker, sa *corev1.ServiceAccount) *appsv1.StatefulSet {
 	nodeType := getBrokerNodeType(stsName)
 
 	// Determine broker sizing
@@ -77,18 +78,17 @@ func (r *PubSubPlusEventBrokerReconciler) createStatefulsetForEventBroker(stsNam
 		},
 	}
 
-	r.updateStatefulsetForEventBroker(stsName, m, dep)
+	r.updateStatefulsetForEventBroker(stsName, m, dep, sa)
 	// Set PubSubPlusEventBroker instance as the owner and controller
 	ctrl.SetControllerReference(m, dep, r.Scheme)
 	return dep
 }
 
 // statefulsetForEventBroker returns an updated pubsubpluseventbroker StatefulSet object
-func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(stsName string, m *eventbrokerv1alpha1.PubSubPlusEventBroker, dep *appsv1.StatefulSet) {
+func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(stsName string, m *eventbrokerv1alpha1.PubSubPlusEventBroker, dep *appsv1.StatefulSet, sa *corev1.ServiceAccount) {
 	brokerServicesName := getObjectName("Service", m.Name)
 	secretName := getObjectName("Secret", m.Name)
 	configmapName := getObjectName("ConfigMap", m.Name)
-	serviceAccountName := getObjectName("ServiceAccount", m.Name)
 	haDeployment := m.Spec.Redundancy
 	nodeType := getBrokerNodeType(stsName)
 
@@ -171,20 +171,6 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(stsNam
 						"-ec",
 						"source /mnt/disks/solace/init.sh\nnohup /mnt/disks/solace/startup-broker.sh &\n/usr/sbin/boot.sh",
 					},
-					Ports: []corev1.ContainerPort{
-						{
-							ContainerPort: 8080,
-							Protocol:      corev1.ProtocolTCP,
-						},
-						{
-							ContainerPort: 8008,
-							Protocol:      corev1.ProtocolTCP,
-						},
-						{
-							ContainerPort: 55555,
-							Protocol:      corev1.ProtocolTCP,
-						},
-					},
 					Env: []corev1.EnvVar{
 						{
 							Name:  "STATEFULSET_NAME",
@@ -217,6 +203,14 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(stsNam
 						{
 							Name:  "BROKER_TLS_ENEBLED",
 							Value: strconv.FormatBool(m.Spec.BrokerTLS.Enabled),
+						},
+						{
+							Name:  "BROKER_CERT_FILENAME",
+							Value: m.Spec.BrokerTLS.TLSCertName,
+						},
+						{
+							Name:  "BROKER_CERTKEY_FILENAME",
+							Value: m.Spec.BrokerTLS.TLSCertKeyName,
 						},
 						{
 							Name:  "BROKER_REDUNDANCY",
@@ -299,7 +293,7 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(stsNam
 			},
 			RestartPolicy:                 corev1.RestartPolicyAlways,
 			TerminationGracePeriodSeconds: &[]int64{1200}[0], // 1200
-			ServiceAccountName:            serviceAccountName,
+			ServiceAccountName:            sa.Name,
 			// NodeName:                      "",
 			Volumes: []corev1.Volume{
 				{
@@ -364,4 +358,77 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(stsNam
 			FSGroup:   &m.Spec.PodSecurityContext.FSGroup,
 		}
 	}
+
+	//Set TLS configuration
+	if m.Spec.BrokerTLS.Enabled {
+		allVolumes := dep.Spec.Template.Spec.Volumes
+		allVolumes = append(allVolumes, corev1.Volume{
+			Name: "server-certs",
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  m.Spec.BrokerTLS.ServerTLsConfigSecret,
+					DefaultMode: &[]int32{0400}[0],
+				},
+			},
+		})
+		allContainerVolumeMounts := dep.Spec.Template.Spec.Containers[0].VolumeMounts
+		allContainerVolumeMounts = append(allContainerVolumeMounts, corev1.VolumeMount{
+			Name:      "server-certs",
+			MountPath: "/mnt/disks/certs/server",
+			ReadOnly:  true,
+		})
+		dep.Spec.Template.Spec.Volumes = allVolumes
+		dep.Spec.Template.Spec.Containers[0].VolumeMounts = allContainerVolumeMounts
+	}
+
+	//Set Service Port configuration
+	if len(m.Spec.Service.Ports) > 0 {
+		ports := make([]corev1.ContainerPort, len(m.Spec.Service.Ports))
+		for idx, pbPort := range m.Spec.Service.Ports {
+			ports[idx] = corev1.ContainerPort{
+				Name:          pbPort.Name,
+				Protocol:      pbPort.Protocol,
+				ContainerPort: pbPort.ContainerPort,
+			}
+		}
+
+		dep.Spec.Template.Spec.Containers[0].Ports = ports
+	}
+
+	//Set Extra environment variables
+	if len(m.Spec.ExtraEnvVars) > 0 {
+		allEnv := dep.Spec.Template.Spec.Containers[0].Env
+		for _, envV := range m.Spec.ExtraEnvVars {
+			allEnv = append(allEnv, corev1.EnvVar{
+				Name:  envV.Name,
+				Value: envV.Value,
+			})
+		}
+		dep.Spec.Template.Spec.Containers[0].Env = allEnv
+	}
+
+	allEnvFrom := []corev1.EnvFromSource{}
+	//Set Extra secret environment variables
+	if len(strings.TrimSpace(m.Spec.ExtraEnvVarsSecret)) > 0 {
+		allEnvFrom = append(allEnvFrom, corev1.EnvFromSource{
+			SecretRef: &corev1.SecretEnvSource{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: m.Spec.ExtraEnvVarsSecret,
+				},
+			},
+		})
+	}
+
+	//Set Extra configmap environment variables
+	if len(strings.TrimSpace(m.Spec.ExtraEnvVarsCM)) > 0 {
+		allEnvFrom = append(allEnvFrom, corev1.EnvFromSource{
+			ConfigMapRef: &corev1.ConfigMapEnvSource{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: m.Spec.ExtraEnvVarsCM,
+				},
+			},
+		})
+	}
+
+	dep.Spec.Template.Spec.Containers[0].EnvFrom = allEnvFrom
 }

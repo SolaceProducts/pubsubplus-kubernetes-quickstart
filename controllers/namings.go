@@ -28,6 +28,7 @@ const (
 	appKubernetesIoNameLabel            = "pubsubpluseventbroker"
 	appKubernetesIoManagedByLabel       = "solace-pubsubplus-operator"
 	secretKeyName                       = "username_admin_password"
+	tcpSempPortName                     = "tcp-semp"
 )
 
 type BrokerRole int // Notice that this is about the current role, not the broker node designation
