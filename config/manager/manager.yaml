@@ -41,7 +41,7 @@ spec:
         - --leader-elect
         - --zap-log-level=info
         image: controller:latest
-        imagePullPolicy: Always
+        # imagePullPolicy: Always
         name: manager
         securityContext:
           allowPrivilegeEscalation: false

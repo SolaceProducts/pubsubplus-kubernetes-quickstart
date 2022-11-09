@@ -5,6 +5,10 @@
 # - use environment variables to overwrite this value (e.g export VERSION=0.0.2)
 VERSION ?= 0.0.1
 
+# OLM_CONTAINER_REPO
+CONTROLLER_CONTAINER_REPO ?= solace.com
+OLM_CONTAINER_REPO ?= solace.com
+
 # CHANNELS define the bundle channels used in the bundle.
 # Add a new line here if you would like to change its default config. (E.g CHANNELS = "candidate,fast,stable")
 # To re-generate a bundle for other specific channels without changing the standard setup, you can:
@@ -29,7 +33,7 @@ BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 #
 # For example, running 'make bundle-build bundle-push catalog-build catalog-push' will build and push both
 # solace.com/pubsubplus-eventbroker-operator-bundle:$VERSION and solace.com/pubsubplus-eventbroker-operator-catalog:$VERSION.
-IMAGE_TAG_BASE ?= solace.com/pubsubplus-eventbroker-operator-v1alpha1
+IMAGE_TAG_BASE ?= $(CONTAINER_REPO)/pubsubplus-eventbroker-operator-v1alpha1
 
 # BUNDLE_IMG defines the image:tag used for the bundle.
 # You can use it as an arg. (E.g make bundle-build BUNDLE_IMG=<some-registry>/<project-name-bundle>:<tag>)
@@ -47,7 +51,7 @@ ifeq ($(USE_IMAGE_DIGESTS), true)
 endif
 
 # Image URL to use all building/pushing image targets
-IMG ?= ghcr.io/solacedev/pubsubplus-eventbroker-operator:v$(VERSION)
+IMG ?= $(CONTROLLER_CONTAINER_REPO)/solacedev/pubsubplus-eventbroker-operator:v$(VERSION)
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.24.2
 
@@ -122,6 +126,10 @@ docker-build: test ## Build docker image with the manager.
 .PHONY: docker-push
 docker-push: ## Push docker image with the manager.
 	docker push ${IMG}
+
+.PHONY: kind-docker-push
+kind-docker-push: ## Push docker image with the manager.
+	kind load docker-image ${IMG}
 
 ##@ Deployment
 
@@ -198,6 +206,10 @@ bundle-build: ## Build the bundle image.
 bundle-push: ## Push the bundle image.
 	$(MAKE) docker-push IMG=$(BUNDLE_IMG)
 
+.PHONY: kind-bundle-push
+kind-bundle-push: ## Push the bundle image.
+	$(MAKE) kind-docker-push IMG=$(BUNDLE_IMG)
+
 .PHONY: opm
 OPM = ./bin/opm
 opm: ## Download opm locally if necessary.
@@ -238,3 +250,8 @@ catalog-build: opm ## Build a catalog image.
 .PHONY: catalog-push
 catalog-push: ## Push a catalog image.
 	$(MAKE) docker-push IMG=$(CATALOG_IMG)
+
+# Push the catalog image.
+.PHONY: kind-catalog-push
+kind-catalog-push: ## Push a catalog image.
+	$(MAKE) kind-docker-push IMG=$(CATALOG_IMG)
