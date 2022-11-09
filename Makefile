@@ -6,8 +6,8 @@
 VERSION ?= 0.0.1
 
 # OLM_CONTAINER_REPO
-CONTROLLER_CONTAINER_REPO ?= solace.com
-OLM_CONTAINER_REPO ?= solace.com
+CONTROLLER_CONTAINER_REPO ?= ghcr.io
+OLM_CONTAINER_REPO ?= ghcr.io
 
 # CHANNELS define the bundle channels used in the bundle.
 # Add a new line here if you would like to change its default config. (E.g CHANNELS = "candidate,fast,stable")
