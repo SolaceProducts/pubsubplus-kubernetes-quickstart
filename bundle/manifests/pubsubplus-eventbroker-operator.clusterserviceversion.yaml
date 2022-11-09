@@ -256,8 +256,7 @@ spec:
                   valueFrom:
                     fieldRef:
                       fieldPath: metadata.annotations['olm.targetNamespaces']
-                image: ghcr.io/solacedev/pubsubplus-eventbroker-operator:v0.0.1
-                imagePullPolicy: Always
+                image: solace.com/solacedev/pubsubplus-eventbroker-operator:v0.0.1
                 livenessProbe:
                   httpGet:
                     path: /healthz

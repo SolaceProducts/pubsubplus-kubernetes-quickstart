@@ -128,7 +128,7 @@ docker-push: ## Push docker image with the manager.
 	docker push ${IMG}
 
 .PHONY: kind-docker-push
-kind-docker-push: ## Push docker image with the manager.
+kind-docker-push: ## Push docker image with the manager to local Kind cluster.
 	kind load docker-image ${IMG} --name `kind get clusters`
 
 ##@ Deployment
@@ -207,7 +207,7 @@ bundle-push: ## Push the bundle image.
 	$(MAKE) docker-push IMG=$(BUNDLE_IMG)
 
 .PHONY: kind-bundle-push
-kind-bundle-push: ## Push the bundle image.
+kind-bundle-push: ## Push the bundle image to local Kind cluster.
 	$(MAKE) kind-docker-push IMG=$(BUNDLE_IMG)
 
 .PHONY: opm
@@ -253,5 +253,5 @@ catalog-push: ## Push a catalog image.
 
 # Push the catalog image.
 .PHONY: kind-catalog-push
-kind-catalog-push: ## Push a catalog image.
+kind-catalog-push: ## Push a catalog image to local Kind cluster.
 	$(MAKE) kind-docker-push IMG=$(CATALOG_IMG)
