@@ -44,7 +44,7 @@ metadata:
         }
       ]
     capabilities: Basic Install
-    operators.operatorframework.io/builder: operator-sdk-v1.25.0
+    operators.operatorframework.io/builder: operator-sdk-v1.23.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
   name: pubsubplus-eventbroker-operator.v0.0.1
   namespace: placeholder
@@ -256,7 +256,7 @@ spec:
                   valueFrom:
                     fieldRef:
                       fieldPath: metadata.annotations['olm.targetNamespaces']
-                image: solace.com/solacedev/pubsubplus-eventbroker-operator:v0.0.1
+                image: ghcr.io/solacedev/pubsubplus-eventbroker-operator:v0.0.1
                 livenessProbe:
                   httpGet:
                     path: /healthz
