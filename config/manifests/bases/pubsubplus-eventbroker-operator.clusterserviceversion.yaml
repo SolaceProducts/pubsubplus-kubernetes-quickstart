@@ -1,0 +1,62 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: '[]'
+    capabilities: Basic Install
+  name: pubsubplus-eventbroker-operator.v0.0.0
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+    - description: PubSubPlusEventBroker is the Schema for the pubsubpluseventbrokers
+        API
+      displayName: PubSubPlusEventBroker
+      kind: PubSubPlusEventBroker
+      name: pubsubpluseventbrokers.pubsubplus.solace.com
+      version: v1alpha1
+  description: PubSubPlus Event Broker Operator description, TODO
+  displayName: PubSubPlus Event Broker Operator
+  icon:
+  - base64data: ""
+    mediatype: ""
+  install:
+    spec:
+      deployments: null
+    strategy: ""
+  installModes:
+  - supported: true
+    type: OwnNamespace
+  - supported: true
+    type: SingleNamespace
+  - supported: true
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
+  keywords:
+  - solace
+  - pubsubplus
+  - pubsub+
+  - pubsub
+  - messaging
+  - advanced event broker
+  - event broker
+  - event mesh
+  - event streaming
+  - data streaming
+  - event integration
+  - middleware
+  links:
+  - name: Documentation
+    url: TODO
+  - name: Solace
+    url: TODO
+  maintainers:
+  - email: TODO
+    name: TODO
+  maturity: beta
+  provider:
+    name: Solace
+    url: www.solace.com
+  version: 0.0.0

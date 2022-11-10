@@ -1,0 +1,362 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: |-
+      [
+        {
+          "apiVersion": "pubsubplus.solace.com/v1alpha1",
+          "kind": "PubSubPlusEventBroker",
+          "metadata": {
+            "name": "test1"
+          },
+          "spec": {
+            "developer": true,
+            "image": {
+              "pullPolicy": "IfNotPresent",
+              "repository": "solace/solace-pubsub-standard",
+              "tag": "latest"
+            },
+            "monitoring": {
+              "enabled": true,
+              "image": {
+                "pullPolicy": "Always",
+                "pullSecretName": [
+                  {
+                    "name": "regcred"
+                  }
+                ],
+                "repository": "ghcr.io/solacedev/solace_prometheus_exporter",
+                "tag": "sol-76199"
+              }
+            },
+            "redundancy": true,
+            "securityContext": {
+              "enabled": true,
+              "fsGroup": 1000002,
+              "runAsUser": 1000001
+            },
+            "timezone": "UTC",
+            "tls": {
+              "enabled": false
+            }
+          }
+        }
+      ]
+    capabilities: Basic Install
+    operators.operatorframework.io/builder: operator-sdk-v1.25.0
+    operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
+  name: pubsubplus-eventbroker-operator.v0.0.1
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+    - description: PubSubPlusEventBroker is the Schema for the pubsubpluseventbrokers
+        API
+      displayName: Pub Sub Plus Event Broker
+      kind: PubSubPlusEventBroker
+      name: pubsubpluseventbrokers.pubsubplus.solace.com
+      version: v1alpha1
+  description: PubSubPlus Event Broker Operator description, TODO
+  displayName: PubSubPlus Event Broker Operator
+  icon:
+  - base64data: ""
+    mediatype: ""
+  install:
+    spec:
+      clusterPermissions:
+      - rules:
+        - apiGroups:
+          - ""
+          resources:
+          - configmaps
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - ""
+          resources:
+          - namespaces
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - ""
+          resources:
+          - pods
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - ""
+          resources:
+          - secrets
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - ""
+          resources:
+          - serviceaccounts
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - ""
+          resources:
+          - services
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - apps
+          resources:
+          - deployments
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - apps
+          resources:
+          - statefulsets
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - policy
+          resources:
+          - poddisruptionbudgets
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - pubsubplus.solace.com
+          resources:
+          - pubsubpluseventbrokers
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - pubsubplus.solace.com
+          resources:
+          - pubsubpluseventbrokers/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - pubsubplus.solace.com
+          resources:
+          - pubsubpluseventbrokers/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - rbac.authorization.k8s.io
+          resources:
+          - rolebindings
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - rbac.authorization.k8s.io
+          resources:
+          - roles
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        serviceAccountName: pubsubplus-eventbroker-operator
+      deployments:
+      - label:
+          app.kubernetes.io/component: controller
+          app.kubernetes.io/name: solace-pubsubplus-eventbroker-operator
+          app.kubernetes.io/version: version
+          control-plane: controller-manager
+        name: pubsubplus-eventbroker-operator
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              control-plane: controller-manager
+          strategy: {}
+          template:
+            metadata:
+              annotations:
+                kubectl.kubernetes.io/default-container: manager
+              labels:
+                app.kubernetes.io/component: controller
+                app.kubernetes.io/name: solace-pubsubplus-eventbroker-operator
+                app.kubernetes.io/version: version
+                control-plane: controller-manager
+            spec:
+              containers:
+              - args:
+                - --leader-elect
+                - --zap-log-level=info
+                command:
+                - /manager
+                env:
+                - name: WATCH_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.annotations['olm.targetNamespaces']
+                image: solace.com/solacedev/pubsubplus-eventbroker-operator:v0.0.1
+                livenessProbe:
+                  httpGet:
+                    path: /healthz
+                    port: 8081
+                  initialDelaySeconds: 15
+                  periodSeconds: 20
+                name: manager
+                readinessProbe:
+                  httpGet:
+                    path: /readyz
+                    port: 8081
+                  initialDelaySeconds: 5
+                  periodSeconds: 10
+                resources:
+                  limits:
+                    cpu: 500m
+                    memory: 128Mi
+                  requests:
+                    cpu: 10m
+                    memory: 64Mi
+                securityContext:
+                  allowPrivilegeEscalation: false
+                  capabilities:
+                    drop:
+                    - ALL
+              imagePullSecrets:
+              - name: regcred
+              securityContext:
+                runAsNonRoot: true
+                seccompProfile:
+                  type: RuntimeDefault
+              serviceAccountName: pubsubplus-eventbroker-operator
+              terminationGracePeriodSeconds: 10
+      permissions:
+      - rules:
+        - apiGroups:
+          - ""
+          resources:
+          - configmaps
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - coordination.k8s.io
+          resources:
+          - leases
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - ""
+          resources:
+          - events
+          verbs:
+          - create
+          - patch
+        serviceAccountName: pubsubplus-eventbroker-operator
+    strategy: deployment
+  installModes:
+  - supported: true
+    type: OwnNamespace
+  - supported: true
+    type: SingleNamespace
+  - supported: true
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
+  keywords:
+  - solace
+  - pubsubplus
+  - pubsub+
+  - pubsub
+  - messaging
+  - advanced event broker
+  - event broker
+  - event mesh
+  - event streaming
+  - data streaming
+  - event integration
+  - middleware
+  links:
+  - name: Documentation
+    url: TODO
+  - name: Solace
+    url: TODO
+  maintainers:
+  - email: TODO
+    name: TODO
+  maturity: beta
+  provider:
+    name: Solace
+    url: www.solace.com
+  version: 0.0.1

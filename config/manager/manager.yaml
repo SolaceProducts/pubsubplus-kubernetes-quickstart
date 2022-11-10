@@ -32,20 +32,16 @@ spec:
     spec:
       securityContext:
         runAsNonRoot: true
-        # TODO(user): For common cases that do not require escalating privileges
-        # it is recommended to ensure that all your Pods/Containers are restrictive.
-        # More info: https://kubernetes.io/docs/concepts/security/pod-security-standards/#restricted
-        # Please uncomment the following code if your project does NOT have to work on old Kubernetes
-        # versions < 1.19 or on vendors versions which do NOT support this field by default (i.e. Openshift < 4.11 ).
-        # seccompProfile:
-        #   type: RuntimeDefault
+        seccompProfile:
+          type: RuntimeDefault
       containers:
       - command:
         - /manager
         args:
         - --leader-elect
+        - --zap-log-level=info
         image: controller:latest
-        imagePullPolicy: Always
+        # imagePullPolicy: Always
         name: manager
         securityContext:
           allowPrivilegeEscalation: false
@@ -64,9 +60,12 @@ spec:
             port: 8081
           initialDelaySeconds: 5
           periodSeconds: 10
-        # TODO(user): Configure the resources accordingly based on the project requirements.
-        # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+        env:
+        - name: WATCH_NAMESPACE
+          # for watching multiple namespaces by operator, give a comma-separated list of namespaces. Empty means cluster-scoped operator.
+          value: ""
         resources:
+          # May need to tune resource requirements
           limits:
             cpu: 500m
             memory: 128Mi
