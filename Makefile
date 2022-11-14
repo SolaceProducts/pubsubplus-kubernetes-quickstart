@@ -242,6 +242,8 @@ BUNDLE_IMGS ?= $(BUNDLE_IMG)
 CATALOG_IMG ?= $(IMAGE_TAG_BASE)-catalog:v$(VERSION)
 
 # Set CATALOG_BASE_IMG to an existing catalog image tag to add $BUNDLE_IMGS to that image.
+# Set this to the last version of the catalog to enable operator upgrade
+# CATALOG_BASE_IMG ?= $(IMAGE_TAG_BASE)-catalog:v0.0.1
 ifneq ($(origin CATALOG_BASE_IMG), undefined)
 FROM_INDEX_OPT := --from-index $(CATALOG_BASE_IMG)
 endif

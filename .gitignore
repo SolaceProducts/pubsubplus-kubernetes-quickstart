@@ -15,8 +15,11 @@ testbin/*
 *.out
 
 # Kubernetes Generated files - skip generated files, except for vendored files
-
 !vendor/**/zz_generated.*
+
+# Operator SDK generated files
+bundle.Dockerfile
+bundle-*/
 
 # editor and IDE paraphernalia
 .vscode
