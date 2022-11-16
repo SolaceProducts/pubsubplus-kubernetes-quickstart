@@ -157,10 +157,10 @@ deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in
 	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
 	$(KUSTOMIZE) build config/default | kubectl apply -f -
 
-.PHONY: create-deploy
-create-deploy: manifests kustomize ## Create a deploy.yaml manifest to deploy the operator using kubectl apply.
+.PHONY: create-deploy-yaml
+create-deploy-yaml: manifests kustomize ## Create a deploy.yaml manifest in deploy/ folder to enable deploy the operator using kubectl apply.
 	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
-	$(KUSTOMIZE) build config/default > deploy.yaml
+	$(KUSTOMIZE) build config/default > deploy/deploy.yaml
 
 .PHONY: undeploy
 undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
@@ -242,6 +242,8 @@ BUNDLE_IMGS ?= $(BUNDLE_IMG)
 CATALOG_IMG ?= $(IMAGE_TAG_BASE)-catalog:v$(VERSION)
 
 # Set CATALOG_BASE_IMG to an existing catalog image tag to add $BUNDLE_IMGS to that image.
+# Set this to the last version of the catalog to enable operator upgrade
+# CATALOG_BASE_IMG ?= $(IMAGE_TAG_BASE)-catalog:v0.0.1
 ifneq ($(origin CATALOG_BASE_IMG), undefined)
 FROM_INDEX_OPT := --from-index $(CATALOG_BASE_IMG)
 endif
