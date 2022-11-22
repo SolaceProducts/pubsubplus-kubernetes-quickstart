@@ -17,6 +17,7 @@ limitations under the License.
 package controllers
 
 import (
+	"fmt"
 	"reflect"
 	"strings"
 	"time"
@@ -95,6 +96,13 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 		return ctrl.Result{}, err
 	} else {
 		log.Info("Detected existing pubsubpluseventbroker", " pubsubpluseventbroker.Name", pubsubpluseventbroker.Name)
+	}
+
+    // Check maintenance mode
+	if labelValue, ok := pubsubpluseventbroker.Labels[maintenanceLabel]; ok && labelValue == "true" {
+		log.Info(fmt.Sprintf("Found maintenance label '%s=true', reconcile paused.", maintenanceLabel))
+		// TODO: update status
+		return ctrl.Result{}, nil
 	}
 
 	// Check if new ServiceAccount needs to created or an existing one needs to be used
@@ -417,93 +425,72 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 			return ctrl.Result{RequeueAfter: time.Duration(5) * time.Second}, nil
 		}
 	}
-	log.Info("All broker pods are available")
+	log.Info("All broker pods are in ready state")
 
 	// Next restart any pods to sync with their config dependencies
-	expectedConfigSignature := hash(pubsubpluseventbroker.Spec)
-	var brokerPod *corev1.Pod
-	// Must distinguish between HA and non-HA
-	if haDeployment {
-		// The algorithm is to process the Monitor, then the pod with `active=false`, finally `active=true`
-		// == Monitor
-		if brokerPod, err = r.getBrokerPod(ctx, pubsubpluseventbroker, Monitor); err != nil {
-			log.Error(err, "Failed to list pods", "PubSubPlusEventBroker.Namespace", pubsubpluseventbroker.Namespace, "PubSubPlusEventBroker.Name", pubsubpluseventbroker.Name)
-			return ctrl.Result{}, err
-		}
-		if brokerPod.ObjectMeta.Annotations[dependenciesSignatureAnnotationName] != expectedConfigSignature {
-			if brokerPod.ObjectMeta.DeletionTimestamp == nil {
-				// Restart the Monitor pod to sync with its Statefulset config
-				log.Info("Restarting Monitor pod to reflect latest updates", "Pod.Namespace", &brokerPod.Namespace, "Pod.Name", &brokerPod.Name)
-				err := r.Delete(ctx, brokerPod)
-				if err != nil {
-					log.Error(err, "Failed to delete the Monitor pod", "Pod.Namespace", &brokerPod.Namespace, "Pod.Name", &brokerPod.Name)
-					return ctrl.Result{}, err
-				}
-			}
-			// Already restarting, just requeue
-			return ctrl.Result{RequeueAfter: time.Duration(5) * time.Second}, nil
-		}
-		// == Standby
-		if brokerPod, err = r.getBrokerPod(ctx, pubsubpluseventbroker, Standby); err != nil {
-			log.Error(err, "Failed to list pods", "PubSubPlusEventBroker.Namespace", pubsubpluseventbroker.Namespace, "PubSubPlusEventBroker.Name", pubsubpluseventbroker.Name)
-			return ctrl.Result{}, err
-		}
-		if brokerPod.ObjectMeta.Annotations[dependenciesSignatureAnnotationName] != expectedConfigSignature {
-			if brokerPod.ObjectMeta.DeletionTimestamp == nil {
-				// Restart the Standby pod to sync with its Statefulset config
-				log.Info("Restarting Standby pod to reflect latest updates", "Pod.Namespace", &brokerPod.Namespace, "Pod.Name", &brokerPod.Name)
-				err := r.Delete(ctx, brokerPod)
-				if err != nil {
-					log.Error(err, "Failed to delete the Standby pod", "Pod.Namespace", &brokerPod.Namespace, "Pod.Name", &brokerPod.Name)
-					return ctrl.Result{}, err
-				}
-			}
-			// Already restarting, just requeue
-			return ctrl.Result{RequeueAfter: time.Duration(5) * time.Second}, nil
-		}
-	}
-	// At this point, HA or not, check the active pod for restart
-	if brokerPod, err = r.getBrokerPod(ctx, pubsubpluseventbroker, Active); err != nil {
-		log.Error(err, "Failed to list pods", "PubSubPlusEventBroker.Namespace", pubsubpluseventbroker.Namespace, "PubSubPlusEventBroker.Name", pubsubpluseventbroker.Name)
-		return ctrl.Result{}, err
-	}
-	if brokerPod.ObjectMeta.Annotations[dependenciesSignatureAnnotationName] != expectedConfigSignature {
-		if brokerPod.ObjectMeta.DeletionTimestamp == nil {
-			// Restart the Active Pod to sync with its Statefulset config
-			log.Info("Restarting Active pod to reflect latest updates", "Pod.Namespace", &brokerPod.Namespace, "Pod.Name", &brokerPod.Name)
-			err := r.Delete(ctx, brokerPod)
-			if err != nil {
-				log.Error(err, "Failed to delete the Active pod", "Pod.Namespace", &brokerPod.Namespace, "Pod.Name", &brokerPod.Name)
+	// Skip it though if updateStrategy is set to manualPodDelete - in this case this is supposed to be done manually by the user
+	if pubsubpluseventbroker.Spec.UpdateStrategy != eventbrokerv1alpha1.ManualPodDeleteUpdateStrategy {
+		expectedConfigSignature := hash(pubsubpluseventbroker.Spec)
+		var brokerPod *corev1.Pod
+		// Must distinguish between HA and non-HA
+		if haDeployment {
+			// The algorithm is to process the Monitor, then the pod with `active=false`, finally `active=true`
+			// == Monitor
+			if brokerPod, err = r.getBrokerPod(ctx, pubsubpluseventbroker, Monitor); err != nil {
+				log.Error(err, "Failed to list pods", "PubSubPlusEventBroker.Namespace", pubsubpluseventbroker.Namespace, "PubSubPlusEventBroker.Name", pubsubpluseventbroker.Name)
 				return ctrl.Result{}, err
 			}
+			if brokerPod.ObjectMeta.Annotations[dependenciesSignatureAnnotationName] != expectedConfigSignature {
+				if brokerPod.ObjectMeta.DeletionTimestamp == nil {
+					// Restart the Monitor pod to sync with its Statefulset config
+					log.Info("Restarting Monitor pod to reflect latest updates", "Pod.Namespace", &brokerPod.Namespace, "Pod.Name", &brokerPod.Name)
+					err := r.Delete(ctx, brokerPod)
+					if err != nil {
+						log.Error(err, "Failed to delete the Monitor pod", "Pod.Namespace", &brokerPod.Namespace, "Pod.Name", &brokerPod.Name)
+						return ctrl.Result{}, err
+					}
+				}
+				// Already restarting, just requeue
+				return ctrl.Result{RequeueAfter: time.Duration(5) * time.Second}, nil
+			}
+			// == Standby
+			if brokerPod, err = r.getBrokerPod(ctx, pubsubpluseventbroker, Standby); err != nil {
+				log.Error(err, "Failed to list pods", "PubSubPlusEventBroker.Namespace", pubsubpluseventbroker.Namespace, "PubSubPlusEventBroker.Name", pubsubpluseventbroker.Name)
+				return ctrl.Result{}, err
+			}
+			if brokerPod.ObjectMeta.Annotations[dependenciesSignatureAnnotationName] != expectedConfigSignature {
+				if brokerPod.ObjectMeta.DeletionTimestamp == nil {
+					// Restart the Standby pod to sync with its Statefulset config
+					log.Info("Restarting Standby pod to reflect latest updates", "Pod.Namespace", &brokerPod.Namespace, "Pod.Name", &brokerPod.Name)
+					err := r.Delete(ctx, brokerPod)
+					if err != nil {
+						log.Error(err, "Failed to delete the Standby pod", "Pod.Namespace", &brokerPod.Namespace, "Pod.Name", &brokerPod.Name)
+						return ctrl.Result{}, err
+					}
+				}
+				// Already restarting, just requeue
+				return ctrl.Result{RequeueAfter: time.Duration(5) * time.Second}, nil
+			}
 		}
-		// Already restarting, just requeue
-		return ctrl.Result{RequeueAfter: time.Duration(5) * time.Second}, nil
+		// At this point, HA or not, check the active pod for restart
+		if brokerPod, err = r.getBrokerPod(ctx, pubsubpluseventbroker, Active); err != nil {
+			log.Error(err, "Failed to list pods", "PubSubPlusEventBroker.Namespace", pubsubpluseventbroker.Namespace, "PubSubPlusEventBroker.Name", pubsubpluseventbroker.Name)
+			return ctrl.Result{}, err
+		}
+		if brokerPod.ObjectMeta.Annotations[dependenciesSignatureAnnotationName] != expectedConfigSignature {
+			if brokerPod.ObjectMeta.DeletionTimestamp == nil {
+				// Restart the Active Pod to sync with its Statefulset config
+				log.Info("Restarting Active pod to reflect latest updates", "Pod.Namespace", &brokerPod.Namespace, "Pod.Name", &brokerPod.Name)
+				err := r.Delete(ctx, brokerPod)
+				if err != nil {
+					log.Error(err, "Failed to delete the Active pod", "Pod.Namespace", &brokerPod.Namespace, "Pod.Name", &brokerPod.Name)
+					return ctrl.Result{}, err
+				}
+			}
+			// Already restarting, just requeue
+			return ctrl.Result{RequeueAfter: time.Duration(5) * time.Second}, nil
+		}
 	}
-
-	// List the pods for this pubsubpluseventbroker
-	// podList := &corev1.PodList{}
-	// listOpts := []client.ListOption{
-	// 	client.InNamespace(pubsubpluseventbroker.Namespace),
-	// 	client.MatchingLabels(getMessagingPodSelectorByActive(pubsubpluseventbroker.Name, "true")),
-	// }
-	// if err = r.List(ctx, podList, listOpts...); err != nil {
-	// 	log.Error(err, "Failed to list pods", "PubSubPlusEventBroker.Namespace", pubsubpluseventbroker.Namespace, "PubSubPlusEventBroker.Name", pubsubpluseventbroker.Name)
-	// 	return ctrl.Result{}, err
-	// }
-	// if (podList != nil && len(podList.Items) > 0 &&
-	// 	podList.Items[0].ObjectMeta.Annotations[dependenciesSignatureAnnotationName] != stsP.Spec.Template.ObjectMeta.Annotations[dependenciesSignatureAnnotationName] &&
-	// 	podList.Items[0].ObjectMeta.DeletionTimestamp == nil) {
-	// 	// Restart the Pod to sync with its Statefulset config
-	// 	log.Info("Restarting pod the reflect latest updates", "Pod.Namespace", &podList.Items[0].Namespace, "Pod.Name", &podList.Items[0].Name)
-	// 	err = r.Delete(ctx, &podList.Items[0])
-	// 	if err != nil {
-	// 		log.Error(err, "Failed to delete the Pod", "Pod.Namespace", &podList.Items[0].Namespace, "Pod.Name", &podList.Items[0].Name)
-	// 		return ctrl.Result{}, err
-	// 	}
-	// 	// Now wait for the pod to come back up
-	// 	return ctrl.Result{RequeueAfter: time.Duration(5) * time.Second}, nil
-	// }
 
 	// Update the PubSubPlusEventBroker status with the pod names
 	// TODO: this is an example. It would make sense to update status with broker ready for messaging, config update on progress, etc.
@@ -553,7 +540,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 		}
 
 		// Pod already exists - don't requeue
-		log.Info("Skip reconcile: Deployment already exists", "Pod.Namespace", foundPrometheusExporter.Namespace, "Pod.Name", foundPrometheusExporter.Name)
+		log.Info("Detected existing Prometheus Exporter deployment", "Deployment.Namespace", foundPrometheusExporter.Namespace, "Deployment.Name", foundPrometheusExporter.Name)
 
 		// Check if this Service for Prometheus Exporter Pod already exists
 		foundPrometheusExporterSvc := &corev1.Service{}

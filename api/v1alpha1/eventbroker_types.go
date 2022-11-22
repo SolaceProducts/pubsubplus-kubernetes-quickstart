@@ -50,9 +50,14 @@ type EventBrokerSpec struct {
 	//+optional
 	//+kubebuilder:validation:Type:=boolean
 	//+kubebuilder:default:=false
-	// Enables setting up PodDisruptionBudget for the broker pods in HA deployment.
+	// PodDisruptionBudgetForHA enables setting up PodDisruptionBudget for the broker pods in HA deployment.
 	// This parameter is ignored for non-HA deployments (if redundancy is false).
 	PodDisruptionBudgetForHA bool `json:"podDisruptionBudgetForHA"`
+	//+optional
+	//+kubebuilder:validation:Enum=automatedRolling;manualPodDelete
+	//+kubebuilder:default:=automatedRolling
+	// UpdateStrategy specifies how to update an existing deployment. ManualPodDelete waits for user intervention.
+	UpdateStrategy PubSubPlusEventBrokerUpdateStrategy `json:"updateStrategy"`
 	//+optional
 	//+kubebuilder:validation:Type:=string
 	//+kubebuilder:default:="UTC"
@@ -89,6 +94,12 @@ type EventBrokerSpec struct {
 	// Monitoring specifies a Prometheus monitoring endpoint for the event broker
 	Monitoring *Monitoring `json:"monitoring,omitempty"`
 }
+
+type PubSubPlusEventBrokerUpdateStrategy string
+const (
+    AutomatedRollingUpdateStrategy PubSubPlusEventBrokerUpdateStrategy = "automatedRolling"
+    ManualPodDeleteUpdateStrategy PubSubPlusEventBrokerUpdateStrategy = "manualPodDelete"
+)
 
 // Port defines parameters configure Service details for the Broker
 type BrokerPort struct {
