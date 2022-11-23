@@ -147,7 +147,7 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(stsNam
 			// Note the resource version of upstream objects
 			// TODO: Consider https://github.com/banzaicloud/k8s-objectmatcher
 			Annotations: map[string]string{
-				dependenciesSignatureAnnotationName: hash(m.Spec),
+				dependenciesSignatureAnnotationName: brokerSpecHash(m.Spec),
 			},
 		},
 		Spec: corev1.PodSpec{

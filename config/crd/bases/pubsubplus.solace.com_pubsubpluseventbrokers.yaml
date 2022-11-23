@@ -395,10 +395,10 @@ spec:
               updateStrategy:
                 default: automatedRolling
                 description: UpdateStrategy specifies how to update an existing deployment.
-                  ManualPodDelete waits for user intervention.
+                  manualPodRestart waits for user intervention.
                 enum:
                 - automatedRolling
-                - manualPodDelete
+                - manualPodRestart
                 type: string
             type: object
           status:

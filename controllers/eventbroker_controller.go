@@ -98,7 +98,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 		log.Info("Detected existing pubsubpluseventbroker", " pubsubpluseventbroker.Name", pubsubpluseventbroker.Name)
 	}
 
-    // Check maintenance mode
+	// Check maintenance mode
 	if labelValue, ok := pubsubpluseventbroker.Labels[maintenanceLabel]; ok && labelValue == "true" {
 		log.Info(fmt.Sprintf("Found maintenance label '%s=true', reconcile paused.", maintenanceLabel))
 		// TODO: update status
@@ -292,7 +292,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 		log.Error(err, "Failed to get StatefulSet")
 		return ctrl.Result{}, err
 	} else {
-		if stsP.Spec.Template.ObjectMeta.Annotations[dependenciesSignatureAnnotationName] != hash(pubsubpluseventbroker.Spec) {
+		if stsP.Spec.Template.ObjectMeta.Annotations[dependenciesSignatureAnnotationName] != brokerSpecHash(pubsubpluseventbroker.Spec) {
 			// If resource versions differ it means update is required
 			log.Info("Updating existing Primary StatefulSet", " StatefulSet.Name", stsP.Name)
 			r.updateStatefulsetForEventBroker(stsPName, pubsubpluseventbroker, stsP, sa)
@@ -329,7 +329,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 			log.Error(err, "Failed to get StatefulSet")
 			return ctrl.Result{}, err
 		} else {
-			if stsB.Spec.Template.ObjectMeta.Annotations[dependenciesSignatureAnnotationName] != hash(pubsubpluseventbroker.Spec) {
+			if stsB.Spec.Template.ObjectMeta.Annotations[dependenciesSignatureAnnotationName] != brokerSpecHash(pubsubpluseventbroker.Spec) {
 				// If resource versions differ it means update is required
 				log.Info("Updating existing Backup StatefulSet", " StatefulSet.Name", stsB.Name)
 				r.updateStatefulsetForEventBroker(stsBName, pubsubpluseventbroker, stsB, sa)
@@ -364,7 +364,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 			log.Error(err, "Failed to get StatefulSet")
 			return ctrl.Result{}, err
 		} else {
-			if stsM.Spec.Template.ObjectMeta.Annotations[dependenciesSignatureAnnotationName] != hash(pubsubpluseventbroker.Spec) {
+			if stsM.Spec.Template.ObjectMeta.Annotations[dependenciesSignatureAnnotationName] != brokerSpecHash(pubsubpluseventbroker.Spec) {
 				// If resource versions differ it means update is required
 				log.Info("Updating existing Monitor StatefulSet", " StatefulSet.Name", stsM.Name)
 				r.updateStatefulsetForEventBroker(stsMName, pubsubpluseventbroker, stsM, sa)
@@ -428,9 +428,9 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 	log.Info("All broker pods are in ready state")
 
 	// Next restart any pods to sync with their config dependencies
-	// Skip it though if updateStrategy is set to manualPodDelete - in this case this is supposed to be done manually by the user
-	if pubsubpluseventbroker.Spec.UpdateStrategy != eventbrokerv1alpha1.ManualPodDeleteUpdateStrategy {
-		expectedConfigSignature := hash(pubsubpluseventbroker.Spec)
+	// Skip it though if updateStrategy is set to manualPodRestart - in this case this is supposed to be done manually by the user
+	if pubsubpluseventbroker.Spec.UpdateStrategy != eventbrokerv1alpha1.manualPodRestartUpdateStrategy {
+		expectedConfigSignature := brokerSpecHash(pubsubpluseventbroker.Spec)
 		var brokerPod *corev1.Pod
 		// Must distinguish between HA and non-HA
 		if haDeployment {

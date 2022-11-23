@@ -54,9 +54,9 @@ type EventBrokerSpec struct {
 	// This parameter is ignored for non-HA deployments (if redundancy is false).
 	PodDisruptionBudgetForHA bool `json:"podDisruptionBudgetForHA"`
 	//+optional
-	//+kubebuilder:validation:Enum=automatedRolling;manualPodDelete
+	//+kubebuilder:validation:Enum=automatedRolling;manualPodRestart
 	//+kubebuilder:default:=automatedRolling
-	// UpdateStrategy specifies how to update an existing deployment. ManualPodDelete waits for user intervention.
+	// UpdateStrategy specifies how to update an existing deployment. manualPodRestart waits for user intervention.
 	UpdateStrategy PubSubPlusEventBrokerUpdateStrategy `json:"updateStrategy"`
 	//+optional
 	//+kubebuilder:validation:Type:=string
@@ -96,9 +96,10 @@ type EventBrokerSpec struct {
 }
 
 type PubSubPlusEventBrokerUpdateStrategy string
+
 const (
-    AutomatedRollingUpdateStrategy PubSubPlusEventBrokerUpdateStrategy = "automatedRolling"
-    ManualPodDeleteUpdateStrategy PubSubPlusEventBrokerUpdateStrategy = "manualPodDelete"
+	AutomatedRollingUpdateStrategy PubSubPlusEventBrokerUpdateStrategy = "automatedRolling"
+	manualPodRestartUpdateStrategy PubSubPlusEventBrokerUpdateStrategy = "manualPodRestart"
 )
 
 // Port defines parameters configure Service details for the Broker

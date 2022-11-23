@@ -14,7 +14,7 @@ spec:
   extraEnvVarsSecret: ""
   podDisruptionBudgetForHA: true
   image: {}
-  updateStrategy: manualPodDelete
+  updateStrategy: manualPodRestart
   securityContext: {}
   tls:
     enabled: false

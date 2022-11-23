@@ -46,6 +46,12 @@ func (r *PubSubPlusEventBrokerReconciler) getBrokerPod(ctx context.Context, m *e
 	return nil, fmt.Errorf("filtered broker pod list didn't return exactly one pod")
 }
 
+func brokerSpecHash(s eventbrokerv1alpha1.EventBrokerSpec) string {
+	brokerSpecSubset := s.DeepCopy()
+	brokerSpecSubset.Monitoring = nil
+	return hash(brokerSpecSubset)
+}
+
 func convertToByteArray(e any) []byte {
 	var network bytes.Buffer        // Stand-in for a network connection
 	enc := gob.NewEncoder(&network) // Will write to network.
