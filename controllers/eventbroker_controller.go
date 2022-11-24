@@ -74,7 +74,9 @@ type PubSubPlusEventBrokerReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.12.2/pkg/reconcile
 func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-
+	// Safeguards in case reconcile gets stuck - not used for now
+	// ctx, cancel := context.WithTimeout(context.Background(), 20*time.Minute)
+	// defer cancel()
 	// Format is set in main.go
 	log := ctrllog.FromContext(ctx)
 
@@ -485,7 +487,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 			// The algorithm is to process the Monitor, then the pod with `active=false`, finally `active=true`
 			// == Monitor
 			if brokerPod, err = r.getBrokerPod(ctx, pubsubpluseventbroker, Monitor); err != nil {
-				log.Error(err, "Failed to list pods", "PubSubPlusEventBroker.Namespace", pubsubpluseventbroker.Namespace, "PubSubPlusEventBroker.Name", pubsubpluseventbroker.Name)
+				log.Error(err, "Failed to list Monitor pod", "PubSubPlusEventBroker.Namespace", pubsubpluseventbroker.Namespace, "PubSubPlusEventBroker.Name", pubsubpluseventbroker.Name)
 				return ctrl.Result{}, err
 			}
 			if brokerPod.ObjectMeta.Annotations[dependenciesSignatureAnnotationName] != expectedConfigSignature {
@@ -503,8 +505,9 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 			}
 			// == Standby
 			if brokerPod, err = r.getBrokerPod(ctx, pubsubpluseventbroker, Standby); err != nil {
-				log.Error(err, "Failed to list pods", "PubSubPlusEventBroker.Namespace", pubsubpluseventbroker.Namespace, "PubSubPlusEventBroker.Name", pubsubpluseventbroker.Name)
-				return ctrl.Result{}, err
+				log.Error(err, "Failed to list a single Standby pod", "PubSubPlusEventBroker.Namespace", pubsubpluseventbroker.Namespace, "PubSubPlusEventBroker.Name", pubsubpluseventbroker.Name)
+				// This may be a temporary issue, most likely more than one pod labelled	 active=false, just requeue
+				return ctrl.Result{RequeueAfter: time.Duration(5) * time.Second}, nil
 			}
 			if brokerPod.ObjectMeta.Annotations[dependenciesSignatureAnnotationName] != expectedConfigSignature {
 				if brokerPod.ObjectMeta.DeletionTimestamp == nil {
@@ -522,7 +525,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 		}
 		// At this point, HA or not, check the active pod for restart
 		if brokerPod, err = r.getBrokerPod(ctx, pubsubpluseventbroker, Active); err != nil {
-			log.Error(err, "Failed to list pods", "PubSubPlusEventBroker.Namespace", pubsubpluseventbroker.Namespace, "PubSubPlusEventBroker.Name", pubsubpluseventbroker.Name)
+			log.Error(err, "Failed to list the Active pod", "PubSubPlusEventBroker.Namespace", pubsubpluseventbroker.Namespace, "PubSubPlusEventBroker.Name", pubsubpluseventbroker.Name)
 			return ctrl.Result{}, err
 		}
 		if brokerPod.ObjectMeta.Annotations[dependenciesSignatureAnnotationName] != expectedConfigSignature {
@@ -620,7 +623,8 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 		// if err wasn't nil then let the next reconcile loop handle it
 	}
 
-	return ctrl.Result{}, nil
+	// Reconcile periodically
+	return ctrl.Result{RequeueAfter: 10 * time.Minute}, nil
 }
 
 // TODO: if still needed move it to namings
