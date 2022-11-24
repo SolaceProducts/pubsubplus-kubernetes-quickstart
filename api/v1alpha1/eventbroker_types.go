@@ -99,7 +99,7 @@ type PubSubPlusEventBrokerUpdateStrategy string
 
 const (
 	AutomatedRollingUpdateStrategy PubSubPlusEventBrokerUpdateStrategy = "automatedRolling"
-	manualPodRestartUpdateStrategy PubSubPlusEventBrokerUpdateStrategy = "manualPodRestart"
+	ManualPodRestartUpdateStrategy PubSubPlusEventBrokerUpdateStrategy = "manualPodRestart"
 )
 
 // Port defines parameters configure Service details for the Broker

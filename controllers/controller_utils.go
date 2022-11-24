@@ -43,7 +43,7 @@ func (r *PubSubPlusEventBrokerReconciler) getBrokerPod(ctx context.Context, m *e
 	if podList != nil && len(podList.Items) == 1 {
 		return &podList.Items[0], nil
 	}
-	return nil, fmt.Errorf("filtered broker pod list didn't return exactly one pod")
+	return nil, fmt.Errorf("filtered broker pod list for broker role %d didn't return exactly one pod", brokerRole)
 }
 
 func brokerSpecHash(s eventbrokerv1alpha1.EventBrokerSpec) string {

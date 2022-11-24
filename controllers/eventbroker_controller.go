@@ -273,6 +273,35 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 		log.Info("Detected existing Secret", " Secret.Name", secret.Name)
 	}
 
+	// Check if Pod DisruptionBudget for HA  is Enabled, only when it is an HA deployment
+	podDisruptionBudgetHAEnabled := pubsubpluseventbroker.Spec.PodDisruptionBudgetForHA
+	if haDeployment && podDisruptionBudgetHAEnabled {
+
+		// Check if PDB for HA already exists
+		foundPodDisruptionBudgetHA := &policyv1.PodDisruptionBudget{}
+		podDisruptionBudgetHAName := getObjectName("PodDisruptionBudget", pubsubpluseventbroker.Name)
+		err = r.Get(ctx, types.NamespacedName{Name: podDisruptionBudgetHAName, Namespace: pubsubpluseventbroker.Namespace}, foundPodDisruptionBudgetHA)
+		if err != nil && errors.IsNotFound(err) {
+
+			//Pod DisruptionBudget for HA not available create new one
+			podDisruptionBudgetHA := r.newPodDisruptionBudgetForHADeployment(podDisruptionBudgetHAName, pubsubpluseventbroker)
+
+			log.Info("Creating new Pod Disruption Budget", "PodDisruptionBudget.Name", podDisruptionBudgetHAName)
+
+			err = r.Create(ctx, podDisruptionBudgetHA)
+
+			if err != nil {
+				return ctrl.Result{}, err
+			}
+			// Pod Disruption Budget created successfully - return requeue
+			return ctrl.Result{Requeue: true}, nil
+		} else if err != nil {
+			return ctrl.Result{}, err
+		}
+	}
+
+	brokerSpecHash := brokerSpecHash(pubsubpluseventbroker.Spec)
+	automatedPodUpdateStrategy := (pubsubpluseventbroker.Spec.UpdateStrategy != eventbrokerv1alpha1.ManualPodRestartUpdateStrategy)
 	// Check if Primary StatefulSet already exists, if not create a new one
 	stsP = &appsv1.StatefulSet{}
 	stsPName := getStatefulsetName(pubsubpluseventbroker.Name, "p")
@@ -292,8 +321,23 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 		log.Error(err, "Failed to get StatefulSet")
 		return ctrl.Result{}, err
 	} else {
-		if stsP.Spec.Template.ObjectMeta.Annotations[dependenciesSignatureAnnotationName] != brokerSpecHash(pubsubpluseventbroker.Spec) {
-			// If resource versions differ it means update is required
+		if stsP.Spec.Template.ObjectMeta.Annotations[dependenciesSignatureAnnotationName] != brokerSpecHash {
+			// If resource versions differ it means recreate or update is required
+			if stsP.Status.ReadyReplicas < 1 {
+				// Related pod is still starting up but already outdated. Remove this statefulset (if automated pod update is allowed and delete has not already been initiated)
+				// and let's recreate it from scratch to force pod restart
+				if automatedPodUpdateStrategy && stsP.ObjectMeta.DeletionTimestamp == nil {
+					log.Info("Existing Primary StatefulSet requires update and its Pod is outdated and not ready - recreating StatefulSet to force pod update", " StatefulSet.Name", stsP.Name)
+					err = r.Delete(ctx, stsP)
+					if err != nil {
+						log.Error(err, "Failed to delete Primary StatefulSet", "StatefulSet.Namespace", stsP.Namespace, "StatefulSet.Name", stsP.Name)
+						return ctrl.Result{}, err
+					}
+					// StatefulSet deleted successfully - return and requeue
+					return ctrl.Result{RequeueAfter: time.Duration(1) * time.Second}, nil
+				}
+				// Otherwise just continue
+			}
 			log.Info("Updating existing Primary StatefulSet", " StatefulSet.Name", stsP.Name)
 			r.updateStatefulsetForEventBroker(stsPName, pubsubpluseventbroker, stsP, sa)
 			log.Info("Updating Primary StatefulSet", "StatefulSet.Namespace", stsP.Namespace, "StatefulSet.Name", stsP.Name)
@@ -329,8 +373,23 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 			log.Error(err, "Failed to get StatefulSet")
 			return ctrl.Result{}, err
 		} else {
-			if stsB.Spec.Template.ObjectMeta.Annotations[dependenciesSignatureAnnotationName] != brokerSpecHash(pubsubpluseventbroker.Spec) {
-				// If resource versions differ it means update is required
+			if stsB.Spec.Template.ObjectMeta.Annotations[dependenciesSignatureAnnotationName] != brokerSpecHash {
+				// If resource versions differ it means recreate or update is required
+				if stsB.Status.ReadyReplicas < 1 {
+					// Related pod is still starting up but already outdated. Remove this statefulset (if automated pod update is allowed and delete has not already been initiated)
+					// and let's recreate it from scratch to force pod restart
+					if automatedPodUpdateStrategy && stsB.ObjectMeta.DeletionTimestamp == nil {
+						log.Info("Existing Backup StatefulSet requires update and its Pod is outdated and not ready - recreating StatefulSet to force pod update", " StatefulSet.Name", stsB.Name)
+						err = r.Delete(ctx, stsB)
+						if err != nil {
+							log.Error(err, "Failed to delete Backup StatefulSet", "StatefulSet.Namespace", stsB.Namespace, "StatefulSet.Name", stsB.Name)
+							return ctrl.Result{}, err
+						}
+						// StatefulSet deleted successfully - return and requeue
+						return ctrl.Result{RequeueAfter: time.Duration(1) * time.Second}, nil
+					}
+					// Otherwise just continue
+				}
 				log.Info("Updating existing Backup StatefulSet", " StatefulSet.Name", stsB.Name)
 				r.updateStatefulsetForEventBroker(stsBName, pubsubpluseventbroker, stsB, sa)
 				log.Info("Updating Backup StatefulSet", "StatefulSet.Namespace", stsB.Namespace, "StatefulSet.Name", stsB.Name)
@@ -364,8 +423,23 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 			log.Error(err, "Failed to get StatefulSet")
 			return ctrl.Result{}, err
 		} else {
-			if stsM.Spec.Template.ObjectMeta.Annotations[dependenciesSignatureAnnotationName] != brokerSpecHash(pubsubpluseventbroker.Spec) {
-				// If resource versions differ it means update is required
+			if stsM.Spec.Template.ObjectMeta.Annotations[dependenciesSignatureAnnotationName] != brokerSpecHash {
+				// If resource versions differ it means recreate or update is required
+				if stsM.Status.ReadyReplicas < 1 {
+					// Related pod is still starting up but already outdated. Remove this statefulset (if automated pod update is allowed and delete has not already been initiated)
+					// and let's recreate it from scratch to force pod restart
+					if automatedPodUpdateStrategy && stsM.ObjectMeta.DeletionTimestamp == nil {
+						log.Info("Existing Monitor StatefulSet requires update and its Pod is outdated and not ready - recreating StatefulSet to force pod update", " StatefulSet.Name", stsM.Name)
+						err = r.Delete(ctx, stsM)
+						if err != nil {
+							log.Error(err, "Failed to delete Monitor StatefulSet", "StatefulSet.Namespace", stsM.Namespace, "StatefulSet.Name", stsM.Name)
+							return ctrl.Result{}, err
+						}
+						// StatefulSet deleted successfully - return and requeue
+						return ctrl.Result{RequeueAfter: time.Duration(1) * time.Second}, nil
+					}
+					// Otherwise just continue
+				}
 				log.Info("Updating existing Monitor StatefulSet", " StatefulSet.Name", stsM.Name)
 				r.updateStatefulsetForEventBroker(stsMName, pubsubpluseventbroker, stsM, sa)
 				log.Info("Updating Monitor StatefulSet", "StatefulSet.Namespace", stsM.Namespace, "StatefulSet.Name", stsM.Name)
@@ -382,40 +456,14 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 
 	}
 
-	// Check if Pod DisruptionBudget for HA  is Enabled, only when it is an HA deployment
-	podDisruptionBudgetHAEnabled := pubsubpluseventbroker.Spec.PodDisruptionBudgetForHA
-	if haDeployment && podDisruptionBudgetHAEnabled {
-
-		// Check if PDB for HA already exists
-		foundPodDisruptionBudgetHA := &policyv1.PodDisruptionBudget{}
-		podDisruptionBudgetHAName := getObjectName("PodDisruptionBudget", pubsubpluseventbroker.Name)
-		err = r.Get(ctx, types.NamespacedName{Name: podDisruptionBudgetHAName, Namespace: pubsubpluseventbroker.Namespace}, foundPodDisruptionBudgetHA)
-		if err != nil && errors.IsNotFound(err) {
-
-			//Pod DisruptionBudget for HA not available create new one
-			podDisruptionBudgetHA := r.newPodDisruptionBudgetForHADeployment(podDisruptionBudgetHAName, pubsubpluseventbroker)
-
-			log.Info("Creating new Pod Disruption Budget", "PodDisruptionBudget.Name", podDisruptionBudgetHAName)
-
-			err = r.Create(ctx, podDisruptionBudgetHA)
-
-			if err != nil {
-				return ctrl.Result{}, err
-			}
-			// Pod Disruption Budget created successfully - return requeue
-			return ctrl.Result{Requeue: true}, nil
-		} else if err != nil {
-			return ctrl.Result{}, err
-		}
-	}
-
 	// Check if pods are out-of-sync and need to be restarted
 	// First check for readiness of all broker nodes to continue
 	// TODO: where it makes sense emit events here instead of logs
 	if stsP.Status.ReadyReplicas < 1 {
 		log.Info("Detected unready Primary StatefulSet, waiting to be ready")
 		return ctrl.Result{RequeueAfter: time.Duration(5) * time.Second}, nil
-	} else if pubsubpluseventbroker.Spec.Redundancy {
+	}
+	if haDeployment {
 		if stsB.Status.ReadyReplicas < 1 {
 			log.Info("Detected unready Backup StatefulSet, waiting to be ready")
 			return ctrl.Result{RequeueAfter: time.Duration(5) * time.Second}, nil
@@ -428,9 +476,9 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 	log.Info("All broker pods are in ready state")
 
 	// Next restart any pods to sync with their config dependencies
-	// Skip it though if updateStrategy is set to manualPodRestart - in this case this is supposed to be done manually by the user
-	if pubsubpluseventbroker.Spec.UpdateStrategy != eventbrokerv1alpha1.manualPodRestartUpdateStrategy {
-		expectedConfigSignature := brokerSpecHash(pubsubpluseventbroker.Spec)
+	// Skip it though if updateStrategy is set to manual - in this case this is supposed to be done manually by the user
+	if automatedPodUpdateStrategy {
+		expectedConfigSignature := brokerSpecHash
 		var brokerPod *corev1.Pod
 		// Must distinguish between HA and non-HA
 		if haDeployment {
@@ -492,29 +540,6 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 		}
 	}
 
-	// Update the PubSubPlusEventBroker status with the pod names
-	// TODO: this is an example. It would make sense to update status with broker ready for messaging, config update on progress, etc.
-	// List the pods for this pubsubpluseventbroker's StatefulSet
-	podList := &corev1.PodList{}
-	listOpts := []client.ListOption{
-		client.InNamespace(pubsubpluseventbroker.Namespace),
-		client.MatchingLabels(baseLabels(pubsubpluseventbroker.Name)),
-	}
-	if err = r.List(ctx, podList, listOpts...); err != nil {
-		log.Error(err, "Failed to list pods", "PubSubPlusEventBroker.Namespace", pubsubpluseventbroker.Namespace, "PubSubPlusEventBroker.Name", pubsubpluseventbroker.Name)
-		return ctrl.Result{}, err
-	}
-	podNames := getPodNames(podList.Items)
-	// Update status.BrokerPods if needed
-	if !reflect.DeepEqual(podNames, pubsubpluseventbroker.Status.BrokerPods) {
-		pubsubpluseventbroker.Status.BrokerPods = podNames
-		err := r.Status().Update(ctx, pubsubpluseventbroker)
-		if err != nil {
-			log.Error(err, "Failed to update PubSubPlusEventBroker status")
-			return ctrl.Result{}, err
-		}
-	}
-
 	// Check if Prometheus Exporter is enabled only after broker is running perfectly
 	prometheusExporterEnabled := pubsubpluseventbroker.Spec.Monitoring.Enabled
 	if prometheusExporterEnabled {
@@ -565,6 +590,34 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 			log.Info("Detected existing Service", " Service.Name", svc.Name)
 		}
 		return ctrl.Result{}, nil
+	}
+
+	// Update the PubSubPlusEventBroker status with the pod names
+	// TODO: this is an example. It would make sense to update status with broker ready for messaging, config update on progress, etc.
+	// List the pods for this pubsubpluseventbroker's StatefulSet
+	podList := &corev1.PodList{}
+	listOpts := []client.ListOption{
+		client.InNamespace(pubsubpluseventbroker.Namespace),
+		client.MatchingLabels(baseLabels(pubsubpluseventbroker.Name)),
+	}
+	if err = r.List(ctx, podList, listOpts...); err != nil {
+		log.Error(err, "Failed to list pods", "PubSubPlusEventBroker.Namespace", pubsubpluseventbroker.Namespace, "PubSubPlusEventBroker.Name", pubsubpluseventbroker.Name)
+		return ctrl.Result{}, err
+	}
+	podNames := getPodNames(podList.Items)
+	// Update status.BrokerPods if needed
+	if !reflect.DeepEqual(podNames, pubsubpluseventbroker.Status.BrokerPods) {
+		pubsubpluseventbroker.Status.BrokerPods = podNames
+		// Get the resource first to ensure updating the latest
+		err := r.Get(ctx, req.NamespacedName, pubsubpluseventbroker)
+		if err == nil {
+			err := r.Status().Update(ctx, pubsubpluseventbroker)
+			if err != nil {
+				log.Error(err, "Failed to update PubSubPlusEventBroker status")
+				return ctrl.Result{}, err
+			}
+		}
+		// if err wasn't nil then let the next reconcile loop handle it
 	}
 
 	return ctrl.Result{}, nil
