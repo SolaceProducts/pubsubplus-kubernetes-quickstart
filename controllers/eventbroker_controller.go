@@ -245,24 +245,32 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 
 	// Check Secret
 	secret := &corev1.Secret{}
-	secretName := getObjectName("Secret", pubsubpluseventbroker.Name)
-	err = r.Get(ctx, types.NamespacedName{Name: secretName, Namespace: pubsubpluseventbroker.Namespace}, secret)
-	if err != nil && errors.IsNotFound(err) {
-		// Define a new Secret
-		secret := r.secretForEventBroker(secretName, pubsubpluseventbroker)
-		log.Info("Creating a new Secret", "Secret.Namespace", secret.Namespace, "Secret.Name", secret.Name)
-		err = r.Create(ctx, secret)
+	if len(strings.TrimSpace(pubsubpluseventbroker.Spec.AdminCredentialsSecret)) == 0 {
+		secretName := getObjectName("Secret", pubsubpluseventbroker.Name)
+		err = r.Get(ctx, types.NamespacedName{Name: secretName, Namespace: pubsubpluseventbroker.Namespace}, secret)
+		if err != nil && errors.IsNotFound(err) {
+			// Define a new Secret
+			secret := r.secretForEventBroker(secretName, pubsubpluseventbroker)
+			log.Info("Creating a new Secret", "Secret.Namespace", secret.Namespace, "Secret.Name", secret.Name)
+			err = r.Create(ctx, secret)
+			if err != nil {
+				log.Error(err, "Failed to create new Secret", "Secret.Namespace", secret.Namespace, "Secret.Name", secret.Name)
+				return ctrl.Result{}, err
+			}
+			// Secret created successfully - return and requeue
+			return ctrl.Result{Requeue: true}, nil
+		} else if err != nil {
+			log.Error(err, "Failed to get Secret")
+			return ctrl.Result{}, err
+		} else {
+			log.Info("Detected existing Secret", " Secret.Name", secret.Name)
+		}
+	} else {
+		err = r.Get(ctx, types.NamespacedName{Name: pubsubpluseventbroker.Spec.AdminCredentialsSecret, Namespace: pubsubpluseventbroker.Namespace}, secret)
 		if err != nil {
-			log.Error(err, "Failed to create new Secret", "Secret.Namespace", secret.Namespace, "Secret.Name", secret.Name)
+			log.Error(err, "Failed to find Secret. '"+pubsubpluseventbroker.Spec.AdminCredentialsSecret+"'")
 			return ctrl.Result{}, err
 		}
-		// Secret created successfully - return and requeue
-		return ctrl.Result{Requeue: true}, nil
-	} else if err != nil {
-		log.Error(err, "Failed to get Secret")
-		return ctrl.Result{}, err
-	} else {
-		log.Info("Detected existing Secret", " Secret.Name", secret.Name)
 	}
 
 	// Check if Primary StatefulSet already exists, if not create a new one
@@ -271,7 +279,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 	err = r.Get(ctx, types.NamespacedName{Name: stsPName, Namespace: pubsubpluseventbroker.Namespace}, stsP)
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new statefulset
-		stsP := r.createStatefulsetForEventBroker(stsPName, pubsubpluseventbroker, sa)
+		stsP := r.createStatefulsetForEventBroker(stsPName, pubsubpluseventbroker, sa, secret)
 		log.Info("Creating a new Primary StatefulSet", "StatefulSet.Namespace", stsP.Namespace, "StatefulSet.Name", stsP.Name)
 		err = r.Create(ctx, stsP)
 		if err != nil {
@@ -287,7 +295,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 		if stsP.Spec.Template.ObjectMeta.Annotations[dependenciesSignatureAnnotationName] != hash(pubsubpluseventbroker.Spec) {
 			// If resource versions differ it means update is required
 			log.Info("Updating existing Primary StatefulSet", " StatefulSet.Name", stsP.Name)
-			r.updateStatefulsetForEventBroker(stsPName, pubsubpluseventbroker, stsP, sa)
+			r.updateStatefulsetForEventBroker(stsPName, pubsubpluseventbroker, stsP, sa, secret)
 			log.Info("Updating Primary StatefulSet", "StatefulSet.Namespace", stsP.Namespace, "StatefulSet.Name", stsP.Name)
 			err = r.Update(ctx, stsP)
 			if err != nil {
@@ -308,7 +316,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 		err = r.Get(ctx, types.NamespacedName{Name: stsBName, Namespace: pubsubpluseventbroker.Namespace}, stsB)
 		if err != nil && errors.IsNotFound(err) {
 			// Define a new statefulset
-			stsB := r.createStatefulsetForEventBroker(stsBName, pubsubpluseventbroker, sa)
+			stsB := r.createStatefulsetForEventBroker(stsBName, pubsubpluseventbroker, sa, secret)
 			log.Info("Creating a new Backup StatefulSet", "StatefulSet.Namespace", stsB.Namespace, "StatefulSet.Name", stsB.Name)
 			err = r.Create(ctx, stsB)
 			if err != nil {
@@ -324,7 +332,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 			if stsB.Spec.Template.ObjectMeta.Annotations[dependenciesSignatureAnnotationName] != hash(pubsubpluseventbroker.Spec) {
 				// If resource versions differ it means update is required
 				log.Info("Updating existing Backup StatefulSet", " StatefulSet.Name", stsB.Name)
-				r.updateStatefulsetForEventBroker(stsBName, pubsubpluseventbroker, stsB, sa)
+				r.updateStatefulsetForEventBroker(stsBName, pubsubpluseventbroker, stsB, sa, secret)
 				log.Info("Updating Backup StatefulSet", "StatefulSet.Namespace", stsB.Namespace, "StatefulSet.Name", stsB.Name)
 				err = r.Update(ctx, stsB)
 				if err != nil {
@@ -343,7 +351,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 		err = r.Get(ctx, types.NamespacedName{Name: stsMName, Namespace: pubsubpluseventbroker.Namespace}, stsM)
 		if err != nil && errors.IsNotFound(err) {
 			// Define a new statefulset
-			stsM := r.createStatefulsetForEventBroker(stsMName, pubsubpluseventbroker, sa)
+			stsM := r.createStatefulsetForEventBroker(stsMName, pubsubpluseventbroker, sa, secret)
 			log.Info("Creating a new Monitor StatefulSet", "StatefulSet.Namespace", stsM.Namespace, "StatefulSet.Name", stsM.Name)
 			err = r.Create(ctx, stsM)
 			if err != nil {
@@ -359,7 +367,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 			if stsM.Spec.Template.ObjectMeta.Annotations[dependenciesSignatureAnnotationName] != hash(pubsubpluseventbroker.Spec) {
 				// If resource versions differ it means update is required
 				log.Info("Updating existing Monitor StatefulSet", " StatefulSet.Name", stsM.Name)
-				r.updateStatefulsetForEventBroker(stsMName, pubsubpluseventbroker, stsM, sa)
+				r.updateStatefulsetForEventBroker(stsMName, pubsubpluseventbroker, stsM, sa, secret)
 				log.Info("Updating Monitor StatefulSet", "StatefulSet.Namespace", stsM.Namespace, "StatefulSet.Name", stsM.Name)
 				err = r.Update(ctx, stsM)
 				if err != nil {
@@ -561,7 +569,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 		err = r.Get(ctx, types.NamespacedName{Name: prometheusExporterSvcName, Namespace: pubsubpluseventbroker.Namespace}, foundPrometheusExporterSvc)
 		if err != nil && errors.IsNotFound(err) {
 			// New service for Prometheus Exporter
-			prometheusExporterSvc := r.newServiceForPrometheusExporter(pubsubpluseventbroker.Spec.Monitoring, prometheusExporterSvcName, pubsubpluseventbroker)
+			prometheusExporterSvc := r.newServiceForPrometheusExporter(&pubsubpluseventbroker.Spec.Monitoring, prometheusExporterSvcName, pubsubpluseventbroker)
 			log.Info("Creating a new Service for Prometheus Exporter", "Service.Namespace", prometheusExporterSvc.Namespace, "Service.Name", prometheusExporterSvc.Name)
 
 			err = r.Create(ctx, prometheusExporterSvc)

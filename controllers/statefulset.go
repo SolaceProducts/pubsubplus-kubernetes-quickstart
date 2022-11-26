@@ -17,6 +17,7 @@ limitations under the License.
 package controllers
 
 import (
+	"encoding/json"
 	"strconv"
 	"strings"
 
@@ -32,15 +33,18 @@ import (
 )
 
 // statefulsetForEventBroker returns a new pubsubpluseventbroker StatefulSet object
-func (r *PubSubPlusEventBrokerReconciler) createStatefulsetForEventBroker(stsName string, m *eventbrokerv1alpha1.PubSubPlusEventBroker, sa *corev1.ServiceAccount) *appsv1.StatefulSet {
+func (r *PubSubPlusEventBrokerReconciler) createStatefulsetForEventBroker(stsName string, m *eventbrokerv1alpha1.PubSubPlusEventBroker, sa *corev1.ServiceAccount, secret *corev1.Secret) *appsv1.StatefulSet {
 	nodeType := getBrokerNodeType(stsName)
 
 	// Determine broker sizing
 	var storageSize string
 	if nodeType == "monitor" {
-		storageSize = "3Gi"
+		if len(strings.TrimSpace(m.Spec.Storage.MonitorNodeStorageSize)) == 0 {
+			storageSize = "3Gi"
+		}
+		storageSize = m.Spec.Storage.MonitorNodeStorageSize
 	} else {
-		storageSize = (map[bool]string{true: "7Gi", false: "17Gi"})[m.Spec.Developer]
+		storageSize = (map[bool]string{true: "7Gi", false: getBrokerMessageNodeStorageSize(&m.Spec.Storage)})[m.Spec.Developer]
 	}
 	dep := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
@@ -60,34 +64,43 @@ func (r *PubSubPlusEventBrokerReconciler) createStatefulsetForEventBroker(stsNam
 			RevisionHistoryLimit:                 new(int32),
 			MinReadySeconds:                      0,
 			PersistentVolumeClaimRetentionPolicy: &appsv1.StatefulSetPersistentVolumeClaimRetentionPolicy{},
-			VolumeClaimTemplates: []corev1.PersistentVolumeClaim{
-				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "data",
-					},
-					Spec: corev1.PersistentVolumeClaimSpec{
-						AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
-						Resources: corev1.ResourceRequirements{
-							Requests: map[corev1.ResourceName]resource.Quantity{
-								corev1.ResourceStorage: resource.MustParse(storageSize),
-							},
+		},
+	}
+
+	//Set Custom Volume
+	if len(m.Spec.Storage.CustomVolumeMount) == 0 {
+		dep.Spec.VolumeClaimTemplates = []corev1.PersistentVolumeClaim{
+			{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "data",
+				},
+				Spec: corev1.PersistentVolumeClaimSpec{
+					AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
+					Resources: corev1.ResourceRequirements{
+						Requests: map[corev1.ResourceName]resource.Quantity{
+							corev1.ResourceStorage: resource.MustParse(storageSize),
 						},
 					},
 				},
 			},
-		},
+		}
+
+		//Set StorageClass
+		if len(strings.TrimSpace(m.Spec.Storage.UseStorageClass)) > 0 {
+			dep.Spec.VolumeClaimTemplates[0].Spec.StorageClassName = &m.Spec.Storage.UseStorageClass
+		}
 	}
 
-	r.updateStatefulsetForEventBroker(stsName, m, dep, sa)
+	r.updateStatefulsetForEventBroker(stsName, m, dep, sa, secret)
 	// Set PubSubPlusEventBroker instance as the owner and controller
 	ctrl.SetControllerReference(m, dep, r.Scheme)
 	return dep
 }
 
 // statefulsetForEventBroker returns an updated pubsubpluseventbroker StatefulSet object
-func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(stsName string, m *eventbrokerv1alpha1.PubSubPlusEventBroker, dep *appsv1.StatefulSet, sa *corev1.ServiceAccount) {
+func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(stsName string, m *eventbrokerv1alpha1.PubSubPlusEventBroker, dep *appsv1.StatefulSet, sa *corev1.ServiceAccount, secret *corev1.Secret) {
 	brokerServicesName := getObjectName("Service", m.Name)
-	secretName := getObjectName("Secret", m.Name)
+	secretName := secret.Name
 	configmapName := getObjectName("ConfigMap", m.Name)
 	haDeployment := m.Spec.Redundancy
 	nodeType := getBrokerNodeType(stsName)
@@ -154,7 +167,7 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(stsNam
 			Containers: []corev1.Container{
 				{
 					Name:            "pubsubplus",
-					Image:           m.Spec.BrokerImage.Repository + ":" + m.Spec.BrokerImage.Tag,
+					Image:           getBrokerImageDetails(&m.Spec.BrokerImage),
 					ImagePullPolicy: m.Spec.BrokerImage.ImagePullPolicy,
 					Resources: corev1.ResourceRequirements{
 						Limits: map[corev1.ResourceName]resource.Quantity{
@@ -218,14 +231,13 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(stsNam
 						},
 						{
 							Name:  "TZ",
-							Value: ":/usr/share/zoneinfo/" + m.Spec.Timezone,
+							Value: ":/usr/share/zoneinfo/" + getTimezone(m.Spec.Timezone),
 						},
 						{
 							Name:  "UMASK",
 							Value: "0022",
 						},
 					},
-					// EnvFrom:                  []corev1.EnvFromSource{},
 					LivenessProbe: &corev1.Probe{
 						ProbeHandler: corev1.ProbeHandler{
 							TCPSocket: &corev1.TCPSocketAction{
@@ -265,6 +277,7 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(stsNam
 					},
 					SecurityContext: &corev1.SecurityContext{
 						Privileged: &[]bool{false}[0], // Set to false
+
 					},
 					VolumeMounts: []corev1.VolumeMount{
 						{
@@ -343,12 +356,33 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(stsNam
 				},
 			},
 			ImagePullSecrets: m.Spec.BrokerImage.ImagePullSecrets,
-			// NodeSelector:                  map[string]string{},
-			// Affinity:                      &corev1.Affinity{},
+			NodeSelector:     getNodeSelectorDetails(m.Spec.BrokerNodeAssignment, nodeType),
+			Affinity:         getNodeAffinityDetails(m.Spec.BrokerNodeAssignment, nodeType),
 			// SchedulerName:                 "",
 			// Tolerations:                   []corev1.Toleration{},
 			// TopologySpreadConstraints:     []corev1.TopologySpreadConstraint{},
 		},
+	}
+
+	if len(m.Spec.Storage.CustomVolumeMount) > 0 {
+		allVolumes := dep.Spec.Template.Spec.Volumes
+		for _, customVolume := range m.Spec.Storage.CustomVolumeMount {
+			if strings.Contains(
+				strings.ToLower(nodeType),
+				strings.ToLower(customVolume.Name),
+			) {
+				allVolumes = append(allVolumes, corev1.Volume{
+					Name: "data",
+					VolumeSource: corev1.VolumeSource{
+						PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+							ClaimName: customVolume.PersistentVolumeClaim.ClaimName,
+							ReadOnly:  false,
+						},
+					},
+				})
+			}
+		}
+		dep.Spec.Template.Spec.Volumes = allVolumes
 	}
 
 	//Set Pod Security Context if Enabled
@@ -356,6 +390,21 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(stsNam
 		dep.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
 			RunAsUser: &m.Spec.PodSecurityContext.RunAsUser,
 			FSGroup:   &m.Spec.PodSecurityContext.FSGroup,
+		}
+		dep.Spec.Template.Spec.Containers[0].SecurityContext = &corev1.SecurityContext{
+			Privileged: &[]bool{false}[0], // Set to false
+			RunAsUser:  &m.Spec.PodSecurityContext.RunAsUser,
+			RunAsGroup: &m.Spec.PodSecurityContext.FSGroup,
+		}
+	} else {
+		dep.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
+			RunAsUser: &[]int64{1000001}[0],
+			FSGroup:   &[]int64{1000002}[0],
+		}
+		dep.Spec.Template.Spec.Containers[0].SecurityContext = &corev1.SecurityContext{
+			Privileged: &[]bool{false}[0], // Set to false
+			RunAsUser:  &[]int64{1000001}[0],
+			RunAsGroup: &[]int64{1000002}[0],
 		}
 	}
 
@@ -391,7 +440,18 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(stsNam
 				ContainerPort: pbPort.ContainerPort,
 			}
 		}
-
+		dep.Spec.Template.Spec.Containers[0].Ports = ports
+	} else {
+		portConfig := eventbrokerv1alpha1.Service{}
+		json.Unmarshal([]byte(DefaultServiceConfig), &portConfig)
+		ports := make([]corev1.ContainerPort, len(portConfig.Ports))
+		for idx, pbPort := range portConfig.Ports {
+			ports[idx] = corev1.ContainerPort{
+				Name:          pbPort.Name,
+				Protocol:      pbPort.Protocol,
+				ContainerPort: pbPort.ContainerPort,
+			}
+		}
 		dep.Spec.Template.Spec.Containers[0].Ports = ports
 	}
 
@@ -429,6 +489,75 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(stsNam
 			},
 		})
 	}
-
 	dep.Spec.Template.Spec.Containers[0].EnvFrom = allEnvFrom
+
+	//Set volume configuration for when storage is slow
+	if m.Spec.Storage.Slow {
+		allVolumes := dep.Spec.Template.Spec.Volumes
+		allVolumes = append(allVolumes, corev1.Volume{
+			Name: "soft-adb-ephemeral",
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			},
+		})
+		allContainerVolumeMounts := dep.Spec.Template.Spec.Containers[0].VolumeMounts
+		allContainerVolumeMounts = append(allContainerVolumeMounts, corev1.VolumeMount{
+			Name:      "soft-adb-ephemeral",
+			MountPath: "/var/lib/solace/spool-cache",
+		})
+		dep.Spec.Template.Spec.Volumes = allVolumes
+		dep.Spec.Template.Spec.Containers[0].VolumeMounts = allContainerVolumeMounts
+	}
+}
+
+func getBrokerImageDetails(bm *eventbrokerv1alpha1.BrokerImage) string {
+	imageRepo := bm.Repository
+	imageTag := bm.Tag
+	if len(strings.TrimSpace(bm.Repository)) == 0 {
+		imageRepo = "solace/solace-pubsub-standard"
+	}
+	if len(strings.TrimSpace(bm.Tag)) == 0 {
+		imageTag = "latest"
+	}
+	return imageRepo + ":" + imageTag
+}
+
+func getTimezone(tz string) string {
+	if len(strings.TrimSpace(tz)) == 0 {
+		return "UTC"
+	}
+	return tz
+}
+
+func getBrokerMessageNodeStorageSize(st *eventbrokerv1alpha1.Storage) string {
+	if st == nil || len(strings.TrimSpace(st.MessagingNodeStorageSize)) == 0 {
+		return "7Gi"
+	}
+	return st.MessagingNodeStorageSize
+}
+
+func getNodeAffinityDetails(na []eventbrokerv1alpha1.NodeAssignment, nodeType string) *corev1.Affinity {
+	affinity := &corev1.Affinity{}
+	for _, nodeAssignment := range na {
+		if strings.Contains(
+			strings.ToLower(nodeType),
+			strings.ToLower(nodeAssignment.Name),
+		) {
+			affinity = &nodeAssignment.Spec.Affinity
+		}
+	}
+	return affinity
+}
+
+func getNodeSelectorDetails(na []eventbrokerv1alpha1.NodeAssignment, nodeType string) map[string]string {
+	nodeSelector := map[string]string{}
+	for _, nodeAssignment := range na {
+		if strings.Contains(
+			strings.ToLower(nodeType),
+			strings.ToLower(nodeAssignment.Name),
+		) {
+			nodeSelector = nodeAssignment.Spec.NodeSelector
+		}
+	}
+	return nodeSelector
 }

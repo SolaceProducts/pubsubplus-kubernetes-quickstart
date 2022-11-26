@@ -1,0 +1,7 @@
+---
+apiVersion: pubsubplus.solace.com/v1alpha1
+kind: PubSubPlusEventBroker
+metadata:
+  name: test-nonha-minimal
+spec:
+   developer: true

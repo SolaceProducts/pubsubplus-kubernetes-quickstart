@@ -7,6 +7,7 @@ spec:
   redundancy: false
   developer: true
   timezone: UTC
+  adminCredentialsSecret: broker-secret
   extraEnvVars:
     - name: TestType
       value: "GithubAction"
@@ -31,11 +32,21 @@ spec:
                   - ubuntu
         nodeSelector:
           kubernetes.io/os: linux
-  securityContext: {}
+  securityContext:
+    enabled: true
+    fsGroup: 0
+    runAsUser: 0
   tls:
     enabled: true
     serverTlsConfigSecret: test-tls
   service: {}
+  storage:
+    slow: true
+    customVolumeMount:
+      - name: Primary
+        persistentVolumeClaim:
+          claimName: data-my-release-pubsubplus-dev-0
+    useStorageClass: standard
   monitoring:
     enabled: true
     listenTLS: false

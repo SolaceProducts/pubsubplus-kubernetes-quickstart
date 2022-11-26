@@ -51,18 +51,18 @@ func (r *PubSubPlusEventBrokerReconciler) newDeploymentForPrometheusExporter(nam
 							Image:           m.Spec.Monitoring.MonitoringImage.Repository + ":" + m.Spec.Monitoring.MonitoringImage.Tag,
 							ImagePullPolicy: m.Spec.Monitoring.MonitoringImage.ImagePullPolicy,
 							Ports: []corev1.ContainerPort{{
-								Name:          getHttpProtocolType(m.Spec.Monitoring),
-								ContainerPort: getPrometheusExporterPort(m.Spec.Monitoring),
+								Name:          getHttpProtocolType(&m.Spec.Monitoring),
+								ContainerPort: getPrometheusExporterPort(&m.Spec.Monitoring),
 							}},
 
 							Env: []corev1.EnvVar{
 								{
 									Name:  "SOLACE_WEB_LISTEN_ADDRESS",
-									Value: fmt.Sprintf("%s://%s.%s.svc.cluster.local:%d", getHttpProtocolType(m.Spec.Monitoring), getObjectName("PrometheusExporterService", m.Name), m.Namespace, getPrometheusExporterPort(m.Spec.Monitoring)),
+									Value: fmt.Sprintf("%s://%s.%s.svc.cluster.local:%d", getHttpProtocolType(&m.Spec.Monitoring), getObjectName("PrometheusExporterService", m.Name), m.Namespace, getPrometheusExporterPort(&m.Spec.Monitoring)),
 								},
 								{
 									Name:  "SOLACE_SCRAPE_URI",
-									Value: fmt.Sprintf("http://%s.%s.svc.cluster.local:%d", getObjectName("Service", m.Name), m.Namespace, getPubSubPlusEventBrokerPort(m.Spec.Service, m.Spec.BrokerTLS)),
+									Value: fmt.Sprintf("http://%s.%s.svc.cluster.local:%d", getObjectName("Service", m.Name), m.Namespace, getPubSubPlusEventBrokerPort(&m.Spec.Service, &m.Spec.BrokerTLS)),
 								},
 								{
 									Name:  "SOLACE_LISTEN_TLS",
@@ -158,7 +158,7 @@ func (r *PubSubPlusEventBrokerReconciler) newServiceForPrometheusExporter(export
 			Type: exporter.ServiceType,
 			Ports: []corev1.ServicePort{
 				{
-					Name:       getHttpProtocolType(m.Spec.Monitoring),
+					Name:       getHttpProtocolType(&m.Spec.Monitoring),
 					Protocol:   corev1.ProtocolTCP,
 					Port:       getPrometheusExporterPort(exporter),
 					TargetPort: intstr.IntOrString{Type: intstr.Int, IntVal: getPrometheusExporterPort(exporter)},
