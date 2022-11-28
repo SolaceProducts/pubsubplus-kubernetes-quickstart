@@ -402,7 +402,7 @@ if [ "${BROKER_REDUNDANCY}" = "true" ]; then
 		touch ${FINAL_ACTIVITY_LOGGED_TRACKING_FILE}
 		echo "$(date) INFO: ${APP}-Server status check complete for this broker node"
 		echo "$(date) INFO: ${APP}-Changing pod label to active"
-		exit 1
+		#exit 1
 	  fi
 	  set_label "active" "true"
 	  exit 0

@@ -17,6 +17,7 @@ limitations under the License.
 package controllers
 
 import (
+	"context"
 	"strconv"
 	"strings"
 
@@ -32,7 +33,7 @@ import (
 )
 
 // statefulsetForEventBroker returns a new pubsubpluseventbroker StatefulSet object
-func (r *PubSubPlusEventBrokerReconciler) createStatefulsetForEventBroker(stsName string, m *eventbrokerv1alpha1.PubSubPlusEventBroker, sa *corev1.ServiceAccount) *appsv1.StatefulSet {
+func (r *PubSubPlusEventBrokerReconciler) createStatefulsetForEventBroker(stsName string, ctx context.Context, m *eventbrokerv1alpha1.PubSubPlusEventBroker, sa *corev1.ServiceAccount) *appsv1.StatefulSet {
 	nodeType := getBrokerNodeType(stsName)
 
 	// Determine broker sizing
@@ -78,14 +79,14 @@ func (r *PubSubPlusEventBrokerReconciler) createStatefulsetForEventBroker(stsNam
 		},
 	}
 
-	r.updateStatefulsetForEventBroker(stsName, m, dep, sa)
+	r.updateStatefulsetForEventBroker(stsName, ctx, m, dep, sa)
 	// Set PubSubPlusEventBroker instance as the owner and controller
 	ctrl.SetControllerReference(m, dep, r.Scheme)
 	return dep
 }
 
 // statefulsetForEventBroker returns an updated pubsubpluseventbroker StatefulSet object
-func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(stsName string, m *eventbrokerv1alpha1.PubSubPlusEventBroker, dep *appsv1.StatefulSet, sa *corev1.ServiceAccount) {
+func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(stsName string, ctx context.Context, m *eventbrokerv1alpha1.PubSubPlusEventBroker, dep *appsv1.StatefulSet, sa *corev1.ServiceAccount) {
 	brokerServicesName := getObjectName("Service", m.Name)
 	secretName := getObjectName("Secret", m.Name)
 	configmapName := getObjectName("ConfigMap", m.Name)
@@ -147,7 +148,7 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(stsNam
 			// Note the resource version of upstream objects
 			// TODO: Consider https://github.com/banzaicloud/k8s-objectmatcher
 			Annotations: map[string]string{
-				dependenciesSignatureAnnotationName: brokerSpecHash(m.Spec),
+				dependenciesSignatureAnnotationName: brokerSpecHash(m.Spec) + r.getTlsSecretResourceVersion(ctx, m),
 			},
 		},
 		Spec: corev1.PodSpec{

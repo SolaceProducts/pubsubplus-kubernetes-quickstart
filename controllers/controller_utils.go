@@ -27,6 +27,7 @@ import (
 	eventbrokerv1alpha1 "github.com/SolaceProducts/pubsubplus-operator/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 // Returns the broker pod in the specified role
@@ -45,6 +46,28 @@ func (r *PubSubPlusEventBrokerReconciler) getBrokerPod(ctx context.Context, m *e
 	}
 	return nil, fmt.Errorf("filtered broker pod list for broker role %d didn't return exactly one pod", brokerRole)
 }
+
+
+// Returns the TLS secret spec if it exists
+func (r *PubSubPlusEventBrokerReconciler) getTlsSecretResourceVersion(ctx context.Context, m *eventbrokerv1alpha1.PubSubPlusEventBroker) (string) {
+	var tlsSecretVersion string = ""
+    if m.Spec.BrokerTLS.ServerTLsConfigSecret != "" {
+        secretName := m.Spec.BrokerTLS.ServerTLsConfigSecret
+        foundSecret := &corev1.Secret{}
+		// TODO: fix error handling properly
+        r.Get(ctx, types.NamespacedName{Name: secretName, Namespace: m.Namespace}, foundSecret)
+        // err := r.Get(ctx, types.NamespacedName{Name: secretName, Namespace: m.Namespace}, foundSecret)
+        // if err != nil {
+        //     // If a secret name is provided, then it must exist
+        //     // You will likely want to create an Event for the user to understand why their reconcile is failing.
+        //     return ctrl.Result{}, err
+        // }
+        tlsSecretVersion = foundSecret.ResourceVersion
+    }
+	return tlsSecretVersion
+}
+
+
 
 func brokerSpecHash(s eventbrokerv1alpha1.EventBrokerSpec) string {
 	brokerSpecSubset := s.DeepCopy()

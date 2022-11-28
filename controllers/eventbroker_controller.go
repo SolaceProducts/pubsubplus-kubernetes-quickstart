@@ -38,6 +38,13 @@ import (
 	ctrllog "sigs.k8s.io/controller-runtime/pkg/log"
 
 	eventbrokerv1alpha1 "github.com/SolaceProducts/pubsubplus-operator/api/v1alpha1"
+
+	"k8s.io/apimachinery/pkg/fields"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 // PubSubPlusEventBrokerReconciler reconciles a PubSubPlusEventBroker object
@@ -45,6 +52,10 @@ type PubSubPlusEventBrokerReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 }
+
+const (
+    dependencyTlsSecretField = ".spec.tls.serverTlsConfigSecret"
+)
 
 // TODO: review and revise to minimum at the end of the dev cycle!
 //+kubebuilder:rbac:groups=pubsubplus.solace.com,resources=pubsubpluseventbrokers,verbs=get;list;watch;create;update;patch;delete
@@ -302,7 +313,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 		}
 	}
 
-	brokerSpecHash := brokerSpecHash(pubsubpluseventbroker.Spec)
+	brokerSpecHash := brokerSpecHash(pubsubpluseventbroker.Spec) + r.getTlsSecretResourceVersion(ctx, pubsubpluseventbroker)
 	automatedPodUpdateStrategy := (pubsubpluseventbroker.Spec.UpdateStrategy != eventbrokerv1alpha1.ManualPodRestartUpdateStrategy)
 	// Check if Primary StatefulSet already exists, if not create a new one
 	stsP = &appsv1.StatefulSet{}
@@ -310,7 +321,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 	err = r.Get(ctx, types.NamespacedName{Name: stsPName, Namespace: pubsubpluseventbroker.Namespace}, stsP)
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new statefulset
-		stsP := r.createStatefulsetForEventBroker(stsPName, pubsubpluseventbroker, sa)
+		stsP := r.createStatefulsetForEventBroker(stsPName, ctx, pubsubpluseventbroker, sa)
 		log.Info("Creating a new Primary StatefulSet", "StatefulSet.Namespace", stsP.Namespace, "StatefulSet.Name", stsP.Name)
 		err = r.Create(ctx, stsP)
 		if err != nil {
@@ -341,7 +352,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 				// Otherwise just continue
 			}
 			log.Info("Updating existing Primary StatefulSet", " StatefulSet.Name", stsP.Name)
-			r.updateStatefulsetForEventBroker(stsPName, pubsubpluseventbroker, stsP, sa)
+			r.updateStatefulsetForEventBroker(stsPName, ctx, pubsubpluseventbroker, stsP, sa)
 			log.Info("Updating Primary StatefulSet", "StatefulSet.Namespace", stsP.Namespace, "StatefulSet.Name", stsP.Name)
 			err = r.Update(ctx, stsP)
 			if err != nil {
@@ -362,7 +373,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 		err = r.Get(ctx, types.NamespacedName{Name: stsBName, Namespace: pubsubpluseventbroker.Namespace}, stsB)
 		if err != nil && errors.IsNotFound(err) {
 			// Define a new statefulset
-			stsB := r.createStatefulsetForEventBroker(stsBName, pubsubpluseventbroker, sa)
+			stsB := r.createStatefulsetForEventBroker(stsBName, ctx, pubsubpluseventbroker, sa)
 			log.Info("Creating a new Backup StatefulSet", "StatefulSet.Namespace", stsB.Namespace, "StatefulSet.Name", stsB.Name)
 			err = r.Create(ctx, stsB)
 			if err != nil {
@@ -393,7 +404,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 					// Otherwise just continue
 				}
 				log.Info("Updating existing Backup StatefulSet", " StatefulSet.Name", stsB.Name)
-				r.updateStatefulsetForEventBroker(stsBName, pubsubpluseventbroker, stsB, sa)
+				r.updateStatefulsetForEventBroker(stsBName, ctx, pubsubpluseventbroker, stsB, sa)
 				log.Info("Updating Backup StatefulSet", "StatefulSet.Namespace", stsB.Namespace, "StatefulSet.Name", stsB.Name)
 				err = r.Update(ctx, stsB)
 				if err != nil {
@@ -412,7 +423,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 		err = r.Get(ctx, types.NamespacedName{Name: stsMName, Namespace: pubsubpluseventbroker.Namespace}, stsM)
 		if err != nil && errors.IsNotFound(err) {
 			// Define a new statefulset
-			stsM := r.createStatefulsetForEventBroker(stsMName, pubsubpluseventbroker, sa)
+			stsM := r.createStatefulsetForEventBroker(stsMName, ctx, pubsubpluseventbroker, sa)
 			log.Info("Creating a new Monitor StatefulSet", "StatefulSet.Namespace", stsM.Namespace, "StatefulSet.Name", stsM.Name)
 			err = r.Create(ctx, stsM)
 			if err != nil {
@@ -443,7 +454,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 					// Otherwise just continue
 				}
 				log.Info("Updating existing Monitor StatefulSet", " StatefulSet.Name", stsM.Name)
-				r.updateStatefulsetForEventBroker(stsMName, pubsubpluseventbroker, stsM, sa)
+				r.updateStatefulsetForEventBroker(stsMName, ctx, pubsubpluseventbroker, stsM, sa)
 				log.Info("Updating Monitor StatefulSet", "StatefulSet.Namespace", stsM.Namespace, "StatefulSet.Name", stsM.Name)
 				err = r.Update(ctx, stsM)
 				if err != nil {
@@ -512,6 +523,8 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 			if brokerPod.ObjectMeta.Annotations[dependenciesSignatureAnnotationName] != expectedConfigSignature {
 				if brokerPod.ObjectMeta.DeletionTimestamp == nil {
 					// Restart the Standby pod to sync with its Statefulset config
+					// TODO: it may be a better idea to let control come here even if
+					//   automatedPodUpdateStrategy is not set. Then log the need for Pod restart.
 					log.Info("Restarting Standby pod to reflect latest updates", "Pod.Namespace", &brokerPod.Namespace, "Pod.Name", &brokerPod.Name)
 					err := r.Delete(ctx, brokerPod)
 					if err != nil {
@@ -648,9 +661,56 @@ func getPodNames(pods []corev1.Pod) []string {
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *PubSubPlusEventBrokerReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	// Need to watch non-managed resources
+	// To understand following code refer to https://kubebuilder.io/reference/watching-resources/externally-managed.html#allow-for-linking-of-resources-in-the-spec
+	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &eventbrokerv1alpha1.PubSubPlusEventBroker{}, dependencyTlsSecretField, func(rawObj client.Object) []string {
+		// Extract the secret name from the EventBroker Spec, if one is provided
+		eventBroker := rawObj.(*eventbrokerv1alpha1.PubSubPlusEventBroker)
+		if eventBroker.Spec.BrokerTLS.ServerTLsConfigSecret == "" {
+			return nil
+		}
+		return []string{eventBroker.Spec.BrokerTLS.ServerTLsConfigSecret}
+	}); err != nil {
+		return err
+	}
+	// This describes rules to manage both owned and external reources
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&eventbrokerv1alpha1.PubSubPlusEventBroker{}).
 		Owns(&appsv1.StatefulSet{}).
+		Owns(&appsv1.Deployment{}).
+		Owns(&corev1.ServiceAccount{}).
+		Owns(&policyv1.PodDisruptionBudget{}).
+		Owns(&rbacv1.Role{}).
+		Owns(&rbacv1.RoleBinding{}).
+		Owns(&corev1.Secret{}).
+		Owns(&corev1.Service{}).
 		Owns(&corev1.ConfigMap{}).
+		Watches(
+			&source.Kind{Type: &corev1.Secret{}},
+			handler.EnqueueRequestsFromMapFunc(r.findEventBrokersForTlsSecret),
+			builder.WithPredicates(predicate.ResourceVersionChangedPredicate{}),
+		).
 		Complete(r)
+}
+
+func (r *PubSubPlusEventBrokerReconciler) findEventBrokersForTlsSecret(secret client.Object) []reconcile.Request {
+	ebDeployments := &eventbrokerv1alpha1.PubSubPlusEventBrokerList{}
+	listOps := &client.ListOptions{
+		FieldSelector: fields.OneTermEqualSelector(dependencyTlsSecretField, secret.GetName()),
+		Namespace:     secret.GetNamespace(),
+	}
+	err := r.List(context.TODO(), ebDeployments, listOps)
+	if err != nil {
+		return []reconcile.Request{}
+	}
+	requests := make([]reconcile.Request, len(ebDeployments.Items))
+	for i, item := range ebDeployments.Items {
+		requests[i] = reconcile.Request{
+			NamespacedName: types.NamespacedName{
+				Name:      item.GetName(),
+				Namespace: item.GetNamespace(),
+			},
+		}
+	}
+	return requests
 }
