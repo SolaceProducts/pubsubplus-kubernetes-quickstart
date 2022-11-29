@@ -79,18 +79,19 @@ func (r *PubSubPlusEventBrokerReconciler) createStatefulsetForEventBroker(stsNam
 		},
 	}
 
-	r.updateStatefulsetForEventBroker(stsName, ctx, m, dep, sa)
+	r.updateStatefulsetForEventBroker(dep, ctx, m, sa)
 	// Set PubSubPlusEventBroker instance as the owner and controller
 	ctrl.SetControllerReference(m, dep, r.Scheme)
 	return dep
 }
 
 // statefulsetForEventBroker returns an updated pubsubpluseventbroker StatefulSet object
-func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(stsName string, ctx context.Context, m *eventbrokerv1alpha1.PubSubPlusEventBroker, dep *appsv1.StatefulSet, sa *corev1.ServiceAccount) {
+func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(sts *appsv1.StatefulSet, ctx context.Context, m *eventbrokerv1alpha1.PubSubPlusEventBroker, sa *corev1.ServiceAccount) {
 	brokerServicesName := getObjectName("Service", m.Name)
 	secretName := getObjectName("Secret", m.Name)
 	configmapName := getObjectName("ConfigMap", m.Name)
 	haDeployment := m.Spec.Redundancy
+	stsName := sts.ObjectMeta.Name
 	nodeType := getBrokerNodeType(stsName)
 
 	// Determine broker sizing
@@ -98,6 +99,7 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(stsNam
 	var memRequests, memLimits string
 	var maxConnections, maxQueueMessages, maxSpoolUsage int
 	// TODO: _types.go has already defaults. Review if those indeed need to be duplicated here.
+	// TODO: remove any hardcoded values - at a minimum move it to the beginning of this code file
 	if nodeType == "monitor" {
 		cpuRequests = "1"
 		cpuLimits = "1"
@@ -139,16 +141,16 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(stsNam
 	}
 
 	// Update fields
-	dep.Spec.UpdateStrategy = appsv1.StatefulSetUpdateStrategy{
+	sts.Spec.UpdateStrategy = appsv1.StatefulSetUpdateStrategy{
 		Type: appsv1.OnDeleteStatefulSetStrategyType,
 	}
-	dep.Spec.Template = corev1.PodTemplateSpec{
+	sts.Spec.Template = corev1.PodTemplateSpec{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels: getPodLabels(m.Name, nodeType),
 			// Note the resource version of upstream objects
-			// TODO: Consider https://github.com/banzaicloud/k8s-objectmatcher
 			Annotations: map[string]string{
-				dependenciesSignatureAnnotationName: brokerSpecHash(m.Spec) + r.getTlsSecretResourceVersion(ctx, m),
+				brokerSpecSignatureAnnotationName: brokerSpecHash(m.Spec),
+				tlsSecretSignatureAnnotationName:  r.tlsSecretHash(ctx, m),
 			},
 		},
 		Spec: corev1.PodSpec{
@@ -354,7 +356,7 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(stsNam
 
 	//Set Pod Security Context if Enabled
 	if m.Spec.PodSecurityContext.Enabled {
-		dep.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
+		sts.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
 			RunAsUser: &m.Spec.PodSecurityContext.RunAsUser,
 			FSGroup:   &m.Spec.PodSecurityContext.FSGroup,
 		}
@@ -362,7 +364,7 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(stsNam
 
 	//Set TLS configuration
 	if m.Spec.BrokerTLS.Enabled {
-		allVolumes := dep.Spec.Template.Spec.Volumes
+		allVolumes := sts.Spec.Template.Spec.Volumes
 		allVolumes = append(allVolumes, corev1.Volume{
 			Name: "server-certs",
 			VolumeSource: corev1.VolumeSource{
@@ -372,14 +374,14 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(stsNam
 				},
 			},
 		})
-		allContainerVolumeMounts := dep.Spec.Template.Spec.Containers[0].VolumeMounts
+		allContainerVolumeMounts := sts.Spec.Template.Spec.Containers[0].VolumeMounts
 		allContainerVolumeMounts = append(allContainerVolumeMounts, corev1.VolumeMount{
 			Name:      "server-certs",
 			MountPath: "/mnt/disks/certs/server",
 			ReadOnly:  true,
 		})
-		dep.Spec.Template.Spec.Volumes = allVolumes
-		dep.Spec.Template.Spec.Containers[0].VolumeMounts = allContainerVolumeMounts
+		sts.Spec.Template.Spec.Volumes = allVolumes
+		sts.Spec.Template.Spec.Containers[0].VolumeMounts = allContainerVolumeMounts
 	}
 
 	//Set Service Port configuration
@@ -393,19 +395,19 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(stsNam
 			}
 		}
 
-		dep.Spec.Template.Spec.Containers[0].Ports = ports
+		sts.Spec.Template.Spec.Containers[0].Ports = ports
 	}
 
 	//Set Extra environment variables
 	if len(m.Spec.ExtraEnvVars) > 0 {
-		allEnv := dep.Spec.Template.Spec.Containers[0].Env
+		allEnv := sts.Spec.Template.Spec.Containers[0].Env
 		for _, envV := range m.Spec.ExtraEnvVars {
 			allEnv = append(allEnv, corev1.EnvVar{
 				Name:  envV.Name,
 				Value: envV.Value,
 			})
 		}
-		dep.Spec.Template.Spec.Containers[0].Env = allEnv
+		sts.Spec.Template.Spec.Containers[0].Env = allEnv
 	}
 
 	allEnvFrom := []corev1.EnvFromSource{}
@@ -431,5 +433,5 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(stsNam
 		})
 	}
 
-	dep.Spec.Template.Spec.Containers[0].EnvFrom = allEnvFrom
+	sts.Spec.Template.Spec.Containers[0].EnvFrom = allEnvFrom
 }

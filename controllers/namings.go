@@ -24,7 +24,8 @@ import (
 )
 
 const (
-	dependenciesSignatureAnnotationName = "lastAppliedConfig"
+	brokerSpecSignatureAnnotationName   = "lastAppliedConfig/brokerSpec"
+	tlsSecretSignatureAnnotationName    = "lastAppliedConfig/tlsSecret"
 	appKubernetesIoNameLabel            = "pubsubpluseventbroker"
 	appKubernetesIoManagedByLabel       = "solace-pubsubplus-operator"
 	maintenanceLabel                    = "solace.com/pauseReconcile"

@@ -54,7 +54,7 @@ type PubSubPlusEventBrokerReconciler struct {
 }
 
 const (
-    dependencyTlsSecretField = ".spec.tls.serverTlsConfigSecret"
+	dependencyTlsSecretField = ".spec.tls.serverTlsConfigSecret"
 )
 
 // TODO: review and revise to minimum at the end of the dev cycle!
@@ -89,6 +89,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 	// ctx, cancel := context.WithTimeout(context.Background(), 20*time.Minute)
 	// defer cancel()
 	// Format is set in main.go
+	// TODO: better share logger within module so code in other source files can make use of logging too
 	log := ctrllog.FromContext(ctx)
 
 	var stsP, stsB, stsM *appsv1.StatefulSet
@@ -313,7 +314,8 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 		}
 	}
 
-	brokerSpecHash := brokerSpecHash(pubsubpluseventbroker.Spec) + r.getTlsSecretResourceVersion(ctx, pubsubpluseventbroker)
+	brokerSpecHash := brokerSpecHash(pubsubpluseventbroker.Spec)
+	tlsSecretHash := r.tlsSecretHash(ctx, pubsubpluseventbroker)
 	automatedPodUpdateStrategy := (pubsubpluseventbroker.Spec.UpdateStrategy != eventbrokerv1alpha1.ManualPodRestartUpdateStrategy)
 	// Check if Primary StatefulSet already exists, if not create a new one
 	stsP = &appsv1.StatefulSet{}
@@ -334,7 +336,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 		log.Error(err, "Failed to get StatefulSet")
 		return ctrl.Result{}, err
 	} else {
-		if stsP.Spec.Template.ObjectMeta.Annotations[dependenciesSignatureAnnotationName] != brokerSpecHash {
+		if stsOutdated(stsP, brokerSpecHash, tlsSecretHash) {
 			// If resource versions differ it means recreate or update is required
 			if stsP.Status.ReadyReplicas < 1 {
 				// Related pod is still starting up but already outdated. Remove this statefulset (if automated pod update is allowed and delete has not already been initiated)
@@ -352,7 +354,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 				// Otherwise just continue
 			}
 			log.Info("Updating existing Primary StatefulSet", " StatefulSet.Name", stsP.Name)
-			r.updateStatefulsetForEventBroker(stsPName, ctx, pubsubpluseventbroker, stsP, sa)
+			r.updateStatefulsetForEventBroker(stsP, ctx, pubsubpluseventbroker, sa)
 			log.Info("Updating Primary StatefulSet", "StatefulSet.Namespace", stsP.Namespace, "StatefulSet.Name", stsP.Name)
 			err = r.Update(ctx, stsP)
 			if err != nil {
@@ -386,7 +388,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 			log.Error(err, "Failed to get StatefulSet")
 			return ctrl.Result{}, err
 		} else {
-			if stsB.Spec.Template.ObjectMeta.Annotations[dependenciesSignatureAnnotationName] != brokerSpecHash {
+			if stsOutdated(stsB, brokerSpecHash, tlsSecretHash) {
 				// If resource versions differ it means recreate or update is required
 				if stsB.Status.ReadyReplicas < 1 {
 					// Related pod is still starting up but already outdated. Remove this statefulset (if automated pod update is allowed and delete has not already been initiated)
@@ -404,7 +406,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 					// Otherwise just continue
 				}
 				log.Info("Updating existing Backup StatefulSet", " StatefulSet.Name", stsB.Name)
-				r.updateStatefulsetForEventBroker(stsBName, ctx, pubsubpluseventbroker, stsB, sa)
+				r.updateStatefulsetForEventBroker(stsB, ctx, pubsubpluseventbroker, sa)
 				log.Info("Updating Backup StatefulSet", "StatefulSet.Namespace", stsB.Namespace, "StatefulSet.Name", stsB.Name)
 				err = r.Update(ctx, stsB)
 				if err != nil {
@@ -436,7 +438,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 			log.Error(err, "Failed to get StatefulSet")
 			return ctrl.Result{}, err
 		} else {
-			if stsM.Spec.Template.ObjectMeta.Annotations[dependenciesSignatureAnnotationName] != brokerSpecHash {
+			if stsOutdated(stsM, brokerSpecHash, tlsSecretHash) {
 				// If resource versions differ it means recreate or update is required
 				if stsM.Status.ReadyReplicas < 1 {
 					// Related pod is still starting up but already outdated. Remove this statefulset (if automated pod update is allowed and delete has not already been initiated)
@@ -454,7 +456,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 					// Otherwise just continue
 				}
 				log.Info("Updating existing Monitor StatefulSet", " StatefulSet.Name", stsM.Name)
-				r.updateStatefulsetForEventBroker(stsMName, ctx, pubsubpluseventbroker, stsM, sa)
+				r.updateStatefulsetForEventBroker(stsM, ctx, pubsubpluseventbroker, sa)
 				log.Info("Updating Monitor StatefulSet", "StatefulSet.Namespace", stsM.Namespace, "StatefulSet.Name", stsM.Name)
 				err = r.Update(ctx, stsM)
 				if err != nil {
@@ -491,7 +493,6 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 	// Next restart any pods to sync with their config dependencies
 	// Skip it though if updateStrategy is set to manual - in this case this is supposed to be done manually by the user
 	if automatedPodUpdateStrategy {
-		expectedConfigSignature := brokerSpecHash
 		var brokerPod *corev1.Pod
 		// Must distinguish between HA and non-HA
 		if haDeployment {
@@ -501,7 +502,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 				log.Error(err, "Failed to list Monitor pod", "PubSubPlusEventBroker.Namespace", pubsubpluseventbroker.Namespace, "PubSubPlusEventBroker.Name", pubsubpluseventbroker.Name)
 				return ctrl.Result{}, err
 			}
-			if brokerPod.ObjectMeta.Annotations[dependenciesSignatureAnnotationName] != expectedConfigSignature {
+			if brokerPodOutdated(brokerPod, brokerSpecHash, tlsSecretHash) {
 				if brokerPod.ObjectMeta.DeletionTimestamp == nil {
 					// Restart the Monitor pod to sync with its Statefulset config
 					log.Info("Restarting Monitor pod to reflect latest updates", "Pod.Namespace", &brokerPod.Namespace, "Pod.Name", &brokerPod.Name)
@@ -520,7 +521,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 				// This may be a temporary issue, most likely more than one pod labelled	 active=false, just requeue
 				return ctrl.Result{RequeueAfter: time.Duration(5) * time.Second}, nil
 			}
-			if brokerPod.ObjectMeta.Annotations[dependenciesSignatureAnnotationName] != expectedConfigSignature {
+			if brokerPodOutdated(brokerPod, brokerSpecHash, tlsSecretHash) {
 				if brokerPod.ObjectMeta.DeletionTimestamp == nil {
 					// Restart the Standby pod to sync with its Statefulset config
 					// TODO: it may be a better idea to let control come here even if
@@ -541,7 +542,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 			log.Error(err, "Failed to list the Active pod", "PubSubPlusEventBroker.Namespace", pubsubpluseventbroker.Namespace, "PubSubPlusEventBroker.Name", pubsubpluseventbroker.Name)
 			return ctrl.Result{}, err
 		}
-		if brokerPod.ObjectMeta.Annotations[dependenciesSignatureAnnotationName] != expectedConfigSignature {
+		if brokerPodOutdated(brokerPod, brokerSpecHash, tlsSecretHash) {
 			if brokerPod.ObjectMeta.DeletionTimestamp == nil {
 				// Restart the Active Pod to sync with its Statefulset config
 				log.Info("Restarting Active pod to reflect latest updates", "Pod.Namespace", &brokerPod.Namespace, "Pod.Name", &brokerPod.Name)
