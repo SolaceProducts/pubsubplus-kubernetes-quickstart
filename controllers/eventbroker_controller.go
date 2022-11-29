@@ -219,12 +219,13 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 	}
 
 	// Check if the Service already exists, if not create a new one
+	brokerServiceHash := brokerServiceHash(pubsubpluseventbroker.Spec)
 	svc := &corev1.Service{}
 	svcName := getObjectName("Service", pubsubpluseventbroker.Name)
 	err = r.Get(ctx, types.NamespacedName{Name: svcName, Namespace: pubsubpluseventbroker.Namespace}, svc)
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new service
-		svc := r.serviceForEventBroker(svcName, pubsubpluseventbroker)
+		svc := r.createServiceForEventBroker(svcName, pubsubpluseventbroker)
 		log.Info("Creating a new Service", "Service.Namespace", svc.Namespace, "Service.Name", svc.Name)
 		err = r.Create(ctx, svc)
 		if err != nil {
@@ -237,7 +238,19 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 		log.Error(err, "Failed to get Service")
 		return ctrl.Result{}, err
 	} else {
-		log.Info("Detected existing Service", " Service.Name", svc.Name)
+		// Check if existing service is not outdated at this point
+		if brokerServiceOutdated(svc, brokerServiceHash) {
+			log.Info("Updating existing Service", "Service.Namespace", svc.Namespace, "Service.Name", svc.Name)
+			r.updateServiceForEventBroker(svc, pubsubpluseventbroker)
+			err = r.Update(ctx, svc)
+			if err != nil {
+				log.Error(err, "Failed to update Service", "Service.Namespace", svc.Namespace, "Service.Name", svc.Name)
+				return ctrl.Result{}, err
+			}
+			// Service updated successfully - return and requeue
+			return ctrl.Result{Requeue: true}, nil
+		}
+		log.Info("Detected up-to-date existing Service", " Service.Name", svc.Name)
 	}
 
 	haDeployment := pubsubpluseventbroker.Spec.Redundancy
@@ -290,7 +303,6 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 	// Check if Pod DisruptionBudget for HA  is Enabled, only when it is an HA deployment
 	podDisruptionBudgetHAEnabled := pubsubpluseventbroker.Spec.PodDisruptionBudgetForHA
 	if haDeployment && podDisruptionBudgetHAEnabled {
-
 		// Check if PDB for HA already exists
 		foundPodDisruptionBudgetHA := &policyv1.PodDisruptionBudget{}
 		podDisruptionBudgetHAName := getObjectName("PodDisruptionBudget", pubsubpluseventbroker.Name)
@@ -336,7 +348,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 		log.Error(err, "Failed to get StatefulSet")
 		return ctrl.Result{}, err
 	} else {
-		if stsOutdated(stsP, brokerSpecHash, tlsSecretHash) {
+		if brokerStsOutdated(stsP, brokerSpecHash, tlsSecretHash) {
 			// If resource versions differ it means recreate or update is required
 			if stsP.Status.ReadyReplicas < 1 {
 				// Related pod is still starting up but already outdated. Remove this statefulset (if automated pod update is allowed and delete has not already been initiated)
@@ -353,9 +365,8 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 				}
 				// Otherwise just continue
 			}
-			log.Info("Updating existing Primary StatefulSet", " StatefulSet.Name", stsP.Name)
+			log.Info("Updating existing Primary StatefulSet", "StatefulSet.Namespace", stsP.Namespace, "StatefulSet.Name", stsP.Name)
 			r.updateStatefulsetForEventBroker(stsP, ctx, pubsubpluseventbroker, sa)
-			log.Info("Updating Primary StatefulSet", "StatefulSet.Namespace", stsP.Namespace, "StatefulSet.Name", stsP.Name)
 			err = r.Update(ctx, stsP)
 			if err != nil {
 				log.Error(err, "Failed to update Primary StatefulSet", "StatefulSet.Namespace", stsP.Namespace, "StatefulSet.Name", stsP.Name)
@@ -388,7 +399,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 			log.Error(err, "Failed to get StatefulSet")
 			return ctrl.Result{}, err
 		} else {
-			if stsOutdated(stsB, brokerSpecHash, tlsSecretHash) {
+			if brokerStsOutdated(stsB, brokerSpecHash, tlsSecretHash) {
 				// If resource versions differ it means recreate or update is required
 				if stsB.Status.ReadyReplicas < 1 {
 					// Related pod is still starting up but already outdated. Remove this statefulset (if automated pod update is allowed and delete has not already been initiated)
@@ -405,9 +416,8 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 					}
 					// Otherwise just continue
 				}
-				log.Info("Updating existing Backup StatefulSet", " StatefulSet.Name", stsB.Name)
+				log.Info("Updating existing Backup StatefulSet", "StatefulSet.Namespace", stsB.Namespace, "StatefulSet.Name", stsB.Name)
 				r.updateStatefulsetForEventBroker(stsB, ctx, pubsubpluseventbroker, sa)
-				log.Info("Updating Backup StatefulSet", "StatefulSet.Namespace", stsB.Namespace, "StatefulSet.Name", stsB.Name)
 				err = r.Update(ctx, stsB)
 				if err != nil {
 					log.Error(err, "Failed to update Backup StatefulSet", "StatefulSet.Namespace", stsB.Namespace, "StatefulSet.Name", stsB.Name)
@@ -438,7 +448,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 			log.Error(err, "Failed to get StatefulSet")
 			return ctrl.Result{}, err
 		} else {
-			if stsOutdated(stsM, brokerSpecHash, tlsSecretHash) {
+			if brokerStsOutdated(stsM, brokerSpecHash, tlsSecretHash) {
 				// If resource versions differ it means recreate or update is required
 				if stsM.Status.ReadyReplicas < 1 {
 					// Related pod is still starting up but already outdated. Remove this statefulset (if automated pod update is allowed and delete has not already been initiated)
@@ -455,9 +465,8 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 					}
 					// Otherwise just continue
 				}
-				log.Info("Updating existing Monitor StatefulSet", " StatefulSet.Name", stsM.Name)
+				log.Info("Updating existing Monitor StatefulSet", "StatefulSet.Namespace", stsM.Namespace, "StatefulSet.Name", stsM.Name)
 				r.updateStatefulsetForEventBroker(stsM, ctx, pubsubpluseventbroker, sa)
-				log.Info("Updating Monitor StatefulSet", "StatefulSet.Namespace", stsM.Namespace, "StatefulSet.Name", stsM.Name)
 				err = r.Update(ctx, stsM)
 				if err != nil {
 					log.Error(err, "Failed to update Monitor StatefulSet", "StatefulSet.Namespace", stsM.Namespace, "StatefulSet.Name", stsM.Name)

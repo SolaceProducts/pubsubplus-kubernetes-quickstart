@@ -24,13 +24,14 @@ import (
 )
 
 const (
-	brokerSpecSignatureAnnotationName   = "lastAppliedConfig/brokerSpec"
-	tlsSecretSignatureAnnotationName    = "lastAppliedConfig/tlsSecret"
-	appKubernetesIoNameLabel            = "pubsubpluseventbroker"
-	appKubernetesIoManagedByLabel       = "solace-pubsubplus-operator"
-	maintenanceLabel                    = "solace.com/pauseReconcile"
-	secretKeyName                       = "username_admin_password"
-	tcpSempPortName                     = "tcp-semp"
+	brokerSpecSignatureAnnotationName    = "lastAppliedConfig/brokerSpec"
+	brokerServiceSignatureAnnotationName = "lastAppliedConfig/brokerService"
+	tlsSecretSignatureAnnotationName     = "lastAppliedConfig/tlsSecret"
+	appKubernetesIoNameLabel             = "pubsubpluseventbroker"
+	appKubernetesIoManagedByLabel        = "solace-pubsubplus-operator"
+	maintenanceLabel                     = "solace.com/pauseReconcile"
+	secretKeyName                        = "username_admin_password"
+	tcpSempPortName                      = "tcp-semp"
 )
 
 type BrokerRole int // Notice that this is about the current role, not the broker node designation

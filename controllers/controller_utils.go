@@ -64,11 +64,24 @@ func (r *PubSubPlusEventBrokerReconciler) tlsSecretHash(ctx context.Context, m *
 
 func brokerSpecHash(s eventbrokerv1alpha1.EventBrokerSpec) string {
 	brokerSpecSubset := s.DeepCopy()
+	// Mask anything that is not relevant to the StatefulSet / broker Pods
 	brokerSpecSubset.Monitoring = nil
+	brokerSpecSubset.Service.Annotations = nil
+	brokerSpecSubset.Service.ServiceType = corev1.ServiceTypeLoadBalancer // just setting it a constant value
 	return hash(brokerSpecSubset)
 }
 
-func stsOutdated(sts *appsv1.StatefulSet, expectedBrokerSpecHash string, expectedTlsSecretHash string) bool {
+func brokerServiceHash(s eventbrokerv1alpha1.EventBrokerSpec) string {
+	brokerServiceSubset := s.Service.DeepCopy()
+	return hash(brokerServiceSubset)
+}
+
+func brokerServiceOutdated(service *corev1.Service, expectedBrokerServiceHash string) bool {
+	result := service.ObjectMeta.Annotations[brokerServiceSignatureAnnotationName] != expectedBrokerServiceHash
+	return result
+}
+
+func brokerStsOutdated(sts *appsv1.StatefulSet, expectedBrokerSpecHash string, expectedTlsSecretHash string) bool {
 	result := sts.Spec.Template.ObjectMeta.Annotations[brokerSpecSignatureAnnotationName] != expectedBrokerSpecHash
 	// Ignore expectedTlsSecretHash if it is an empty string. This means the sts is not marked as outdated if the secret does not exist or has been deleted
 	if expectedTlsSecretHash != "" {
