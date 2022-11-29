@@ -48,7 +48,7 @@ func (r *PubSubPlusEventBrokerReconciler) getBrokerPod(ctx context.Context, m *e
 	return nil, fmt.Errorf("filtered broker pod list for broker role %d didn't return exactly one pod", brokerRole)
 }
 
-// Returns the TLS secret resourceVersion if it exists. If not found it returns empty string.
+// Returns the TLS secret resourceVersion if it exists. If TLS is not configured or TLS secret not found it returns empty string
 func (r *PubSubPlusEventBrokerReconciler) tlsSecretHash(ctx context.Context, m *eventbrokerv1alpha1.PubSubPlusEventBroker) string {
 	var tlsSecretVersion string = ""
 	if m.Spec.BrokerTLS.ServerTLsConfigSecret != "" {
@@ -72,7 +72,7 @@ func stsOutdated(sts *appsv1.StatefulSet, expectedBrokerSpecHash string, expecte
 	result := sts.Spec.Template.ObjectMeta.Annotations[brokerSpecSignatureAnnotationName] != expectedBrokerSpecHash
 	// Ignore expectedTlsSecretHash if it is an empty string. This means the sts is not marked as outdated if the secret does not exist or has been deleted
 	if expectedTlsSecretHash != "" {
-		result = result && (sts.Spec.Template.ObjectMeta.Annotations[tlsSecretSignatureAnnotationName] != expectedTlsSecretHash)
+		result = result || (sts.Spec.Template.ObjectMeta.Annotations[tlsSecretSignatureAnnotationName] != expectedTlsSecretHash)
 	}
 	return result
 }
@@ -81,7 +81,7 @@ func brokerPodOutdated(pod *corev1.Pod, expectedBrokerSpecHash string, expectedT
 	result := pod.ObjectMeta.Annotations[brokerSpecSignatureAnnotationName] != expectedBrokerSpecHash
 	// Ignore expectedTlsSecretHash if it is an empty string. This means the pod is not marked as outdated if the secret does not exist or has been deleted
 	if expectedTlsSecretHash != "" {
-		result = result && (pod.ObjectMeta.Annotations[tlsSecretSignatureAnnotationName] != expectedTlsSecretHash)
+		result = result || (pod.ObjectMeta.Annotations[tlsSecretSignatureAnnotationName] != expectedTlsSecretHash)
 	}
 	return result
 }

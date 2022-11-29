@@ -539,8 +539,15 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 		}
 		// At this point, HA or not, check the active pod for restart
 		if brokerPod, err = r.getBrokerPod(ctx, pubsubpluseventbroker, Active); err != nil {
-			log.Error(err, "Failed to list the Active pod", "PubSubPlusEventBroker.Namespace", pubsubpluseventbroker.Namespace, "PubSubPlusEventBroker.Name", pubsubpluseventbroker.Name)
-			return ctrl.Result{}, err
+			if haDeployment {
+				// In case of HA it is expected that there is an active pod if control got this far
+				log.Error(err, "Failed to list the Active pod", "PubSubPlusEventBroker.Namespace", pubsubpluseventbroker.Namespace, "PubSubPlusEventBroker.Name", pubsubpluseventbroker.Name)
+				return ctrl.Result{}, err
+			} else {
+				// In case of non-HA this means that there is no active pod (likely restarting)
+				// This is expected to be a temporary issue, just requeue
+				return ctrl.Result{RequeueAfter: time.Duration(5) * time.Second}, nil
+			}
 		}
 		if brokerPodOutdated(brokerPod, brokerSpecHash, tlsSecretHash) {
 			if brokerPod.ObjectMeta.DeletionTimestamp == nil {

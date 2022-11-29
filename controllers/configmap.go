@@ -138,6 +138,7 @@ if [ "${BROKER_TLS_ENEBLED}" = "true" ]; then
 	exit 1 
   fi
   echo "$(date) INFO: ${APP}-Server certificate has been configured"
+  # Future improvement: enable CA configuration from secret ca.crt
 fi
 if [ "${BROKER_REDUNDANCY}" = "true" ]; then
   # for non-monitor nodes setup redundancy and config-sync
@@ -402,7 +403,7 @@ if [ "${BROKER_REDUNDANCY}" = "true" ]; then
 		touch ${FINAL_ACTIVITY_LOGGED_TRACKING_FILE}
 		echo "$(date) INFO: ${APP}-Server status check complete for this broker node"
 		echo "$(date) INFO: ${APP}-Changing pod label to active"
-		#exit 1
+		#exit 1 Removing as this may delay activity switch by 5 seconds
 	  fi
 	  set_label "active" "true"
 	  exit 0
