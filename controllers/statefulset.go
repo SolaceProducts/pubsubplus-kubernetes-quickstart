@@ -141,6 +141,7 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(sts *a
 	}
 
 	// Update fields
+	// TODO: add support for podAnnotations, podLabels
 	sts.Spec.UpdateStrategy = appsv1.StatefulSetUpdateStrategy{
 		Type: appsv1.OnDeleteStatefulSetStrategyType,
 	}
