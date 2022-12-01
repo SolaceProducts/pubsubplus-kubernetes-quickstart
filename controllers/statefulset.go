@@ -392,20 +392,10 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(stsNam
 			RunAsUser: &m.Spec.PodSecurityContext.RunAsUser,
 			FSGroup:   &m.Spec.PodSecurityContext.FSGroup,
 		}
-		dep.Spec.Template.Spec.Containers[0].SecurityContext = &corev1.SecurityContext{
-			Privileged: &[]bool{false}[0], // Set to false
-			RunAsUser:  &m.Spec.PodSecurityContext.RunAsUser,
-			RunAsGroup: &m.Spec.PodSecurityContext.FSGroup,
-		}
 	} else {
 		dep.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
 			RunAsUser: &[]int64{1000001}[0],
 			FSGroup:   &[]int64{1000002}[0],
-		}
-		dep.Spec.Template.Spec.Containers[0].SecurityContext = &corev1.SecurityContext{
-			Privileged: &[]bool{false}[0], // Set to false
-			RunAsUser:  &[]int64{1000001}[0],
-			RunAsGroup: &[]int64{1000002}[0],
 		}
 	}
 
