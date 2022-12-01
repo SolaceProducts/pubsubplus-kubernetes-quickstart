@@ -42,7 +42,7 @@ spec:
               adminCredentialsSecret:
                 description: Defines the password for PubSubPlusEventBroker if provided.
                   Random one will be generated if not provided. When provided, ensure
-                  the secret name is `username_admin_password`.
+                  the secret key name is `username_admin_password`.
                 nullable: true
                 type: string
               developer:
@@ -1343,7 +1343,7 @@ spec:
                       the minimum persistent storage to be used by the message nodes.
                     type: string
                   monitorNodeStorageSize:
-                    default: 2Gi
+                    default: 3Gi
                     description: MonitorNodeStorageSize if provided this will create
                       and assign the minimum recommended storage to Monitor pods.
                     type: string

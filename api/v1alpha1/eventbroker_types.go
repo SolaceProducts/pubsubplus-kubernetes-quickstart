@@ -38,7 +38,7 @@ type EventBrokerSpec struct {
 	//+nullable
 	//+kubebuilder:validation:Type:=string
 	// Defines the password for PubSubPlusEventBroker if provided. Random one will be generated if not provided.
-	// When provided, ensure the secret name is `username_admin_password`.
+	// When provided, ensure the secret key name is `username_admin_password`.
 	AdminCredentialsSecret string `json:"adminCredentialsSecret,omitempty"`
 	//+optional
 	//+kubebuilder:validation:Type:=array
@@ -143,7 +143,7 @@ type Storage struct {
 	MessagingNodeStorageSize string `json:"messagingNodeStorageSize,omitempty"`
 	//+optional
 	//+kubebuilder:validation:Type:=string
-	//+kubebuilder:default:="2Gi"
+	//+kubebuilder:default:="3Gi"
 	// MonitorNodeStorageSize if provided this will create and assign the minimum recommended storage to Monitor pods.
 	MonitorNodeStorageSize string `json:"monitorNodeStorageSize,omitempty"`
 	//+optional

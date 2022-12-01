@@ -41,8 +41,9 @@ func (r *PubSubPlusEventBrokerReconciler) createStatefulsetForEventBroker(stsNam
 	if nodeType == "monitor" {
 		if len(strings.TrimSpace(m.Spec.Storage.MonitorNodeStorageSize)) == 0 {
 			storageSize = "3Gi"
+		}else{
+			storageSize = m.Spec.Storage.MonitorNodeStorageSize
 		}
-		storageSize = m.Spec.Storage.MonitorNodeStorageSize
 	} else {
 		storageSize = (map[bool]string{true: "7Gi", false: getBrokerMessageNodeStorageSize(&m.Spec.Storage)})[m.Spec.Developer]
 	}
@@ -531,7 +532,7 @@ func getTimezone(tz string) string {
 
 func getBrokerMessageNodeStorageSize(st *eventbrokerv1alpha1.Storage) string {
 	if st == nil || len(strings.TrimSpace(st.MessagingNodeStorageSize)) == 0 {
-		return "7Gi"
+		return "30Gi"
 	}
 	return st.MessagingNodeStorageSize
 }
