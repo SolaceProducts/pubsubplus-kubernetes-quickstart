@@ -19,7 +19,16 @@ spec:
   nodeAssignment:
     - name: Primary
       spec:
-        affinity: {}
+        affinity:
+          podAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                - key: instance
+                  operator: In
+                  values:
+                  - test1
+              topologyKey: "kubernetes.io/hostname"
         nodeSelector: {}
     - name: Backup
       spec:
@@ -109,6 +118,21 @@ spec:
         containerPort: 8443
         protocol: TCP
         name: tls-mqttweb
+  storage:
+    slow: false
+    messagingNodeStorageSize: 30Gi
+    monitorNodeStorageSize: 2Gi
+    customVolumeMount:
+      - name: Primary
+        persistentVolumeClaim:
+          claimName: my-primary-pvc-name
+      - name: Backup
+        persistentVolumeClaim:
+          claimName: my-backup-pvc-name
+      - name: Monitor
+        persistentVolumeClaim:
+          claimName: my-monitor-pvc-name
+    useStorageClass: standard
   monitoring:
     enabled: true
     image:

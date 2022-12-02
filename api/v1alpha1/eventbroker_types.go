@@ -35,6 +35,12 @@ type EventBrokerSpec struct {
 	// If set to true it overrides SystemScaling parameters.
 	Developer bool `json:"developer"`
 	//+optional
+	//+nullable
+	//+kubebuilder:validation:Type:=string
+	// Defines the password for PubSubPlusEventBroker if provided. Random one will be generated if not provided.
+	// When provided, ensure the secret key name is `username_admin_password`.
+	AdminCredentialsSecret string `json:"adminCredentialsSecret,omitempty"`
+	//+optional
 	//+kubebuilder:validation:Type:=array
 	// List of extra environment variables to be added to the PubSubPlusEventBroker container.
 	// A primary use case is to specify configuration keys, although the variables defined here will not override the ones defined in ConfigMap
@@ -70,29 +76,28 @@ type EventBrokerSpec struct {
 	SystemScaling *SystemScaling `json:"systemScaling,omitempty"`
 	//+kubebuilder:validation:Type:=object
 	// Image defines container image parameters for the event broker.
-	BrokerImage *BrokerImage `json:"image,omitempty"`
+	BrokerImage BrokerImage `json:"image,omitempty"`
+	//+kubebuilder:validation:Type:=array
+	// NodeAssignment defines labels to constrain PubSubPlusEventBroker nodes to run on particular node(s), or to prefer to run on particular nodes.
+	BrokerNodeAssignment []NodeAssignment `json:"nodeAssignment,omitempty"`
 	//+kubebuilder:validation:Type:=object
 	// PodSecurityContext defines the pod security context for the event broker.
-	PodSecurityContext *PodSecurityContext `json:"securityContext,omitempty"`
+	PodSecurityContext PodSecurityContext `json:"securityContext,omitempty"`
 	//+kubebuilder:validation:Type:=object
 	// ServiceAccount defines a ServiceAccount dedicated to the PubSubPlusEventBroker
 	ServiceAccount BrokerServiceAccount `json:"serviceAccount,omitempty"`
-	//+optional
 	//+kubebuilder:validation:Type:=object
 	// TLS provides TLS configuration for the event broker.
-	BrokerTLS *BrokerTLS `json:"tls,omitempty"`
-	//+optional
+	BrokerTLS BrokerTLS `json:"tls,omitempty"`
 	//+kubebuilder:validation:Type:=object
 	// Service defines broker service details.
-	Service *Service `json:"service,omitempty"`
-	//+optional
+	Service Service `json:"service,omitempty"`
 	//+kubebuilder:validation:Type:=object
 	// Storage defines storage details for the broker.
-	Storage *Storage `json:"storage,omitempty"`
-	//+optional
+	Storage Storage `json:"storage,omitempty"`
 	//+kubebuilder:validation:Type:=object
 	// Monitoring specifies a Prometheus monitoring endpoint for the event broker
-	Monitoring *Monitoring `json:"monitoring,omitempty"`
+	Monitoring Monitoring `json:"monitoring,omitempty"`
 }
 
 type PubSubPlusEventBrokerUpdateStrategy string
@@ -139,13 +144,47 @@ type Service struct {
 
 // Storage defines parameters configure Storage details for the Broker
 type Storage struct {
-	//storage.persistent	false to use ephemeral storage at pod level; true to request persistent storage through a StorageClass	true, false is not recommended for production use
-	//storage.slow	true to indicate slow storage used, e.g. for NFS.	false
-	//storage.customVolumeMount	customVolumeMount can be used to specify a YAML fragment how the data volume should be mounted instead of using a storage class.	Undefined
-	//storage.useStorageClass	Name of the StorageClass to be used to request persistent storage volumes	Undefined, meaning to use the "default" StorageClass for the Kubernetes cluster
-	//storage.size	Size of the persistent storage to be used; Refer to the Solace documentation and  for storage size requirements	30Gi
-	//storage.monitorStorageSize	If provided this will create and assign the minimum recommended storage to Monitor pods. For initial deployments only.	1500M
-	//storage.useStorageGroup	true to use a single mount point storage-group, as recommended from PubSub+ version 9.12. Undefined or false is legacy behavior. Note: legacy mount still works for newer versions but may be deprecated in the future.	Undefined
+	//+optional
+	//+kubebuilder:validation:Type:=boolean
+	//+kubebuilder:default:=false
+	// Slow indicate slow storage is in use, an example is NFS.
+	Slow bool `json:"slow,omitempty"`
+	//+kubebuilder:validation:Type:=string
+	//+kubebuilder:default:="30Gi"
+	// MessagingNodeStorageSize if provided will assign the minimum persistent storage to be used by the message nodes.
+	MessagingNodeStorageSize string `json:"messagingNodeStorageSize,omitempty"`
+	//+optional
+	//+kubebuilder:validation:Type:=string
+	//+kubebuilder:default:="3Gi"
+	// MonitorNodeStorageSize if provided this will create and assign the minimum recommended storage to Monitor pods.
+	MonitorNodeStorageSize string `json:"monitorNodeStorageSize,omitempty"`
+	//+optional
+	//+kubebuilder:validation:Type:=array
+	//CustomVolumeMount can be used to show the data volume should be mounted instead of using a storage class.
+	CustomVolumeMount []StorageCustomVolumeMount `json:"customVolumeMount,omitempty"`
+	//+optional
+	//+kubebuilder:validation:Type:=string
+	// UseStrorageClass Name of the StorageClass to be used to request persistent storage volumes. If undefined, the "default" StorageClass will be used.
+	UseStorageClass string `json:"useStorageClass,omitempty"`
+}
+
+// StorageCustomVolumeMount defines Image details and pulling configurations
+type StorageCustomVolumeMount struct {
+	//+kubebuilder:validation:Type:=string
+	//+kubebuilder:validation:Enum=Primary;Backup;Monitor
+	// Defines the name of PubSubPlusEventBroker node type that has the customVolumeMount spec defined
+	Name string `json:"name,omitempty"`
+	//+optional
+	//+kubebuilder:validation:Type:=object
+	// Defines the customVolumeMount that can be used mount the data volume instead of using a storage class
+	PersistentVolumeClaim BrokerPersistentVolumeClaim `json:"persistentVolumeClaim,omitempty"`
+}
+
+// BrokerPersistentVolumeClaim defines custom PersistentVolumeClaim to be use by PubSubPlusEventBroker
+type BrokerPersistentVolumeClaim struct {
+	//+kubebuilder:validation:Type:=string
+	// Defines the claimName of a custom PersistentVolumeClaim to be used instead
+	ClaimName string `json:"claimName"`
 }
 
 type SystemScaling struct {
@@ -214,21 +253,51 @@ type ExtraEnvVar struct {
 
 // BrokerImage defines Image details and pulling configurations
 type BrokerImage struct {
+	//+optional
 	//+kubebuilder:validation:Type:=string
 	//+kubebuilder:default:="solace/solace-pubsub-standard"
 	// Defines the container image repo where the event broker image is pulled from
-	Repository string `json:"repository,omitempty"`
+	Repository string `json:"repository"`
+	//+optional
 	//+kubebuilder:validation:Type:=string
 	//+kubebuilder:default:="latest"
 	// Specifies the tag of the container image to be used for the event broker.
-	Tag string `json:"tag,omitempty"`
+	Tag string `json:"tag"`
+	//+optional
 	//+kubebuilder:validation:Type:=string
 	//+kubebuilder:default:="IfNotPresent"
 	// Specifies ImagePullPolicy of the container image for the event broker.
-	ImagePullPolicy corev1.PullPolicy `json:"pullPolicy,omitempty"`
+	ImagePullPolicy corev1.PullPolicy `json:"pullPolicy"`
+	//+optional
 	//+kubebuilder:validation:Type:=array
 	// ImagePullSecrets is an optional list of references to secrets in the same namespace to use for pulling any of the images used by this PodSpec.
 	ImagePullSecrets []corev1.LocalObjectReference `json:"pullSecretName,omitempty"`
+}
+
+// NodeAssignment defines labels to constrain PubSubPlusEventBroker nodes to specific nodes
+type NodeAssignment struct {
+	//+kubebuilder:validation:Type:=string
+	//+kubebuilder:validation:Enum=Primary;Backup;Monitor
+	// Defines the name of broker node type that has the nodeAssignment spec defined
+	Name string `json:"name,omitempty"`
+	//+kubebuilder:validation:Type:=object
+	// If provided defines the labels to constrain the PubSubPlusEventBroker node to specific nodes
+	Spec NodeAssignmentSpec `json:"spec,omitempty"`
+}
+
+// NodeAssignmentSpec defines the NodeAffinity and NodeSelector details to be used for event broker nodes
+type NodeAssignmentSpec struct {
+	//+optional
+	//+nullable
+	//+kubebuilder:validation:Type:=object
+	//+kubebuilder:default:={}
+	// Affinity if provided defines the conditional approach to assign PubSubPlusEventBroker nodes to specific nodes to which they can be scheduled
+	Affinity corev1.Affinity `json:"affinity,omitempty"`
+	//+optional
+	//+kubebuilder:validation:Type:=object
+	//+kubebuilder:default:={}
+	// NodeSelector if provided defines the exact labels of nodes to which PubSubPlusEventBroker nodes can be scheduled
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 }
 
 // PodSecurityContext defines the pod security context for the PubSubPlusEventBroker
