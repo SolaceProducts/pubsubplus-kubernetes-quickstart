@@ -138,7 +138,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 				return ctrl.Result{}, err
 			}
 			// ServiceAccount created successfully - return and requeue
-			r.Recorder.Event(pubsubpluseventbroker, "Normal", "Created",
+			r.Recorder.Event(pubsubpluseventbroker, corev1.EventTypeNormal, "Created",
 				fmt.Sprintf("ServiceAccount %s created in namespace %s",
 				saName,
 				pubsubpluseventbroker.Namespace),)
