@@ -40,10 +40,11 @@ func (r *PubSubPlusEventBrokerReconciler) createServiceForEventBroker(svcName st
 }
 
 func (r *PubSubPlusEventBrokerReconciler) updateServiceForEventBroker(service *corev1.Service, m *eventbrokerv1alpha1.PubSubPlusEventBroker) {
-	// Note the resource version of upstream objects
-	service.Annotations = map[string]string{
-		brokerServiceSignatureAnnotationName: brokerServiceHash(m.Spec),
+	if m.Spec.Service.Annotations != nil || len(m.Spec.Service.Annotations) > 0 {
+		service.Annotations = m.Spec.Service.Annotations
 	}
+	// Note the resource version of upstream objects
+	service.Annotations[brokerServiceSignatureAnnotationName] = brokerServiceHash(m.Spec)
 	// Populate the rest of the relevant parameters
 	service.Spec = corev1.ServiceSpec{
 		Type:     getServiceType(m.Spec.Service),
@@ -73,9 +74,6 @@ func (r *PubSubPlusEventBrokerReconciler) updateServiceForEventBroker(service *c
 			}
 		}
 		service.Spec.Ports = ports
-	}
-	if m.Spec.Service.Annotations != nil || len(m.Spec.Service.Annotations) > 0 {
-		service.Annotations = m.Spec.Service.Annotations
 	}
 }
 
