@@ -17,12 +17,12 @@ limitations under the License.
 package controllers
 
 import (
+	"encoding/json"
+	eventbrokerv1alpha1 "github.com/SolaceProducts/pubsubplus-operator/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	ctrl "sigs.k8s.io/controller-runtime"
-
-	eventbrokerv1alpha1 "github.com/SolaceProducts/pubsubplus-operator/api/v1alpha1"
 )
 
 func (r *PubSubPlusEventBrokerReconciler) serviceForEventBroker(svcName string, m *eventbrokerv1alpha1.PubSubPlusEventBroker) *corev1.Service {
@@ -33,13 +33,26 @@ func (r *PubSubPlusEventBrokerReconciler) serviceForEventBroker(svcName string, 
 			Labels:    getObjectLabels(m.Name),
 		},
 		Spec: corev1.ServiceSpec{
-			Type:     m.Spec.Service.ServiceType,
+			Type:     getServiceType(m.Spec.Service),
 			Selector: getServiceSelector(m.Name),
 		},
 	}
 	if len(m.Spec.Service.Ports) > 0 {
 		ports := make([]corev1.ServicePort, len(m.Spec.Service.Ports))
 		for idx, pbPort := range m.Spec.Service.Ports {
+			ports[idx] = corev1.ServicePort{
+				Name:       pbPort.Name,
+				Protocol:   pbPort.Protocol,
+				Port:       pbPort.ServicePort,
+				TargetPort: intstr.IntOrString{Type: intstr.Int, IntVal: pbPort.ContainerPort},
+			}
+		}
+		dep.Spec.Ports = ports
+	} else {
+		portConfig := eventbrokerv1alpha1.Service{}
+		json.Unmarshal([]byte(DefaultServiceConfig), &portConfig)
+		ports := make([]corev1.ServicePort, len(portConfig.Ports))
+		for idx, pbPort := range portConfig.Ports {
 			ports[idx] = corev1.ServicePort{
 				Name:       pbPort.Name,
 				Protocol:   pbPort.Protocol,
@@ -56,4 +69,11 @@ func (r *PubSubPlusEventBrokerReconciler) serviceForEventBroker(svcName string, 
 	// Set PubSubPlusEventBroker instance as the owner and controller
 	ctrl.SetControllerReference(m, dep, r.Scheme)
 	return dep
+}
+
+func getServiceType(ms eventbrokerv1alpha1.Service) corev1.ServiceType {
+	if ms.ServiceType != "" {
+		return ms.ServiceType
+	}
+	return corev1.ServiceTypeLoadBalancer
 }
