@@ -23,6 +23,7 @@ import (
 	"time"
 
 	policyv1 "k8s.io/api/policy/v1"
+	"k8s.io/client-go/tools/record"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -51,6 +52,7 @@ import (
 type PubSubPlusEventBrokerReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
+	Recorder record.EventRecorder
 }
 
 const (
@@ -74,6 +76,7 @@ const (
 // +kubebuilder:rbac:groups="",resources=pods,verbs=get;list;watch;create;update;delete
 // +kubebuilder:rbac:groups="",resources=namespaces,verbs=get;list;watch
 // +kubebuilder:rbac:groups="policy",resources=poddisruptionbudgets,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups="",resources=events,verbs=create;patch
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -135,6 +138,10 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 				return ctrl.Result{}, err
 			}
 			// ServiceAccount created successfully - return and requeue
+			r.Recorder.Event(pubsubpluseventbroker, "Normal", "Created",
+				fmt.Sprintf("ServiceAccount %s created in namespace %s",
+				saName,
+				pubsubpluseventbroker.Namespace),)
 			return ctrl.Result{Requeue: true}, nil
 		} else if err != nil {
 			log.Error(err, "Failed to get ServiceAccount")
