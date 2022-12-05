@@ -30,13 +30,16 @@ jobs:
         run: make docker-push
 
   call-test-full-params:
+    if: ${{ false }}  # disable for now
     needs: build
     uses: ./.github/workflows/test-full-params.yml
 
   call-test-helm-upgrade:
+    if: ${{ false }}  # disable for now
     needs: build
     uses: ./.github/workflows/test-helm-upgrade.yml
 
   call-test-minimal-params:
+    if: ${{ false }}  # disable for now
     needs: build
     uses: ./.github/workflows/test-minimal-params.yml
