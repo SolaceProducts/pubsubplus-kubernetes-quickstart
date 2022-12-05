@@ -31,11 +31,11 @@ jobs:
 
   call-test-full-params:
     needs: build
-    uses: ./_test-full-params.yml
+    uses: ./test-full-params.yml
 
   call-test-helm-upgrade:
     needs: build
-    uses: ./_test-helm-upgrade.yml
+    uses: ./test-helm-upgrade.yml
 
   call-test-minimal-params:
     needs: build
