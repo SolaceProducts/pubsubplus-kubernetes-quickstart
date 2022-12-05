@@ -110,6 +110,7 @@ func main() {
 	if err = (&controllers.PubSubPlusEventBrokerReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
+		Recorder: mgr.GetEventRecorderFor("PubSubPlusEventBroker"),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "PubSubPlusEventBroker")
 		os.Exit(1)
@@ -130,10 +131,6 @@ func main() {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
-}
-
-func If(b bool, watchNs, s string) {
-	panic("unimplemented")
 }
 
 // getWatchNamespace returns the Namespace the operator should be watching for changes

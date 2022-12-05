@@ -12,10 +12,9 @@ spec:
       value: "GithubAction"
   extraEnvVarsCM: ""
   extraEnvVarsSecret: ""
-  podDisruptionBudgetForHA: false
   podDisruptionBudgetForHA: true
   image: {}
-  nodeAssignment: {}
+  updateStrategy: manualPodRestart
   securityContext: {}
   tls:
     enabled: false

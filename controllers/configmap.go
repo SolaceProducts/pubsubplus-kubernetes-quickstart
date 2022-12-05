@@ -138,6 +138,7 @@ if [ "${BROKER_TLS_ENEBLED}" = "true" ]; then
 	exit 1 
   fi
   echo "$(date) INFO: ${APP}-Server certificate has been configured"
+  # Future improvement: enable CA configuration from secret ca.crt
 fi
 if [ "${BROKER_REDUNDANCY}" = "true" ]; then
   # for non-monitor nodes setup redundancy and config-sync
@@ -253,13 +254,13 @@ if [ "${BROKER_REDUNDANCY}" = "true" ]; then
 	fi
 	# Now can issue assert-master command
 	if [ "${resync_step_required}" = "true" ]; then
-	echo "$(date) INFO: ${APP}-Initiating assert-master"
-	/mnt/disks/solace/semp_query.sh -n admin -p ${password} -u http://localhost:8080 \
-		  -q "<rpc semp-version=\"soltr/9_8VMR\"><admin><config-sync><assert-master><router/></assert-master></config-sync></admin></rpc>"
-	/mnt/disks/solace/semp_query.sh -n admin -p ${password} -u http://localhost:8080 \
-		  -q "<rpc semp-version=\"soltr/9_8VMR\"><admin><config-sync><assert-master><vpn-name>*</vpn-name></assert-master></config-sync></admin></rpc>"
-	# Wait for config-sync results
+		echo "$(date) INFO: ${APP}-Initiating assert-master"
+		/mnt/disks/solace/semp_query.sh -n admin -p ${password} -u http://localhost:8080 \
+			-q "<rpc semp-version=\"soltr/9_8VMR\"><admin><config-sync><assert-master><router/></assert-master></config-sync></admin></rpc>"
+		/mnt/disks/solace/semp_query.sh -n admin -p ${password} -u http://localhost:8080 \
+			-q "<rpc semp-version=\"soltr/9_8VMR\"><admin><config-sync><assert-master><vpn-name>*</vpn-name></assert-master></config-sync></admin></rpc>"
 	fi
+	# Wait for config-sync results
 	count=0
 	echo "$(date) INFO: ${APP}-Waiting for config-sync results"
 	while [ ${count} -lt ${loop_guard} ]; do
@@ -285,7 +286,7 @@ if [ "${BROKER_REDUNDANCY}" = "true" ]; then
   fi # if not monitor
 fi
 echo "$(date) INFO: ${APP}-PubSub+ Event Broker bringup is complete for this node."
-# create startup file after PubSub+ Event Broker is up and running.  Create only if it does not exists
+# create startup file after PubSub+ Event Broker is up and running.  Create only if it does not exist
 if [[ ! -e ${INITIAL_STARTUP_FILE} ]]; then
 	echo "PubSub+ Event Broker initial startup completed on $(date)" > ${INITIAL_STARTUP_FILE}
 fi
@@ -346,8 +347,8 @@ if [ "${BROKER_REDUNDANCY}" = "true" ]; then
   # For update (includes SolOS upgrade) purposes, additional checks are required for readiness state when the pod has been started
   # This is an update if the LASTVERSION_FILE with K8s controller-revision-hash exists and contents differ from current value
   LASTVERSION_FILE=/var/lib/solace/var/lastConfigRevisionBeforeReboot
-  if [ -f ${LASTVERSION_FILE} ] && [[ $(cat ${LASTVERSION_FILE}) != $(get_label "controller-revision-hash") ]] ; then
-	echo "$(date) INFO: ${APP}-Upgrade detected, running additional checks..."
+  if [ ! -f ${LASTVERSION_FILE} ] || [[ $(cat ${LASTVERSION_FILE}) != $(get_label "controller-revision-hash") ]] ; then
+	echo "$(date) INFO: ${APP}-Initial startup or Upgrade detected, running additional checks..."
 	# Check redundancy
 	echo "$(date) INFO: ${APP}-Running checks. Redundancy state check started..."
 	results=$(/mnt/disks/solace/semp_query.sh -n admin -p ${password} -u http://localhost:8080 \
@@ -373,31 +374,26 @@ if [ "${BROKER_REDUNDANCY}" = "true" ]; then
   fi
   # Record current version in LASTVERSION_FILE
   echo $(get_label "controller-revision-hash") > ${LASTVERSION_FILE}
-  # For monitor node just check for 3 online nodes in group; active label will never be set
-  echo "$(date) INFO: ${APP}-Running checks. Server status check started..."
+  # For monitor node just check for redundancy; active label will never be set
   if [ "${is_monitor}" = "1" ]; then
-	role_results=$(/mnt/disks/solace/semp_query.sh -n admin -p ${password} -u http://localhost:8080 \
-			-q "<rpc><show><redundancy><group/></redundancy></show></rpc>" \
-			-c "/rpc-reply/rpc/show/redundancy/group-node/status[text() = \"Online\"]")
-	if [[ ${role_results} != *"<errorInfo></errorInfo>"* ]]; then
-	  errorinfo=$(echo ${results} | xmllint -xpath "string(returnInfo/errorInfo)" - 2>/dev/null) || errorinfo=
-	  echo "$(date) INFO: ${APP}-Waiting for valid server status response, got ${errorinfo}"
-	  rm -f ${FINAL_ACTIVITY_LOGGED_TRACKING_FILE}; exit 1
+	# Check redundancy
+	echo "$(date) INFO: ${APP}-Running checks. Redundancy state check started..."
+	results=$(/mnt/disks/solace/semp_query.sh -n admin -p ${password} -u http://localhost:8080 \
+			-q "<rpc><show><redundancy/></show></rpc>" \
+			-v "/rpc-reply/rpc/show/redundancy/redundancy-status")
+	redundancystatus_results=$(echo ${results} | xmllint -xpath "string(returnInfo/valueSearchResult)" -)
+	if [ "${redundancystatus_results}" != "Up" ]; then
+		echo "$(date) INFO: ${APP}-Redundancy state is not yet up."
+		rm -f ${FINAL_ACTIVITY_LOGGED_TRACKING_FILE}; exit 1
 	fi
-	nodes_online=$(echo ${role_results} |  xmllint -xpath "string(returnInfo/countSearchResult)" -)
-	if [ "$nodes_online" -eq "3" ]; then
-	  if [ ! -f ${FINAL_ACTIVITY_LOGGED_TRACKING_FILE} ]; then
+	if [ ! -f ${FINAL_ACTIVITY_LOGGED_TRACKING_FILE} ]; then
 		echo "$(date) INFO: ${APP}-All nodes online, monitor node is redundancy ready"
 		touch ${FINAL_ACTIVITY_LOGGED_TRACKING_FILE}
 		echo "$(date) INFO: ${APP}-Server status check complete for this broker node"
 		exit 1
-	  fi
-	  exit 0
-	else
-	  echo "$(date) INFO: ${APP}-Monitor node is not redundancy ready, ${nodes_online} of 3 nodes online"
-	  rm -f ${FINAL_ACTIVITY_LOGGED_TRACKING_FILE}; exit 1
 	fi
-  fi # End Monitor Node, above branch has exited with result
+	exit 0
+  fi # End Monitor Node
   # For Primary or Backup nodes set both service readiness (active label) and k8s readiness (exit return value)
   health_result=$(curl -s -o /dev/null -w "%{http_code}"  http://localhost:5550/health-check/guaranteed-active)
   case "${health_result}" in
@@ -407,7 +403,7 @@ if [ "${BROKER_REDUNDANCY}" = "true" ]; then
 		touch ${FINAL_ACTIVITY_LOGGED_TRACKING_FILE}
 		echo "$(date) INFO: ${APP}-Server status check complete for this broker node"
 		echo "$(date) INFO: ${APP}-Changing pod label to active"
-		exit 1
+		#exit 1 Removing as this may delay activity switch by 5 seconds
 	  fi
 	  set_label "active" "true"
 	  exit 0
@@ -438,6 +434,26 @@ if [ "${BROKER_REDUNDANCY}" = "true" ]; then
   local_activity=$(echo ${online_results} | xmllint -xpath "string(returnInfo/valueSearchResult)" -)
   case "${local_activity}" in
 	"Mate Active")
+	  # Check redundancy
+	  results=$(/mnt/disks/solace/semp_query.sh -n admin -p ${password} -u http://localhost:8080 \
+			-q "<rpc><show><redundancy/></show></rpc>" \
+			-v "/rpc-reply/rpc/show/redundancy/redundancy-status")
+	  redundancystatus_results=$(echo ${results} | xmllint -xpath "string(returnInfo/valueSearchResult)" -)
+	  if [ "${redundancystatus_results}" != "Up" ]; then
+		echo "$(date) INFO: ${APP}-Running checks.Redundancy state is not yet up."
+		rm -f ${FINAL_ACTIVITY_LOGGED_TRACKING_FILE}; exit 1
+	  fi
+	  # Additionally check config-sync status for non-monitoring nodes
+	  if [ "${node_ordinal}" != "2" ]; then
+		results=$(/mnt/disks/solace/semp_query.sh -n admin -p ${password} -u http://localhost:8080 \
+			-q "<rpc><show><config-sync></config-sync></show></rpc>" \
+			-v "/rpc-reply/rpc/show/config-sync/status/oper-status")
+		confsyncstatus_results=$(echo ${results} | xmllint -xpath "string(returnInfo/valueSearchResult)" -)
+		if [ "${confsyncstatus_results}" != "Up" ]; then
+			echo "$(date) INFO: ${APP}-Running checks. Config-sync state is not yet up."
+			rm -f ${FINAL_ACTIVITY_LOGGED_TRACKING_FILE}; exit 1
+		fi
+	  fi
 	  # Pass readiness check
 	  if [ ! -f ${FINAL_ACTIVITY_LOGGED_TRACKING_FILE} ]; then
 		echo "$(date) INFO: ${APP}-Redundancy is up and node is mate Active"

@@ -24,11 +24,14 @@ import (
 )
 
 const (
-	dependenciesSignatureAnnotationName = "lastAppliedConfig"
-	appKubernetesIoNameLabel            = "pubsubpluseventbroker"
-	appKubernetesIoManagedByLabel       = "solace-pubsubplus-operator"
-	secretKeyName                       = "username_admin_password"
-	tcpSempPortName                     = "tcp-semp"
+	brokerSpecSignatureAnnotationName    = "lastAppliedConfig/brokerSpec"
+	brokerServiceSignatureAnnotationName = "lastAppliedConfig/brokerService"
+	tlsSecretSignatureAnnotationName     = "lastAppliedConfig/tlsSecret"
+	appKubernetesIoNameLabel             = "pubsubpluseventbroker"
+	appKubernetesIoManagedByLabel        = "solace-pubsubplus-operator"
+	maintenanceLabel                     = "solace.com/pauseReconcile"
+	secretKeyName                        = "username_admin_password"
+	tcpSempPortName                      = "tcp-semp"
 )
 
 type BrokerRole int // Notice that this is about the current role, not the broker node designation
@@ -49,7 +52,7 @@ func getObjectName(objectType string, deploymentName string) string {
 		"Secret":                       "-pubsubplus-secrets",
 		"Service":                      "-pubsubplus",
 		"StatefulSet":                  "-pubsubplus-%s",
-		"PodDisruptionBudget":          "-pubsubplus-poddisruptionbudget-%s",
+		"PodDisruptionBudget":          "-pubsubplus-poddisruptionbudget",
 		"PrometheusExporterDeployment": "-pubsubplus-prometheus-exporter",
 		"PrometheusExporterService":    "-pubsubplus-prometheus-exporter-service",
 	}

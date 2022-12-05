@@ -32,8 +32,7 @@ import (
 // secretForEventBroker returns an pubsubpluseventbroker Secret object
 func (r *PubSubPlusEventBrokerReconciler) secretForEventBroker(secretName string, m *eventbrokerv1alpha1.PubSubPlusEventBroker) *corev1.Secret {
 
-	// TODO: Replace with more serious generator
-	randomPassword := generateSimplePassword(8)
+	randomPassword := generateSimplePassword(10)
 
 	dep := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
@@ -57,6 +56,7 @@ func generateSimplePassword(length int) string {
 	rand.Seed(time.Now().UnixNano())
 	chars := []rune("ABCDEFGHIJKLMNOPQRSTUVWXYZ" +
 		"abcdefghijklmnopqrstuvwxyz" +
+		"!@#$%^" +
 		"0123456789")
 	var b strings.Builder
 	for i := 0; i < length; i++ {

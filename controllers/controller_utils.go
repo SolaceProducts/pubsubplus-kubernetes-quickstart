@@ -25,7 +25,9 @@ import (
 	"strconv"
 
 	eventbrokerv1alpha1 "github.com/SolaceProducts/pubsubplus-operator/api/v1alpha1"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -45,7 +47,62 @@ func (r *PubSubPlusEventBrokerReconciler) getBrokerPod(ctx context.Context, m *e
 	if podList != nil && len(podList.Items) == 1 {
 		return &podList.Items[0], nil
 	}
-	return nil, fmt.Errorf("filtered broker pod list didn't return exactly one pod")
+	return nil, fmt.Errorf("filtered broker pod list for broker role %d didn't return exactly one pod", brokerRole)
+}
+
+// Returns the TLS secret resourceVersion if it exists. If TLS is not configured or TLS secret not found it returns empty string
+func (r *PubSubPlusEventBrokerReconciler) tlsSecretHash(ctx context.Context, m *eventbrokerv1alpha1.PubSubPlusEventBroker) string {
+	var tlsSecretVersion string = ""
+	if m.Spec.BrokerTLS.ServerTLsConfigSecret != "" {
+		secretName := m.Spec.BrokerTLS.ServerTLsConfigSecret
+		foundSecret := &corev1.Secret{}
+		err := r.Get(ctx, types.NamespacedName{Name: secretName, Namespace: m.Namespace}, foundSecret)
+		if err == nil {
+			tlsSecretVersion = foundSecret.ResourceVersion
+		}
+	}
+	return tlsSecretVersion
+}
+
+func brokerSpecHash(s eventbrokerv1alpha1.EventBrokerSpec) string {
+	brokerSpecSubset := s.DeepCopy()
+	// Mask anything that is not relevant to the StatefulSet / broker Pods
+	brokerSpecSubset.Monitoring = eventbrokerv1alpha1.Monitoring{}
+	brokerSpecSubset.Service.Annotations = nil
+	brokerSpecSubset.Service.ServiceType = corev1.ServiceTypeLoadBalancer // cannot use nil, setting it a constant value
+	brokerSpecSubset.Redundancy = false // change of redundancy is not supported for now
+	brokerSpecSubset.ServiceAccount = eventbrokerv1alpha1.BrokerServiceAccount{} // change of SA is not supported
+	// TODO: mask out adminCredentialsSecret, preSharedAuthKeySecret
+	brokerSpecSubset.PodDisruptionBudgetForHA = false // does not affect the statefulset/pod
+	return hash(brokerSpecSubset)
+}
+
+func brokerServiceHash(s eventbrokerv1alpha1.EventBrokerSpec) string {
+	brokerServiceSubset := s.Service.DeepCopy()
+	return hash(brokerServiceSubset)
+}
+
+func brokerServiceOutdated(service *corev1.Service, expectedBrokerServiceHash string) bool {
+	result := service.ObjectMeta.Annotations[brokerServiceSignatureAnnotationName] != expectedBrokerServiceHash
+	return result
+}
+
+func brokerStsOutdated(sts *appsv1.StatefulSet, expectedBrokerSpecHash string, expectedTlsSecretHash string) bool {
+	result := sts.Spec.Template.ObjectMeta.Annotations[brokerSpecSignatureAnnotationName] != expectedBrokerSpecHash
+	// Ignore expectedTlsSecretHash if it is an empty string. This means the sts is not marked as outdated if the secret does not exist or has been deleted
+	if expectedTlsSecretHash != "" {
+		result = result || (sts.Spec.Template.ObjectMeta.Annotations[tlsSecretSignatureAnnotationName] != expectedTlsSecretHash)
+	}
+	return result
+}
+
+func brokerPodOutdated(pod *corev1.Pod, expectedBrokerSpecHash string, expectedTlsSecretHash string) bool {
+	result := pod.ObjectMeta.Annotations[brokerSpecSignatureAnnotationName] != expectedBrokerSpecHash
+	// Ignore expectedTlsSecretHash if it is an empty string. This means the pod is not marked as outdated if the secret does not exist or has been deleted
+	if expectedTlsSecretHash != "" {
+		result = result || (pod.ObjectMeta.Annotations[tlsSecretSignatureAnnotationName] != expectedTlsSecretHash)
+	}
+	return result
 }
 
 func convertToByteArray(e any) []byte {

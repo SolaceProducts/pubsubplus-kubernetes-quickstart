@@ -1152,9 +1152,9 @@ spec:
                 type: array
               podDisruptionBudgetForHA:
                 default: false
-                description: Enables setting up PodDisruptionBudget for the broker
-                  pods in HA deployment. This parameter is ignored for non-HA deployments
-                  (if redundancy is false).
+                description: PodDisruptionBudgetForHA enables setting up PodDisruptionBudget
+                  for the broker pods in HA deployment. This parameter is ignored
+                  for non-HA deployments (if redundancy is false).
                 type: boolean
               redundancy:
                 default: false
@@ -1406,6 +1406,14 @@ spec:
                       for the broker
                     type: string
                 type: object
+              updateStrategy:
+                default: automatedRolling
+                description: UpdateStrategy specifies how to update an existing deployment.
+                  manualPodRestart waits for user intervention.
+                enum:
+                - automatedRolling
+                - manualPodRestart
+                type: string
             type: object
           status:
             description: EventBrokerStatus defines the observed state of the event

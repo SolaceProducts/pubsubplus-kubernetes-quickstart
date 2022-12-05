@@ -25,17 +25,32 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-func (r *PubSubPlusEventBrokerReconciler) serviceForEventBroker(svcName string, m *eventbrokerv1alpha1.PubSubPlusEventBroker) *corev1.Service {
+func (r *PubSubPlusEventBrokerReconciler) createServiceForEventBroker(svcName string, m *eventbrokerv1alpha1.PubSubPlusEventBroker) *corev1.Service {
 	dep := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      svcName,
 			Namespace: m.Namespace,
 			Labels:    getObjectLabels(m.Name),
 		},
-		Spec: corev1.ServiceSpec{
-			Type:     getServiceType(m.Spec.Service),
-			Selector: getServiceSelector(m.Name),
-		},
+	}
+	r.updateServiceForEventBroker(dep, m)
+	// Set PubSubPlusEventBroker instance as the owner and controller
+	ctrl.SetControllerReference(m, dep, r.Scheme)
+	return dep
+}
+
+func (r *PubSubPlusEventBrokerReconciler) updateServiceForEventBroker(service *corev1.Service, m *eventbrokerv1alpha1.PubSubPlusEventBroker) {
+	if m.Spec.Service.Annotations != nil && len(m.Spec.Service.Annotations) > 0 {
+		service.Annotations = m.Spec.Service.Annotations
+	} else {
+		service.Annotations = map[string]string{}
+	}
+	// Note the resource version of upstream objects
+	service.Annotations[brokerServiceSignatureAnnotationName] = brokerServiceHash(m.Spec)
+	// Populate the rest of the relevant parameters
+	service.Spec = corev1.ServiceSpec{
+		Type:     getServiceType(m.Spec.Service),
+		Selector: getServiceSelector(m.Name),
 	}
 	if len(m.Spec.Service.Ports) > 0 {
 		ports := make([]corev1.ServicePort, len(m.Spec.Service.Ports))
@@ -47,7 +62,7 @@ func (r *PubSubPlusEventBrokerReconciler) serviceForEventBroker(svcName string, 
 				TargetPort: intstr.IntOrString{Type: intstr.Int, IntVal: pbPort.ContainerPort},
 			}
 		}
-		dep.Spec.Ports = ports
+		service.Spec.Ports = ports
 	} else {
 		portConfig := eventbrokerv1alpha1.Service{}
 		json.Unmarshal([]byte(DefaultServiceConfig), &portConfig)
@@ -60,15 +75,8 @@ func (r *PubSubPlusEventBrokerReconciler) serviceForEventBroker(svcName string, 
 				TargetPort: intstr.IntOrString{Type: intstr.Int, IntVal: pbPort.ContainerPort},
 			}
 		}
-		dep.Spec.Ports = ports
+		service.Spec.Ports = ports
 	}
-
-	if m.Spec.Service.Annotations != nil || len(m.Spec.Service.Annotations) > 0 {
-		dep.Annotations = m.Spec.Service.Annotations
-	}
-	// Set PubSubPlusEventBroker instance as the owner and controller
-	ctrl.SetControllerReference(m, dep, r.Scheme)
-	return dep
 }
 
 func getServiceType(ms eventbrokerv1alpha1.Service) corev1.ServiceType {

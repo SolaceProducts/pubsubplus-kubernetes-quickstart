@@ -17,11 +17,13 @@ limitations under the License.
 package controllers
 
 import (
+	"fmt"
 	"reflect"
 	"strings"
 	"time"
 
 	policyv1 "k8s.io/api/policy/v1"
+	"k8s.io/client-go/tools/record"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -37,13 +39,25 @@ import (
 	ctrllog "sigs.k8s.io/controller-runtime/pkg/log"
 
 	eventbrokerv1alpha1 "github.com/SolaceProducts/pubsubplus-operator/api/v1alpha1"
+
+	"k8s.io/apimachinery/pkg/fields"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 // PubSubPlusEventBrokerReconciler reconciles a PubSubPlusEventBroker object
 type PubSubPlusEventBrokerReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
+	Recorder record.EventRecorder
 }
+
+const (
+	dependencyTlsSecretField = ".spec.tls.serverTlsConfigSecret"
+)
 
 // TODO: review and revise to minimum at the end of the dev cycle!
 //+kubebuilder:rbac:groups=pubsubplus.solace.com,resources=pubsubpluseventbrokers,verbs=get;list;watch;create;update;patch;delete
@@ -62,19 +76,16 @@ type PubSubPlusEventBrokerReconciler struct {
 // +kubebuilder:rbac:groups="",resources=pods,verbs=get;list;watch;create;update;delete
 // +kubebuilder:rbac:groups="",resources=namespaces,verbs=get;list;watch
 // +kubebuilder:rbac:groups="policy",resources=poddisruptionbudgets,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups="",resources=events,verbs=create;patch
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
-// TODO(user): Modify the Reconcile function to compare the state specified by
-// the PubSubPlusEventBroker object against the actual cluster state, and then
-// perform operations to make the cluster state reflect the state specified by
-// the user.
-//
-// For more details, check Reconcile and its Result here:
-// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.12.2/pkg/reconcile
 func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-
+	// Safeguards in case reconcile gets stuck - not used for now
+	// ctx, cancel := context.WithTimeout(context.Background(), 20*time.Minute)
+	// defer cancel()
 	// Format is set in main.go
+	// TODO: better share logger within module so code in other source files can make use of logging too
 	log := ctrllog.FromContext(ctx)
 
 	var stsP, stsB, stsM *appsv1.StatefulSet
@@ -95,6 +106,13 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 		return ctrl.Result{}, err
 	} else {
 		log.Info("Detected existing pubsubpluseventbroker", " pubsubpluseventbroker.Name", pubsubpluseventbroker.Name)
+	}
+
+	// Check maintenance mode
+	if labelValue, ok := pubsubpluseventbroker.Labels[maintenanceLabel]; ok && labelValue == "true" {
+		log.Info(fmt.Sprintf("Found maintenance label '%s=true', reconcile paused.", maintenanceLabel))
+		// TODO: update status
+		return ctrl.Result{}, nil
 	}
 
 	// Check if new ServiceAccount needs to created or an existing one needs to be used
@@ -120,6 +138,10 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 				return ctrl.Result{}, err
 			}
 			// ServiceAccount created successfully - return and requeue
+			r.Recorder.Event(pubsubpluseventbroker, corev1.EventTypeNormal, "Created",
+				fmt.Sprintf("ServiceAccount %s created in namespace %s",
+				saName,
+				pubsubpluseventbroker.Namespace),)
 			return ctrl.Result{Requeue: true}, nil
 		} else if err != nil {
 			log.Error(err, "Failed to get ServiceAccount")
@@ -197,12 +219,13 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 	}
 
 	// Check if the Service already exists, if not create a new one
+	brokerServiceHash := brokerServiceHash(pubsubpluseventbroker.Spec)
 	svc := &corev1.Service{}
 	svcName := getObjectName("Service", pubsubpluseventbroker.Name)
 	err = r.Get(ctx, types.NamespacedName{Name: svcName, Namespace: pubsubpluseventbroker.Namespace}, svc)
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new service
-		svc := r.serviceForEventBroker(svcName, pubsubpluseventbroker)
+		svc := r.createServiceForEventBroker(svcName, pubsubpluseventbroker)
 		log.Info("Creating a new Service", "Service.Namespace", svc.Namespace, "Service.Name", svc.Name)
 		err = r.Create(ctx, svc)
 		if err != nil {
@@ -215,7 +238,19 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 		log.Error(err, "Failed to get Service")
 		return ctrl.Result{}, err
 	} else {
-		log.Info("Detected existing Service", " Service.Name", svc.Name)
+		// Check if existing service is not outdated at this point
+		if brokerServiceOutdated(svc, brokerServiceHash) {
+			log.Info("Updating existing Service", "Service.Namespace", svc.Namespace, "Service.Name", svc.Name)
+			r.updateServiceForEventBroker(svc, pubsubpluseventbroker)
+			err = r.Update(ctx, svc)
+			if err != nil {
+				log.Error(err, "Failed to update Service", "Service.Namespace", svc.Namespace, "Service.Name", svc.Name)
+				return ctrl.Result{}, err
+			}
+			// Service updated successfully - return and requeue
+			return ctrl.Result{Requeue: true}, nil
+		}
+		log.Info("Detected up-to-date existing Service", " Service.Name", svc.Name)
 	}
 
 	haDeployment := pubsubpluseventbroker.Spec.Redundancy
@@ -268,124 +303,14 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 	} else {
 		err = r.Get(ctx, types.NamespacedName{Name: pubsubpluseventbroker.Spec.AdminCredentialsSecret, Namespace: pubsubpluseventbroker.Namespace}, secret)
 		if err != nil {
-			log.Error(err, "Failed to find Secret. '"+pubsubpluseventbroker.Spec.AdminCredentialsSecret+"'")
+			log.Error(err, "Failed to find specified Secret: '" + pubsubpluseventbroker.Spec.AdminCredentialsSecret + "'")
 			return ctrl.Result{}, err
 		}
-	}
-
-	// Check if Primary StatefulSet already exists, if not create a new one
-	stsP = &appsv1.StatefulSet{}
-	stsPName := getStatefulsetName(pubsubpluseventbroker.Name, "p")
-	err = r.Get(ctx, types.NamespacedName{Name: stsPName, Namespace: pubsubpluseventbroker.Namespace}, stsP)
-	if err != nil && errors.IsNotFound(err) {
-		// Define a new statefulset
-		stsP := r.createStatefulsetForEventBroker(stsPName, pubsubpluseventbroker, sa, secret)
-		log.Info("Creating a new Primary StatefulSet", "StatefulSet.Namespace", stsP.Namespace, "StatefulSet.Name", stsP.Name)
-		err = r.Create(ctx, stsP)
-		if err != nil {
-			log.Error(err, "Failed to create new Primary StatefulSet", "StatefulSet.Namespace", stsP.Namespace, "StatefulSet.Name", stsP.Name)
-			return ctrl.Result{}, err
-		}
-		// StatefulSet created successfully - return and requeue
-		return ctrl.Result{Requeue: true}, nil
-	} else if err != nil {
-		log.Error(err, "Failed to get StatefulSet")
-		return ctrl.Result{}, err
-	} else {
-		if stsP.Spec.Template.ObjectMeta.Annotations[dependenciesSignatureAnnotationName] != hash(pubsubpluseventbroker.Spec) {
-			// If resource versions differ it means update is required
-			log.Info("Updating existing Primary StatefulSet", " StatefulSet.Name", stsP.Name)
-			r.updateStatefulsetForEventBroker(stsPName, pubsubpluseventbroker, stsP, sa, secret)
-			log.Info("Updating Primary StatefulSet", "StatefulSet.Namespace", stsP.Namespace, "StatefulSet.Name", stsP.Name)
-			err = r.Update(ctx, stsP)
-			if err != nil {
-				log.Error(err, "Failed to update Primary StatefulSet", "StatefulSet.Namespace", stsP.Namespace, "StatefulSet.Name", stsP.Name)
-				return ctrl.Result{}, err
-			}
-			// StatefulSet updated successfully - return and requeue
-			return ctrl.Result{Requeue: true}, nil
-		}
-		log.Info("Detected up-to-date existing Primary StatefulSet", " StatefulSet.Name", stsP.Name)
-	}
-
-	if haDeployment {
-		// Add backup and monitor statefulsets
-		// == Check if Backup StatefulSet already exists, if not create a new one
-		stsB = &appsv1.StatefulSet{}
-		stsBName := getStatefulsetName(pubsubpluseventbroker.Name, "b")
-		err = r.Get(ctx, types.NamespacedName{Name: stsBName, Namespace: pubsubpluseventbroker.Namespace}, stsB)
-		if err != nil && errors.IsNotFound(err) {
-			// Define a new statefulset
-			stsB := r.createStatefulsetForEventBroker(stsBName, pubsubpluseventbroker, sa, secret)
-			log.Info("Creating a new Backup StatefulSet", "StatefulSet.Namespace", stsB.Namespace, "StatefulSet.Name", stsB.Name)
-			err = r.Create(ctx, stsB)
-			if err != nil {
-				log.Error(err, "Failed to create new Backup StatefulSet", "StatefulSet.Namespace", stsB.Namespace, "StatefulSet.Name", stsB.Name)
-				return ctrl.Result{}, err
-			}
-			// StatefulSet created successfully - return and requeue
-			return ctrl.Result{Requeue: true}, nil
-		} else if err != nil {
-			log.Error(err, "Failed to get StatefulSet")
-			return ctrl.Result{}, err
-		} else {
-			if stsB.Spec.Template.ObjectMeta.Annotations[dependenciesSignatureAnnotationName] != hash(pubsubpluseventbroker.Spec) {
-				// If resource versions differ it means update is required
-				log.Info("Updating existing Backup StatefulSet", " StatefulSet.Name", stsB.Name)
-				r.updateStatefulsetForEventBroker(stsBName, pubsubpluseventbroker, stsB, sa, secret)
-				log.Info("Updating Backup StatefulSet", "StatefulSet.Namespace", stsB.Namespace, "StatefulSet.Name", stsB.Name)
-				err = r.Update(ctx, stsB)
-				if err != nil {
-					log.Error(err, "Failed to update Backup StatefulSet", "StatefulSet.Namespace", stsB.Namespace, "StatefulSet.Name", stsB.Name)
-					return ctrl.Result{}, err
-				}
-				// StatefulSet updated successfully - return and requeue
-				return ctrl.Result{Requeue: true}, nil
-			}
-			log.Info("Detected up-to-date existing Backup StatefulSet", " StatefulSet.Name", stsB.Name)
-		}
-
-		// == Check if Monitor StatefulSet already exists, if not create a new one
-		stsM = &appsv1.StatefulSet{}
-		stsMName := getStatefulsetName(pubsubpluseventbroker.Name, "m")
-		err = r.Get(ctx, types.NamespacedName{Name: stsMName, Namespace: pubsubpluseventbroker.Namespace}, stsM)
-		if err != nil && errors.IsNotFound(err) {
-			// Define a new statefulset
-			stsM := r.createStatefulsetForEventBroker(stsMName, pubsubpluseventbroker, sa, secret)
-			log.Info("Creating a new Monitor StatefulSet", "StatefulSet.Namespace", stsM.Namespace, "StatefulSet.Name", stsM.Name)
-			err = r.Create(ctx, stsM)
-			if err != nil {
-				log.Error(err, "Failed to create new Monitor StatefulSet", "StatefulSet.Namespace", stsM.Namespace, "StatefulSet.Name", stsM.Name)
-				return ctrl.Result{}, err
-			}
-			// StatefulSet created successfully - return and requeue
-			return ctrl.Result{Requeue: true}, nil
-		} else if err != nil {
-			log.Error(err, "Failed to get StatefulSet")
-			return ctrl.Result{}, err
-		} else {
-			if stsM.Spec.Template.ObjectMeta.Annotations[dependenciesSignatureAnnotationName] != hash(pubsubpluseventbroker.Spec) {
-				// If resource versions differ it means update is required
-				log.Info("Updating existing Monitor StatefulSet", " StatefulSet.Name", stsM.Name)
-				r.updateStatefulsetForEventBroker(stsMName, pubsubpluseventbroker, stsM, sa, secret)
-				log.Info("Updating Monitor StatefulSet", "StatefulSet.Namespace", stsM.Namespace, "StatefulSet.Name", stsM.Name)
-				err = r.Update(ctx, stsM)
-				if err != nil {
-					log.Error(err, "Failed to update Monitor StatefulSet", "StatefulSet.Namespace", stsM.Namespace, "StatefulSet.Name", stsM.Name)
-					return ctrl.Result{}, err
-				}
-				// StatefulSet updated successfully - return and requeue
-				return ctrl.Result{Requeue: true}, nil
-			}
-			log.Info("Detected up-to-date existing Monitor StatefulSet", " StatefulSet.Name", stsM.Name)
-		}
-
 	}
 
 	// Check if Pod DisruptionBudget for HA  is Enabled, only when it is an HA deployment
 	podDisruptionBudgetHAEnabled := pubsubpluseventbroker.Spec.PodDisruptionBudgetForHA
 	if haDeployment && podDisruptionBudgetHAEnabled {
-
 		// Check if PDB for HA already exists
 		foundPodDisruptionBudgetHA := &policyv1.PodDisruptionBudget{}
 		podDisruptionBudgetHAName := getObjectName("PodDisruptionBudget", pubsubpluseventbroker.Name)
@@ -409,13 +334,168 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 		}
 	}
 
+	brokerSpecHash := brokerSpecHash(pubsubpluseventbroker.Spec)
+	tlsSecretHash := r.tlsSecretHash(ctx, pubsubpluseventbroker)
+	automatedPodUpdateStrategy := (pubsubpluseventbroker.Spec.UpdateStrategy != eventbrokerv1alpha1.ManualPodRestartUpdateStrategy)
+	// Check if Primary StatefulSet already exists, if not create a new one
+	stsP = &appsv1.StatefulSet{}
+	stsPName := getStatefulsetName(pubsubpluseventbroker.Name, "p")
+	err = r.Get(ctx, types.NamespacedName{Name: stsPName, Namespace: pubsubpluseventbroker.Namespace}, stsP)
+	if err != nil && errors.IsNotFound(err) {
+		// Define a new statefulset
+		stsP := r.createStatefulsetForEventBroker(stsPName, ctx, pubsubpluseventbroker, sa, secret)
+		log.Info("Creating a new Primary StatefulSet", "StatefulSet.Namespace", stsP.Namespace, "StatefulSet.Name", stsP.Name)
+		err = r.Create(ctx, stsP)
+		if err != nil {
+			log.Error(err, "Failed to create new Primary StatefulSet", "StatefulSet.Namespace", stsP.Namespace, "StatefulSet.Name", stsP.Name)
+			return ctrl.Result{}, err
+		}
+		// StatefulSet created successfully - return and requeue
+		return ctrl.Result{Requeue: true}, nil
+	} else if err != nil {
+		log.Error(err, "Failed to get StatefulSet")
+		return ctrl.Result{}, err
+	} else {
+		if brokerStsOutdated(stsP, brokerSpecHash, tlsSecretHash) {
+			// If resource versions differ it means recreate or update is required
+			if stsP.Status.ReadyReplicas < 1 {
+				// Related pod is still starting up but already outdated. Remove this statefulset (if automated pod update is allowed and delete has not already been initiated)
+				// and let's recreate it from scratch to force pod restart
+				if automatedPodUpdateStrategy && stsP.ObjectMeta.DeletionTimestamp == nil {
+					log.Info("Existing Primary StatefulSet requires update and its Pod is outdated and not ready - recreating StatefulSet to force pod update", " StatefulSet.Name", stsP.Name)
+					err = r.Delete(ctx, stsP)
+					if err != nil {
+						log.Error(err, "Failed to delete Primary StatefulSet", "StatefulSet.Namespace", stsP.Namespace, "StatefulSet.Name", stsP.Name)
+						return ctrl.Result{}, err
+					}
+					// StatefulSet deleted successfully - return and requeue
+					return ctrl.Result{RequeueAfter: time.Duration(1) * time.Second}, nil
+				}
+				// Otherwise just continue
+			}
+			log.Info("Updating existing Primary StatefulSet", "StatefulSet.Namespace", stsP.Namespace, "StatefulSet.Name", stsP.Name)
+			r.updateStatefulsetForEventBroker(stsP, ctx, pubsubpluseventbroker, sa, secret)
+			err = r.Update(ctx, stsP)
+			if err != nil {
+				log.Error(err, "Failed to update Primary StatefulSet", "StatefulSet.Namespace", stsP.Namespace, "StatefulSet.Name", stsP.Name)
+				return ctrl.Result{}, err
+			}
+			// StatefulSet updated successfully - return and requeue
+			return ctrl.Result{Requeue: true}, nil
+		}
+		log.Info("Detected up-to-date existing Primary StatefulSet", " StatefulSet.Name", stsP.Name)
+	}
+
+	if haDeployment {
+		// Add backup and monitor statefulsets
+		// == Check if Backup StatefulSet already exists, if not create a new one
+		stsB = &appsv1.StatefulSet{}
+		stsBName := getStatefulsetName(pubsubpluseventbroker.Name, "b")
+		err = r.Get(ctx, types.NamespacedName{Name: stsBName, Namespace: pubsubpluseventbroker.Namespace}, stsB)
+		if err != nil && errors.IsNotFound(err) {
+			// Define a new statefulset
+			stsB := r.createStatefulsetForEventBroker(stsBName, ctx, pubsubpluseventbroker, sa, secret)
+			log.Info("Creating a new Backup StatefulSet", "StatefulSet.Namespace", stsB.Namespace, "StatefulSet.Name", stsB.Name)
+			err = r.Create(ctx, stsB)
+			if err != nil {
+				log.Error(err, "Failed to create new Backup StatefulSet", "StatefulSet.Namespace", stsB.Namespace, "StatefulSet.Name", stsB.Name)
+				return ctrl.Result{}, err
+			}
+			// StatefulSet created successfully - return and requeue
+			return ctrl.Result{Requeue: true}, nil
+		} else if err != nil {
+			log.Error(err, "Failed to get StatefulSet")
+			return ctrl.Result{}, err
+		} else {
+			if brokerStsOutdated(stsB, brokerSpecHash, tlsSecretHash) {
+				// If resource versions differ it means recreate or update is required
+				if stsB.Status.ReadyReplicas < 1 {
+					// Related pod is still starting up but already outdated. Remove this statefulset (if automated pod update is allowed and delete has not already been initiated)
+					// and let's recreate it from scratch to force pod restart
+					if automatedPodUpdateStrategy && stsB.ObjectMeta.DeletionTimestamp == nil {
+						log.Info("Existing Backup StatefulSet requires update and its Pod is outdated and not ready - recreating StatefulSet to force pod update", " StatefulSet.Name", stsB.Name)
+						err = r.Delete(ctx, stsB)
+						if err != nil {
+							log.Error(err, "Failed to delete Backup StatefulSet", "StatefulSet.Namespace", stsB.Namespace, "StatefulSet.Name", stsB.Name)
+							return ctrl.Result{}, err
+						}
+						// StatefulSet deleted successfully - return and requeue
+						return ctrl.Result{RequeueAfter: time.Duration(1) * time.Second}, nil
+					}
+					// Otherwise just continue
+				}
+				log.Info("Updating existing Backup StatefulSet", "StatefulSet.Namespace", stsB.Namespace, "StatefulSet.Name", stsB.Name)
+				r.updateStatefulsetForEventBroker(stsB, ctx, pubsubpluseventbroker, sa, secret)
+				err = r.Update(ctx, stsB)
+				if err != nil {
+					log.Error(err, "Failed to update Backup StatefulSet", "StatefulSet.Namespace", stsB.Namespace, "StatefulSet.Name", stsB.Name)
+					return ctrl.Result{}, err
+				}
+				// StatefulSet updated successfully - return and requeue
+				return ctrl.Result{Requeue: true}, nil
+			}
+			log.Info("Detected up-to-date existing Backup StatefulSet", " StatefulSet.Name", stsB.Name)
+		}
+
+		// == Check if Monitor StatefulSet already exists, if not create a new one
+		stsM = &appsv1.StatefulSet{}
+		stsMName := getStatefulsetName(pubsubpluseventbroker.Name, "m")
+		err = r.Get(ctx, types.NamespacedName{Name: stsMName, Namespace: pubsubpluseventbroker.Namespace}, stsM)
+		if err != nil && errors.IsNotFound(err) {
+			// Define a new statefulset
+			stsM := r.createStatefulsetForEventBroker(stsMName, ctx, pubsubpluseventbroker, sa, secret)
+			log.Info("Creating a new Monitor StatefulSet", "StatefulSet.Namespace", stsM.Namespace, "StatefulSet.Name", stsM.Name)
+			err = r.Create(ctx, stsM)
+			if err != nil {
+				log.Error(err, "Failed to create new Monitor StatefulSet", "StatefulSet.Namespace", stsM.Namespace, "StatefulSet.Name", stsM.Name)
+				return ctrl.Result{}, err
+			}
+			// StatefulSet created successfully - return and requeue
+			return ctrl.Result{Requeue: true}, nil
+		} else if err != nil {
+			log.Error(err, "Failed to get StatefulSet")
+			return ctrl.Result{}, err
+		} else {
+			if brokerStsOutdated(stsM, brokerSpecHash, tlsSecretHash) {
+				// If resource versions differ it means recreate or update is required
+				if stsM.Status.ReadyReplicas < 1 {
+					// Related pod is still starting up but already outdated. Remove this statefulset (if automated pod update is allowed and delete has not already been initiated)
+					// and let's recreate it from scratch to force pod restart
+					if automatedPodUpdateStrategy && stsM.ObjectMeta.DeletionTimestamp == nil {
+						log.Info("Existing Monitor StatefulSet requires update and its Pod is outdated and not ready - recreating StatefulSet to force pod update", " StatefulSet.Name", stsM.Name)
+						err = r.Delete(ctx, stsM)
+						if err != nil {
+							log.Error(err, "Failed to delete Monitor StatefulSet", "StatefulSet.Namespace", stsM.Namespace, "StatefulSet.Name", stsM.Name)
+							return ctrl.Result{}, err
+						}
+						// StatefulSet deleted successfully - return and requeue
+						return ctrl.Result{RequeueAfter: time.Duration(1) * time.Second}, nil
+					}
+					// Otherwise just continue
+				}
+				log.Info("Updating existing Monitor StatefulSet", "StatefulSet.Namespace", stsM.Namespace, "StatefulSet.Name", stsM.Name)
+				r.updateStatefulsetForEventBroker(stsM, ctx, pubsubpluseventbroker, sa, secret)
+				err = r.Update(ctx, stsM)
+				if err != nil {
+					log.Error(err, "Failed to update Monitor StatefulSet", "StatefulSet.Namespace", stsM.Namespace, "StatefulSet.Name", stsM.Name)
+					return ctrl.Result{}, err
+				}
+				// StatefulSet updated successfully - return and requeue
+				return ctrl.Result{Requeue: true}, nil
+			}
+			log.Info("Detected up-to-date existing Monitor StatefulSet", " StatefulSet.Name", stsM.Name)
+		}
+
+	}
+
 	// Check if pods are out-of-sync and need to be restarted
 	// First check for readiness of all broker nodes to continue
 	// TODO: where it makes sense emit events here instead of logs
 	if stsP.Status.ReadyReplicas < 1 {
 		log.Info("Detected unready Primary StatefulSet, waiting to be ready")
 		return ctrl.Result{RequeueAfter: time.Duration(5) * time.Second}, nil
-	} else if pubsubpluseventbroker.Spec.Redundancy {
+	}
+	if haDeployment {
 		if stsB.Status.ReadyReplicas < 1 {
 			log.Info("Detected unready Backup StatefulSet, waiting to be ready")
 			return ctrl.Result{RequeueAfter: time.Duration(5) * time.Second}, nil
@@ -425,114 +505,79 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 			return ctrl.Result{RequeueAfter: time.Duration(5) * time.Second}, nil
 		}
 	}
-	log.Info("All broker pods are available")
+	log.Info("All broker pods are in ready state")
 
 	// Next restart any pods to sync with their config dependencies
-	expectedConfigSignature := hash(pubsubpluseventbroker.Spec)
-	var brokerPod *corev1.Pod
-	// Must distinguish between HA and non-HA
-	if haDeployment {
-		// The algorithm is to process the Monitor, then the pod with `active=false`, finally `active=true`
-		// == Monitor
-		if brokerPod, err = r.getBrokerPod(ctx, pubsubpluseventbroker, Monitor); err != nil {
-			log.Error(err, "Failed to list pods", "PubSubPlusEventBroker.Namespace", pubsubpluseventbroker.Namespace, "PubSubPlusEventBroker.Name", pubsubpluseventbroker.Name)
-			return ctrl.Result{}, err
-		}
-		if brokerPod.ObjectMeta.Annotations[dependenciesSignatureAnnotationName] != expectedConfigSignature {
-			if brokerPod.ObjectMeta.DeletionTimestamp == nil {
-				// Restart the Monitor pod to sync with its Statefulset config
-				log.Info("Restarting Monitor pod to reflect latest updates", "Pod.Namespace", &brokerPod.Namespace, "Pod.Name", &brokerPod.Name)
-				err := r.Delete(ctx, brokerPod)
-				if err != nil {
-					log.Error(err, "Failed to delete the Monitor pod", "Pod.Namespace", &brokerPod.Namespace, "Pod.Name", &brokerPod.Name)
-					return ctrl.Result{}, err
-				}
-			}
-			// Already restarting, just requeue
-			return ctrl.Result{RequeueAfter: time.Duration(5) * time.Second}, nil
-		}
-		// == Standby
-		if brokerPod, err = r.getBrokerPod(ctx, pubsubpluseventbroker, Standby); err != nil {
-			log.Error(err, "Failed to list pods", "PubSubPlusEventBroker.Namespace", pubsubpluseventbroker.Namespace, "PubSubPlusEventBroker.Name", pubsubpluseventbroker.Name)
-			return ctrl.Result{}, err
-		}
-		if brokerPod.ObjectMeta.Annotations[dependenciesSignatureAnnotationName] != expectedConfigSignature {
-			if brokerPod.ObjectMeta.DeletionTimestamp == nil {
-				// Restart the Standby pod to sync with its Statefulset config
-				log.Info("Restarting Standby pod to reflect latest updates", "Pod.Namespace", &brokerPod.Namespace, "Pod.Name", &brokerPod.Name)
-				err := r.Delete(ctx, brokerPod)
-				if err != nil {
-					log.Error(err, "Failed to delete the Standby pod", "Pod.Namespace", &brokerPod.Namespace, "Pod.Name", &brokerPod.Name)
-					return ctrl.Result{}, err
-				}
-			}
-			// Already restarting, just requeue
-			return ctrl.Result{RequeueAfter: time.Duration(5) * time.Second}, nil
-		}
-	}
-	// At this point, HA or not, check the active pod for restart
-	if brokerPod, err = r.getBrokerPod(ctx, pubsubpluseventbroker, Active); err != nil {
-		log.Error(err, "Failed to list pods", "PubSubPlusEventBroker.Namespace", pubsubpluseventbroker.Namespace, "PubSubPlusEventBroker.Name", pubsubpluseventbroker.Name)
-		return ctrl.Result{}, err
-	}
-	if brokerPod.ObjectMeta.Annotations[dependenciesSignatureAnnotationName] != expectedConfigSignature {
-		if brokerPod.ObjectMeta.DeletionTimestamp == nil {
-			// Restart the Active Pod to sync with its Statefulset config
-			log.Info("Restarting Active pod to reflect latest updates", "Pod.Namespace", &brokerPod.Namespace, "Pod.Name", &brokerPod.Name)
-			err := r.Delete(ctx, brokerPod)
-			if err != nil {
-				log.Error(err, "Failed to delete the Active pod", "Pod.Namespace", &brokerPod.Namespace, "Pod.Name", &brokerPod.Name)
+	// Skip it though if updateStrategy is set to manual - in this case this is supposed to be done manually by the user
+	if automatedPodUpdateStrategy {
+		var brokerPod *corev1.Pod
+		// Must distinguish between HA and non-HA
+		if haDeployment {
+			// The algorithm is to process the Monitor, then the pod with `active=false`, finally `active=true`
+			// == Monitor
+			if brokerPod, err = r.getBrokerPod(ctx, pubsubpluseventbroker, Monitor); err != nil {
+				log.Error(err, "Failed to list Monitor pod", "PubSubPlusEventBroker.Namespace", pubsubpluseventbroker.Namespace, "PubSubPlusEventBroker.Name", pubsubpluseventbroker.Name)
 				return ctrl.Result{}, err
 			}
+			if brokerPodOutdated(brokerPod, brokerSpecHash, tlsSecretHash) {
+				if brokerPod.ObjectMeta.DeletionTimestamp == nil {
+					// Restart the Monitor pod to sync with its Statefulset config
+					log.Info("Restarting Monitor pod to reflect latest updates", "Pod.Namespace", &brokerPod.Namespace, "Pod.Name", &brokerPod.Name)
+					err := r.Delete(ctx, brokerPod)
+					if err != nil {
+						log.Error(err, "Failed to delete the Monitor pod", "Pod.Namespace", &brokerPod.Namespace, "Pod.Name", &brokerPod.Name)
+						return ctrl.Result{}, err
+					}
+				}
+				// Already restarting, just requeue
+				return ctrl.Result{RequeueAfter: time.Duration(5) * time.Second}, nil
+			}
+			// == Standby
+			if brokerPod, err = r.getBrokerPod(ctx, pubsubpluseventbroker, Standby); err != nil {
+				log.Error(err, "Failed to list a single Standby pod", "PubSubPlusEventBroker.Namespace", pubsubpluseventbroker.Namespace, "PubSubPlusEventBroker.Name", pubsubpluseventbroker.Name)
+				// This may be a temporary issue, most likely more than one pod labelled	 active=false, just requeue
+				return ctrl.Result{RequeueAfter: time.Duration(5) * time.Second}, nil
+			}
+			if brokerPodOutdated(brokerPod, brokerSpecHash, tlsSecretHash) {
+				if brokerPod.ObjectMeta.DeletionTimestamp == nil {
+					// Restart the Standby pod to sync with its Statefulset config
+					// TODO: it may be a better idea to let control come here even if
+					//   automatedPodUpdateStrategy is not set. Then log the need for Pod restart.
+					log.Info("Restarting Standby pod to reflect latest updates", "Pod.Namespace", &brokerPod.Namespace, "Pod.Name", &brokerPod.Name)
+					err := r.Delete(ctx, brokerPod)
+					if err != nil {
+						log.Error(err, "Failed to delete the Standby pod", "Pod.Namespace", &brokerPod.Namespace, "Pod.Name", &brokerPod.Name)
+						return ctrl.Result{}, err
+					}
+				}
+				// Already restarting, just requeue
+				return ctrl.Result{RequeueAfter: time.Duration(5) * time.Second}, nil
+			}
 		}
-		// Already restarting, just requeue
-		return ctrl.Result{RequeueAfter: time.Duration(5) * time.Second}, nil
-	}
-
-	// List the pods for this pubsubpluseventbroker
-	// podList := &corev1.PodList{}
-	// listOpts := []client.ListOption{
-	// 	client.InNamespace(pubsubpluseventbroker.Namespace),
-	// 	client.MatchingLabels(getMessagingPodSelectorByActive(pubsubpluseventbroker.Name, "true")),
-	// }
-	// if err = r.List(ctx, podList, listOpts...); err != nil {
-	// 	log.Error(err, "Failed to list pods", "PubSubPlusEventBroker.Namespace", pubsubpluseventbroker.Namespace, "PubSubPlusEventBroker.Name", pubsubpluseventbroker.Name)
-	// 	return ctrl.Result{}, err
-	// }
-	// if (podList != nil && len(podList.Items) > 0 &&
-	// 	podList.Items[0].ObjectMeta.Annotations[dependenciesSignatureAnnotationName] != stsP.Spec.Template.ObjectMeta.Annotations[dependenciesSignatureAnnotationName] &&
-	// 	podList.Items[0].ObjectMeta.DeletionTimestamp == nil) {
-	// 	// Restart the Pod to sync with its Statefulset config
-	// 	log.Info("Restarting pod the reflect latest updates", "Pod.Namespace", &podList.Items[0].Namespace, "Pod.Name", &podList.Items[0].Name)
-	// 	err = r.Delete(ctx, &podList.Items[0])
-	// 	if err != nil {
-	// 		log.Error(err, "Failed to delete the Pod", "Pod.Namespace", &podList.Items[0].Namespace, "Pod.Name", &podList.Items[0].Name)
-	// 		return ctrl.Result{}, err
-	// 	}
-	// 	// Now wait for the pod to come back up
-	// 	return ctrl.Result{RequeueAfter: time.Duration(5) * time.Second}, nil
-	// }
-
-	// Update the PubSubPlusEventBroker status with the pod names
-	// TODO: this is an example. It would make sense to update status with broker ready for messaging, config update on progress, etc.
-	// List the pods for this pubsubpluseventbroker's StatefulSet
-	podList := &corev1.PodList{}
-	listOpts := []client.ListOption{
-		client.InNamespace(pubsubpluseventbroker.Namespace),
-		client.MatchingLabels(baseLabels(pubsubpluseventbroker.Name)),
-	}
-	if err = r.List(ctx, podList, listOpts...); err != nil {
-		log.Error(err, "Failed to list pods", "PubSubPlusEventBroker.Namespace", pubsubpluseventbroker.Namespace, "PubSubPlusEventBroker.Name", pubsubpluseventbroker.Name)
-		return ctrl.Result{}, err
-	}
-	podNames := getPodNames(podList.Items)
-	// Update status.BrokerPods if needed
-	if !reflect.DeepEqual(podNames, pubsubpluseventbroker.Status.BrokerPods) {
-		pubsubpluseventbroker.Status.BrokerPods = podNames
-		err := r.Status().Update(ctx, pubsubpluseventbroker)
-		if err != nil {
-			log.Error(err, "Failed to update PubSubPlusEventBroker status")
-			return ctrl.Result{}, err
+		// At this point, HA or not, check the active pod for restart
+		if brokerPod, err = r.getBrokerPod(ctx, pubsubpluseventbroker, Active); err != nil {
+			if haDeployment {
+				// In case of HA it is expected that there is an active pod if control got this far
+				log.Error(err, "Failed to list the Active pod", "PubSubPlusEventBroker.Namespace", pubsubpluseventbroker.Namespace, "PubSubPlusEventBroker.Name", pubsubpluseventbroker.Name)
+				return ctrl.Result{}, err
+			} else {
+				// In case of non-HA this means that there is no active pod (likely restarting)
+				// This is expected to be a temporary issue, just requeue
+				return ctrl.Result{RequeueAfter: time.Duration(5) * time.Second}, nil
+			}
+		}
+		if brokerPodOutdated(brokerPod, brokerSpecHash, tlsSecretHash) {
+			if brokerPod.ObjectMeta.DeletionTimestamp == nil {
+				// Restart the Active Pod to sync with its Statefulset config
+				log.Info("Restarting Active pod to reflect latest updates", "Pod.Namespace", &brokerPod.Namespace, "Pod.Name", &brokerPod.Name)
+				err := r.Delete(ctx, brokerPod)
+				if err != nil {
+					log.Error(err, "Failed to delete the Active pod", "Pod.Namespace", &brokerPod.Namespace, "Pod.Name", &brokerPod.Name)
+					return ctrl.Result{}, err
+				}
+			}
+			// Already restarting, just requeue
+			return ctrl.Result{RequeueAfter: time.Duration(5) * time.Second}, nil
 		}
 	}
 
@@ -561,7 +606,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 		}
 
 		// Pod already exists - don't requeue
-		log.Info("Skip reconcile: Deployment already exists", "Pod.Namespace", foundPrometheusExporter.Namespace, "Pod.Name", foundPrometheusExporter.Name)
+		log.Info("Detected existing Prometheus Exporter deployment", "Deployment.Namespace", foundPrometheusExporter.Namespace, "Deployment.Name", foundPrometheusExporter.Name)
 
 		// Check if this Service for Prometheus Exporter Pod already exists
 		foundPrometheusExporterSvc := &corev1.Service{}
@@ -588,7 +633,36 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 		return ctrl.Result{}, nil
 	}
 
-	return ctrl.Result{}, nil
+	// Update the PubSubPlusEventBroker status with the pod names
+	// TODO: this is an example. It would make sense to update status with broker ready for messaging, config update on progress, etc.
+	// List the pods for this pubsubpluseventbroker's StatefulSet
+	podList := &corev1.PodList{}
+	listOpts := []client.ListOption{
+		client.InNamespace(pubsubpluseventbroker.Namespace),
+		client.MatchingLabels(baseLabels(pubsubpluseventbroker.Name)),
+	}
+	if err = r.List(ctx, podList, listOpts...); err != nil {
+		log.Error(err, "Failed to list pods", "PubSubPlusEventBroker.Namespace", pubsubpluseventbroker.Namespace, "PubSubPlusEventBroker.Name", pubsubpluseventbroker.Name)
+		return ctrl.Result{}, err
+	}
+	podNames := getPodNames(podList.Items)
+	// Update status.BrokerPods if needed
+	if !reflect.DeepEqual(podNames, pubsubpluseventbroker.Status.BrokerPods) {
+		pubsubpluseventbroker.Status.BrokerPods = podNames
+		// Get the resource first to ensure updating the latest
+		err := r.Get(ctx, req.NamespacedName, pubsubpluseventbroker)
+		if err == nil {
+			err := r.Status().Update(ctx, pubsubpluseventbroker)
+			if err != nil {
+				log.Error(err, "Failed to update PubSubPlusEventBroker status")
+				return ctrl.Result{}, err
+			}
+		}
+		// if err wasn't nil then let the next reconcile loop handle it
+	}
+
+	// Reconcile periodically
+	return ctrl.Result{RequeueAfter: 10 * time.Minute}, nil
 }
 
 // TODO: if still needed move it to namings
@@ -612,9 +686,56 @@ func getPodNames(pods []corev1.Pod) []string {
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *PubSubPlusEventBrokerReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	// Need to watch non-managed resources
+	// To understand following code refer to https://kubebuilder.io/reference/watching-resources/externally-managed.html#allow-for-linking-of-resources-in-the-spec
+	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &eventbrokerv1alpha1.PubSubPlusEventBroker{}, dependencyTlsSecretField, func(rawObj client.Object) []string {
+		// Extract the secret name from the EventBroker Spec, if one is provided
+		eventBroker := rawObj.(*eventbrokerv1alpha1.PubSubPlusEventBroker)
+		if eventBroker.Spec.BrokerTLS.ServerTLsConfigSecret == "" {
+			return nil
+		}
+		return []string{eventBroker.Spec.BrokerTLS.ServerTLsConfigSecret}
+	}); err != nil {
+		return err
+	}
+	// This describes rules to manage both owned and external reources
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&eventbrokerv1alpha1.PubSubPlusEventBroker{}).
 		Owns(&appsv1.StatefulSet{}).
+		Owns(&appsv1.Deployment{}).
+		Owns(&corev1.ServiceAccount{}).
+		Owns(&policyv1.PodDisruptionBudget{}).
+		Owns(&rbacv1.Role{}).
+		Owns(&rbacv1.RoleBinding{}).
+		Owns(&corev1.Secret{}).
+		Owns(&corev1.Service{}).
 		Owns(&corev1.ConfigMap{}).
+		Watches(
+			&source.Kind{Type: &corev1.Secret{}},
+			handler.EnqueueRequestsFromMapFunc(r.findEventBrokersForTlsSecret),
+			builder.WithPredicates(predicate.ResourceVersionChangedPredicate{}),
+		).
 		Complete(r)
+}
+
+func (r *PubSubPlusEventBrokerReconciler) findEventBrokersForTlsSecret(secret client.Object) []reconcile.Request {
+	ebDeployments := &eventbrokerv1alpha1.PubSubPlusEventBrokerList{}
+	listOps := &client.ListOptions{
+		FieldSelector: fields.OneTermEqualSelector(dependencyTlsSecretField, secret.GetName()),
+		Namespace:     secret.GetNamespace(),
+	}
+	err := r.List(context.TODO(), ebDeployments, listOps)
+	if err != nil {
+		return []reconcile.Request{}
+	}
+	requests := make([]reconcile.Request, len(ebDeployments.Items))
+	for i, item := range ebDeployments.Items {
+		requests[i] = reconcile.Request{
+			NamespacedName: types.NamespacedName{
+				Name:      item.GetName(),
+				Namespace: item.GetNamespace(),
+			},
+		}
+	}
+	return requests
 }
