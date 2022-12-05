@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Set up Go
-        uses: actions/setup-go@v1
+        uses: actions/setup-go@v3
         with:
           go-version: 1.19
 
@@ -30,16 +30,16 @@ jobs:
         run: make docker-push
 
   call-test-full-params:
-    if: ${{ false }}  # disable for now
+    # if: ${{ false }}  # disable for now
     needs: build
     uses: ./.github/workflows/test-full-params.yml
 
   call-test-helm-upgrade:
-    if: ${{ false }}  # disable for now
+    # if: ${{ false }}  # disable for now
     needs: build
     uses: ./.github/workflows/test-helm-upgrade.yml
 
   call-test-minimal-params:
-    if: ${{ false }}  # disable for now
+    # if: ${{ false }}  # disable for now
     needs: build
     uses: ./.github/workflows/test-minimal-params.yml
