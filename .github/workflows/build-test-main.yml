@@ -31,12 +31,12 @@ jobs:
 
   call-test-full-params:
     needs: build
-    uses: ./test-full-params.yml
+    uses: ./.github/workflows/test-full-params.yml
 
   call-test-helm-upgrade:
     needs: build
-    uses: ./test-helm-upgrade.yml
+    uses: ./.github/workflows/test-helm-upgrade.yml
 
   call-test-minimal-params:
     needs: build
-    uses: ./test-minimal-params.yml
+    uses: ./.github/workflows/test-minimal-params.yml
