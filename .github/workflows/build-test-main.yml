@@ -1,0 +1,42 @@
+name: Build and Test
+
+on:
+  push:
+
+jobs:
+  build:
+    name: Build & push image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Go
+        uses: actions/setup-go@v1
+        with:
+          go-version: 1.19
+
+      - name: Check out code
+        uses: actions/checkout@v1
+
+      - name: Build
+        run: make docker-build
+
+      - name: Login to Github Packages
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build image and push GitHub Container Registry
+        run: make docker-push
+
+  call-test-full-params:
+    needs: build
+    uses: ./_test-full-params.yml
+
+  call-test-helm-upgrade:
+    needs: build
+    uses: ./_test-helm-upgrade.yml
+
+  call-test-minimal-params:
+    needs: build
+    uses: ./test-minimal-params.yml
