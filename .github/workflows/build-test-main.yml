@@ -42,7 +42,7 @@ jobs:
   test-minimal-params:
     if: ${{ false }}  # disable for now
     needs: build
-    uses: ./.github/workflows/test-minimal-params.yml
+    uses: ./.github/workflows/test-minimal-params.yml 
 
   test-broker-upgrade-update:
     # if: ${{ false }}  # disable for now
