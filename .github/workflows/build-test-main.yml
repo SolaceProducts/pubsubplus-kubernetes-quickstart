@@ -5,6 +5,7 @@ on:
 
 jobs:
   build:
+    if: ${{ false }}  # disable for now
     name: Build & push image
     runs-on: ubuntu-latest
     steps:
@@ -30,17 +31,17 @@ jobs:
         run: make docker-push
 
   test-full-params:
-    # if: ${{ false }}  # disable for now
+    if: ${{ false }}  # disable for now
     needs: build
     uses: ./.github/workflows/test-full-params.yml
 
   test-helm-upgrade:
-    # if: ${{ false }}  # disable for now
+    if: ${{ false }}  # disable for now
     needs: build
     uses: ./.github/workflows/test-helm-upgrade.yml
 
   test-minimal-params:
-    # if: ${{ false }}  # disable for now
+    if: ${{ false }}  # disable for now
     needs: build
     uses: ./.github/workflows/test-minimal-params.yml
 

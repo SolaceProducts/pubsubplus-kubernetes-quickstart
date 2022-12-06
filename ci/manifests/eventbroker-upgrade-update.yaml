@@ -1,0 +1,12 @@
+---
+apiVersion: pubsubplus.solace.com/v1alpha1
+kind: PubSubPlusEventBroker
+metadata:
+  name: test-nonha-upgrade-update
+spec:
+  developer: true
+  image:
+    repository: solace/solace-pubsub-standard
+    tag: "10.1"
+  service:
+    type: LoadBalancer
