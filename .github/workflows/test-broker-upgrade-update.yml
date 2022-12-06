@@ -64,7 +64,7 @@ jobs:
           kubectl get po --show-labels | grep test-nonha-upgrade-update | grep "1/1"
           kubectl get po --show-labels | grep test-nonha-upgrade-update | grep active=true
           kubectl get po -o yaml | grep "image: ${REPO}:${UPGRADETAG}"
-          pkill -f "port-forward"; kubectl port-forward svc/test-nonha-upgrade-update-pubsubplus 55555:55555 & 
+          pkill -f "port-forward"; kubectl port-forward svc/test-nonha-upgrade-update-pubsubplus 55555:55555 &
           pubSubTools/sdkperf_c -cip=tcp://localhost:55555 -mn=1000 -mr=0 -ptl=t1 -stl=t1 | grep "Total Messages"
 
       - name: Update deployment service type - expecting automated update with no pod restart
