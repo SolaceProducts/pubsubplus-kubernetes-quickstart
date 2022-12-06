@@ -54,7 +54,7 @@ jobs:
           DOCKERHUBRESULTS=`curl --silent "https://hub.docker.com/v2/repositories/$REPO/tags?page_size=1000" | jq -r '.results[] | "\(.digest) \(.name)"' | sort`
           SHA=`echo "$DOCKERHUBRESULTS" | grep latest | awk '{print $1;}'`
           UPGRADETAG=`echo "$DOCKERHUBRESULTS" | grep $SHA | head -n 1 | awk '{print $2;}'`
-          // overwrite the upgrade version, then apply manifest
+          # overwrite the upgrade version, then apply manifest
           sed -i "s/latest/\"${UPGRADETAG}\"/" ci/manifests/eventbroker-upgrade-update.yaml
           kubectl apply -f ci/manifests/eventbroker-upgrade-update.yaml | grep "test-nonha-upgrade-update"
           while ! kubectl get po | grep "0/1" ; do sleep 1 ; done
