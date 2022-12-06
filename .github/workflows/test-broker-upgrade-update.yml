@@ -67,21 +67,18 @@ jobs:
           pkill -f "port-forward"; kubectl port-forward svc/test-nonha-upgrade-update-pubsubplus 55555:55555 & 
           pubSubTools/sdkperf_c -cip=tcp://localhost:55555 -mn=1000 -mr=0 -ptl=t1 -stl=t1 | grep "Total Messages"
 
-      - name: Update deployment service type - expecting automated update
+      - name: Update deployment service type - expecting automated update with no pod restart
         run: |
           # overwrite the service type, then apply manifest
           sed -i "s/LoadBalancer/NodePort/" ci/manifests/eventbroker-upgrade-update.yaml
           kubectl apply -f ci/manifests/eventbroker-upgrade-update.yaml | grep "test-nonha-upgrade-update"
           sleep 10; kubectl get all
-          while ! kubectl get po | grep "0/1" ; do sleep 1 ; done
-          kubectl get all
-          kubectl wait pods --selector app.kubernetes.io/instance=test-nonha-upgrade-update --for condition=Ready --timeout=120s | grep "condition met"
-          kubectl get po --show-labels | grep test-nonha-upgrade-update | grep "1/1"
-          kubectl get po --show-labels | grep test-nonha-upgrade-update | grep active=true
           kubectl get svc -o yaml | grep NodePort
           pkill -f "port-forward"; kubectl port-forward svc/test-nonha-upgrade-update-pubsubplus 55555:55555 & 
           pubSubTools/sdkperf_c -cip=tcp://localhost:55555 -mn=1000 -mr=0 -ptl=t1 -stl=t1 | grep "Total Messages"
 
       - name: Delete broker deployment
         run: |
+          # show any error in the operator logs
+          kubectl logs $POD -n pubsubplus-operator-system | grep error || echo
           kubectl delete eventbroker test-nonha-upgrade-update | grep deleted
