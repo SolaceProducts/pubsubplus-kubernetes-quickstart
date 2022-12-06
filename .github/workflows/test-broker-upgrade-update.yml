@@ -46,9 +46,7 @@ jobs:
           curl -O https://sftp.solace.com/download/SDKPERF_C_LINUX64
           tar -xvf SDKPERF_C_LINUX64
           pubSubTools/sdkperf_c -cip=tcp://localhost:55555 -mn=1000 -mr=0 -ptl=t1 -stl=t1 | grep "Total Messages"
-
-      - name: Upgrade to new broker version
-        run: |
+          # Upgrade now
           REPO=solace/solace-pubsub-standard
           # grab a tag from Docker Hub that has the same SHA as "latest", so upgrade is easy
           DOCKERHUBRESULTS=`curl --silent "https://hub.docker.com/v2/repositories/$REPO/tags?page_size=1000" | jq -r '.results[] | "\(.digest) \(.name)"' | sort`
