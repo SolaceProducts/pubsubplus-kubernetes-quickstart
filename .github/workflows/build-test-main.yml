@@ -37,7 +37,7 @@ jobs:
   test-helm-upgrade:
     # if: ${{ false }}  # disable for now
     needs: build
-    uses: ./.github/workflows/test-helm-upgrade.yml
+    uses: ./.github/workflows/test-helm-upgrade.yml 
 
   test-minimal-params:
     # if: ${{ false }}  # disable for now
