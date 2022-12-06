@@ -7,6 +7,6 @@ spec:
   developer: true
   image:
     repository: solace/solace-pubsub-standard
-    tag: "10.1"
+    tag: latest
   service:
     type: LoadBalancer

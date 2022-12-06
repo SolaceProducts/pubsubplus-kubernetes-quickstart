@@ -53,7 +53,7 @@ jobs:
           SHA=`echo "$DOCKERHUBRESULTS" | grep latest | awk '{print $1;}'`
           UPGRADETAG=`echo "$DOCKERHUBRESULTS" | grep $SHA | head -n 1 | awk '{print $2;}'`; echo "Upgrade version: ${UPGRADETAG}"
           # overwrite the upgrade version, then apply manifest
-          sed -i "s/latest/\"${UPGRADETAG}\"/" ci/manifests/eventbroker-upgrade-update.yaml
+          sed -i "s/latest/\"${UPGRADETAG}\"/" ci/manifests/eventbroker-upgrade-update.yaml; cat ci/manifests/eventbroker-upgrade-update.yaml
           kubectl apply -f ci/manifests/eventbroker-upgrade-update.yaml | grep "test-nonha-upgrade-update"
           sleep 10; kubectl get all
           while ! kubectl get po | grep "0/1" ; do sleep 1 ; done
