@@ -7,6 +7,8 @@
 *.dylib
 bin
 testbin/*
+pubSubTools
+SDKPERF*
 
 # Test binary, build with `go test -c`
 *.test
