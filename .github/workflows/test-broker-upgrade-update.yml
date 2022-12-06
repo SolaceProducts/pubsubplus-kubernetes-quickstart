@@ -53,10 +53,11 @@ jobs:
           # grab a tag from Docker Hub that has the same SHA as "latest", so upgrade is easy
           DOCKERHUBRESULTS=`curl --silent "https://hub.docker.com/v2/repositories/$REPO/tags?page_size=1000" | jq -r '.results[] | "\(.digest) \(.name)"' | sort`
           SHA=`echo "$DOCKERHUBRESULTS" | grep latest | awk '{print $1;}'`
-          UPGRADETAG=`echo "$DOCKERHUBRESULTS" | grep $SHA | head -n 1 | awk '{print $2;}'`
+          UPGRADETAG=`echo "$DOCKERHUBRESULTS" | grep $SHA | head -n 1 | awk '{print $2;}'`; echo "Upgrade version: ${UPGRADETAG}"
           # overwrite the upgrade version, then apply manifest
           sed -i "s/latest/\"${UPGRADETAG}\"/" ci/manifests/eventbroker-upgrade-update.yaml
           kubectl apply -f ci/manifests/eventbroker-upgrade-update.yaml | grep "test-nonha-upgrade-update"
+          sleep 10; kubectl get all
           while ! kubectl get po | grep "0/1" ; do sleep 1 ; done
           kubectl get all
           kubectl wait pods --selector app.kubernetes.io/instance=test-nonha-upgrade-update --for condition=Ready --timeout=120s | grep "condition met"
