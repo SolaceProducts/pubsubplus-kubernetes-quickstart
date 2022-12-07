@@ -29,17 +29,22 @@ jobs:
       - name: Build image and push GitHub Container Registry
         run: make docker-push
 
-  call-test-full-params:
+  test-full-params:
     # if: ${{ false }}  # disable for now
     needs: build
     uses: ./.github/workflows/test-full-params.yml
 
-  call-test-helm-upgrade:
+  test-helm-upgrade:
     # if: ${{ false }}  # disable for now
     needs: build
-    uses: ./.github/workflows/test-helm-upgrade.yml
+    uses: ./.github/workflows/test-helm-upgrade.yml 
 
-  call-test-minimal-params:
+  test-minimal-params:
     # if: ${{ false }}  # disable for now
     needs: build
     uses: ./.github/workflows/test-minimal-params.yml
+
+  test-broker-upgrade-update:
+    # if: ${{ false }}  # disable for now
+    needs: build
+    uses: ./.github/workflows/test-broker-upgrade-update.yml

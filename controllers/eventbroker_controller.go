@@ -647,21 +647,16 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 	}
 	podNames := getPodNames(podList.Items)
 	// Update status.BrokerPods if needed
+	// Get the resource first to ensure updating the latest
 	if !reflect.DeepEqual(podNames, pubsubpluseventbroker.Status.BrokerPods) {
 		pubsubpluseventbroker.Status.BrokerPods = podNames
-		// Get the resource first to ensure updating the latest
-		err := r.Get(ctx, req.NamespacedName, pubsubpluseventbroker)
-		if err == nil {
-			err := r.Status().Update(ctx, pubsubpluseventbroker)
-			if err != nil {
-				log.Error(err, "Failed to update PubSubPlusEventBroker status")
-				return ctrl.Result{}, err
-			}
+		err := r.Status().Update(ctx, pubsubpluseventbroker)
+		if err != nil {
+			log.Error(err, "Failed to update PubSubPlusEventBroker status")
+			return ctrl.Result{}, err
 		}
-		// if err wasn't nil then let the next reconcile loop handle it
 	}
-
-	// Reconcile periodically
+	// If no status update needed then just reconcile periodically
 	return ctrl.Result{RequeueAfter: 10 * time.Minute}, nil
 }
 
