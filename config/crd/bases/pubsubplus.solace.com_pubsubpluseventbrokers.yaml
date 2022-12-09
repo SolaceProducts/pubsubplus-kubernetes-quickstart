@@ -1162,21 +1162,19 @@ spec:
                   Non-HA.
                 type: boolean
               securityContext:
-                description: PodSecurityContext defines the pod security context for
+                description: securityContext defines the pod security context for
                   the event broker.
                 properties:
-                  enabled:
-                    default: true
-                    description: Enabled true will enable the Pod Security Context.
-                    type: boolean
                   fsGroup:
-                    default: 1000002
-                    description: Specifies fsGroup in pod security context.
+                    description: Specifies fsGroup in pod security context. 0 or unset
+                      defaults either to 1000002, or if OpenShift detected to unspecified
+                      (see documentation)
                     format: int64
                     type: number
                   runAsUser:
-                    default: 1000001
-                    description: Specifies runAsUser in pod security context.
+                    description: Specifies runAsUser in pod security context. 0 or
+                      unset defaults either to 1000001, or if OpenShift detected to
+                      unspecified (see documentation)
                     format: int64
                     type: number
                 type: object

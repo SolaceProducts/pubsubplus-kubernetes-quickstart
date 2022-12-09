@@ -53,6 +53,7 @@ type PubSubPlusEventBrokerReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 	Recorder record.EventRecorder
+	IsOpenShift bool
 }
 
 const (

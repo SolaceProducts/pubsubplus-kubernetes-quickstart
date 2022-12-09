@@ -25,7 +25,9 @@ import (
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 	"go.uber.org/zap/zapcore"
+	"k8s.io/client-go/discovery"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
+	"k8s.io/client-go/rest"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -101,16 +103,17 @@ func main() {
 	} else {
 		options.Namespace = watchNs
 	}
-	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), options)
+	cfg := ctrl.GetConfigOrDie()
+	mgr, err := ctrl.NewManager(cfg, options)
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)
 	}
-
 	if err = (&controllers.PubSubPlusEventBrokerReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 		Recorder: mgr.GetEventRecorderFor("PubSubPlusEventBroker"),
+		IsOpenShift: detectOpenShift(cfg),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "PubSubPlusEventBroker")
 		os.Exit(1)
@@ -144,4 +147,32 @@ func getWatchNamespace() (string, error) {
 		return "", fmt.Errorf("%s must be set", watchNamespaceEnvVar)
 	}
 	return ns, nil
+}
+
+// detectOpenShift returns true if OpenShift environment has been identified
+func detectOpenShift(cfg *rest.Config) bool {
+	// Note: there could be additional checks here or env variable to force.
+	dclient, err := getDiscoveryClient(cfg)
+	if err == nil && dclient != nil {
+		apiGroupList, err := dclient.ServerGroups()
+		if err == nil {
+			openShiftApiGroupOccurrenceCount := 0 // Let's ensure to have a number of (>5) evidences that this is indeed OpenShift
+			for i := 0; i < len(apiGroupList.Groups); i++ {
+				if strings.HasSuffix(apiGroupList.Groups[i].Name, ".openshift.io") {
+					openShiftApiGroupOccurrenceCount++
+					if openShiftApiGroupOccurrenceCount > 5 {
+						setupLog.Info("Identified OpenShift environment")
+						return true
+					}
+				}
+			}
+		}
+	}
+	setupLog.Info("Identified general Kubernetes environment")
+	return false
+}
+
+// getDiscoveryClient returns a discovery client for the current reconciler
+func getDiscoveryClient(config *rest.Config) (*discovery.DiscoveryClient, error) {
+    return discovery.NewDiscoveryClientForConfig(config)
 }
