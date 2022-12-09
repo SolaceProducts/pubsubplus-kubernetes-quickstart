@@ -33,7 +33,6 @@ spec:
         nodeSelector:
           kubernetes.io/os: linux
   securityContext:
-    enabled: true
     fsGroup: 0
     runAsUser: 0
   tls:
