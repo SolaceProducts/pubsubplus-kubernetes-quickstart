@@ -1156,6 +1156,12 @@ spec:
                   for the broker pods in HA deployment. This parameter is ignored
                   for non-HA deployments (if redundancy is false).
                 type: boolean
+              preSharedAuthKeySecret:
+                description: PreSharedAuthKeySecret defines the PreSharedAuthKey Secret
+                  for PubSubPlusEventBroker. Random one will be generated if not provided.
+                  When provided, ensure the secret key name is `preshared_auth_key`.
+                nullable: true
+                type: string
               redundancy:
                 default: false
                 description: Redundancy true specifies HA deployment, false specifies

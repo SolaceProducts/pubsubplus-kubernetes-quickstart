@@ -13,6 +13,7 @@ spec:
   extraEnvVarsCM: ""
   extraEnvVarsSecret: ""
   podDisruptionBudgetForHA: true
+  preSharedAuthKeySecret: preshared-auth-secret
   image: {}
   updateStrategy: manualPodRestart
   securityContext: {}
@@ -99,3 +100,12 @@ spec:
       pullPolicy: Always
       pullSecretName:
       - name: regcred
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: preshared-auth-secret
+type: Opaque
+data:
+  preshared_auth_key: YWRtaW4=
+---

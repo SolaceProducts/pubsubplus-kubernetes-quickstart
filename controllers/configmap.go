@@ -75,7 +75,7 @@ if [ "${BROKER_REDUNDANCY}" = "true" ]; then
   export routername=$(echo $(hostname) | sed 's/-//g')
   export redundancy_enable=yes
   export configsync_enable=yes
-  export redundancy_authentication_presharedkey_key=$(cat /mnt/disks/secrets/username_admin_password | awk '{x=$0;for(i=length;i<51;i++)x=x "0";}END{print x}' | base64) # Right-pad with 0s to 50 length
+  export redundancy_authentication_presharedkey_key=$(cat /mnt/disks/preshared-secrets/preshared_auth_key | awk '{x=$0;for(i=length;i<51;i++)x=x "0";}END{print x}' | base64) # Right-pad with 0s to 50 length
   export service_redundancy_firstlistenport='8300'
   export redundancy_group_node_${service_name}p0_nodetype=message_routing
   export redundancy_group_node_${service_name}p0_connectvia=${service}-p-0.${service}-discovery.${namespace}.svc:${service_redundancy_firstlistenport}
