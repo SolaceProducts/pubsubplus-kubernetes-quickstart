@@ -336,6 +336,8 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 			if err != nil {
 				log.Error(err, "Failed to find specified PreSharedAuthKeySecret: '"+pubsubpluseventbroker.Spec.PreSharedAuthKeySecret+"'")
 				return ctrl.Result{}, err
+			} else{
+				log.Info("Detected PreSharedAuthKeySecret", " Secret.Name", preSharedAuthKeySecret.Name)
 			}
 		}
 	}

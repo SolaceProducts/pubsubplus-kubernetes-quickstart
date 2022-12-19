@@ -429,7 +429,7 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(sts *a
 	if m.Spec.Redundancy {
 		allVolumes := sts.Spec.Template.Spec.Volumes
 		allVolumes = append(allVolumes, corev1.Volume{
-			Name: "preshared-secret",
+			Name: "presharedauthkey-secret",
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName:  preSharedAuthKeySecret.Name,
@@ -439,8 +439,8 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(sts *a
 		})
 		allContainerVolumeMounts := sts.Spec.Template.Spec.Containers[0].VolumeMounts
 		allContainerVolumeMounts = append(allContainerVolumeMounts, corev1.VolumeMount{
-			Name:      "preshared-secret",
-			MountPath: "/mnt/disks/preshared-secrets",
+			Name:      "presharedauthkey-secret",
+			MountPath: "/mnt/disks/presharedauthkey-secret",
 			ReadOnly:  true,
 		})
 		sts.Spec.Template.Spec.Volumes = allVolumes
