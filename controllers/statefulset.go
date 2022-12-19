@@ -281,8 +281,17 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(sts *a
 						},
 					},
 					SecurityContext: &corev1.SecurityContext{
-						Privileged: &[]bool{false}[0], // Set to false
-
+						Privileged: 			  &[]bool{false}[0], // Set to false
+						Capabilities:             &corev1.Capabilities{
+							Drop: []corev1.Capability{
+								corev1.Capability("ALL"),
+							},
+						},
+						RunAsNonRoot:             &[]bool{true}[0], // Set to true
+						AllowPrivilegeEscalation: &[]bool{false}[0], // Set to false
+						SeccompProfile:           &corev1.SeccompProfile{
+							Type:             corev1.SeccompProfileTypeRuntimeDefault,
+						},
 					},
 					VolumeMounts: []corev1.VolumeMount{
 						{
