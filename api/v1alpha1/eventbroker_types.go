@@ -87,8 +87,8 @@ type EventBrokerSpec struct {
 	// NodeAssignment defines labels to constrain PubSubPlusEventBroker nodes to run on particular node(s), or to prefer to run on particular nodes.
 	BrokerNodeAssignment []NodeAssignment `json:"nodeAssignment,omitempty"`
 	//+kubebuilder:validation:Type:=object
-	// PodSecurityContext defines the pod security context for the event broker.
-	PodSecurityContext PodSecurityContext `json:"securityContext,omitempty"`
+	// securityContext defines the pod security context for the event broker.
+	SecurityContext SecurityContext `json:"securityContext,omitempty"`
 	//+kubebuilder:validation:Type:=object
 	// ServiceAccount defines a ServiceAccount dedicated to the PubSubPlusEventBroker
 	ServiceAccount BrokerServiceAccount `json:"serviceAccount,omitempty"`
@@ -206,15 +206,6 @@ type SystemScaling struct {
 	MessagingNodeMemory string `json:"messagingNodeMemory,omitempty"`
 }
 
-// EventBrokerStatus defines the observed state of the event PubSubPlusEventBroker
-type EventBrokerStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-
-	// BrokerPods are the names of the eventbroker pods
-	BrokerPods []string `json:"brokerpods"`
-}
-
 // BrokerTLS defines TLS configuration for the PubSubPlusEventBroker
 type BrokerTLS struct {
 	//+optional
@@ -306,22 +297,15 @@ type NodeAssignmentSpec struct {
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 }
 
-// PodSecurityContext defines the pod security context for the PubSubPlusEventBroker
-type PodSecurityContext struct {
-	//+optional
-	//+kubebuilder:validation:Type:=boolean
-	//+kubebuilder:default:=true
-	// Enabled true will enable the Pod Security Context.
-	Enabled bool `json:"enabled"`
+// SecurityContext defines the pod security context for the PubSubPlusEventBroker
+type SecurityContext struct {
 	//+optional
 	//+kubebuilder:validation:Type:=number
-	//+kubebuilder:default:=1000002
-	// Specifies fsGroup in pod security context.
+	// Specifies fsGroup in pod security context. 0 or unset defaults either to 1000002, or if OpenShift detected to unspecified (see documentation)
 	FSGroup int64 `json:"fsGroup"`
 	//+optional
 	//+kubebuilder:validation:Type:=number
-	//+kubebuilder:default:=1000001
-	// Specifies runAsUser in pod security context.
+	// Specifies runAsUser in pod security context. 0 or unset defaults either to 1000001, or if OpenShift detected to unspecified (see documentation)
 	RunAsUser int64 `json:"runAsUser"`
 }
 
@@ -390,6 +374,16 @@ type Monitoring struct {
 	//+kubebuilder:default:=ClusterIP
 	// Defines the service type for Prometheus Exporter
 	ServiceType corev1.ServiceType `json:"serviceType,omitempty"`
+}
+
+// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
+// Important: Run "make" to regenerate code after modifying this file
+// TODO: Ready to serve traffic
+
+// EventBrokerStatus defines the observed state of the event PubSubPlusEventBroker
+type EventBrokerStatus struct {
+	// BrokerPods are the names of the eventbroker pods
+	BrokerPods []string `json:"brokerpods"`
 }
 
 //+kubebuilder:object:root=true
