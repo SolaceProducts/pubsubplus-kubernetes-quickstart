@@ -39,7 +39,7 @@ spec:
           kubernetes.io/os: linux
   securityContext: {}
   tls:
-    enabled: false
+    enabled: true
     serverTlsConfigSecret: test-tls
   service: {}
   monitoring:
