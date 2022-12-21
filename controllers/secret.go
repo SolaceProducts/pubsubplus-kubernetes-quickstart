@@ -52,6 +52,26 @@ func (r *PubSubPlusEventBrokerReconciler) secretForEventBroker(secretName string
 	return dep
 }
 
+// createPreSharedAuthKeySecret returns an PubSubPlusEventBroker PreSharedAuthKeySecret object
+func (r *PubSubPlusEventBrokerReconciler) createPreSharedAuthKeySecret(secretName string, m *eventbrokerv1alpha1.PubSubPlusEventBroker) *corev1.Secret {
+
+	randomPassword := generateSimplePassword(10)
+
+	dep := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      secretName,
+			Namespace: m.Namespace,
+			Labels:    getObjectLabels(m.Name),
+		},
+		Data: map[string][]byte{
+			preSharedAuthKeyName: []byte(randomPassword),
+		},
+		Type: corev1.SecretTypeOpaque,
+	}
+	ctrl.SetControllerReference(m, dep, r.Scheme)
+	return dep
+}
+
 func generateSimplePassword(length int) string {
 	rand.Seed(time.Now().UnixNano())
 	chars := []rune("ABCDEFGHIJKLMNOPQRSTUVWXYZ" +

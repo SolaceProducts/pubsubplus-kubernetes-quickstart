@@ -31,6 +31,7 @@ const (
 	appKubernetesIoManagedByLabel        = "solace-pubsubplus-operator"
 	maintenanceLabel                     = "solace.com/pauseReconcile"
 	secretKeyName                        = "username_admin_password"
+	preSharedAuthKeyName                 = "preshared_auth_key"
 	tcpSempPortName                      = "tcp-semp"
 )
 
@@ -50,6 +51,7 @@ func getObjectName(objectType string, deploymentName string) string {
 		"RoleBinding":                  "-pubsubplus-sa-to-podtagupdater",
 		"ServiceAccount":               "-pubsubplus-sa",
 		"Secret":                       "-pubsubplus-secrets",
+		"PreSharedAuthSecret":          "-pubsubplus-preshared-auth-secrets",
 		"Service":                      "-pubsubplus",
 		"StatefulSet":                  "-pubsubplus-%s",
 		"PodDisruptionBudget":          "-pubsubplus-poddisruptionbudget",

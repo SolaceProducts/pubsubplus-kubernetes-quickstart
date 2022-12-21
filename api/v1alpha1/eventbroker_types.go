@@ -41,6 +41,12 @@ type EventBrokerSpec struct {
 	// When provided, ensure the secret key name is `username_admin_password`.
 	AdminCredentialsSecret string `json:"adminCredentialsSecret,omitempty"`
 	//+optional
+	//+nullable
+	//+kubebuilder:validation:Type:=string
+	// PreSharedAuthKeySecret defines the PreSharedAuthKey Secret for PubSubPlusEventBroker. Random one will be generated if not provided.
+	// When provided, ensure the secret key name is `preshared_auth_key`.
+	PreSharedAuthKeySecret string `json:"preSharedAuthKeySecret,omitempty"`
+	//+optional
 	//+kubebuilder:validation:Type:=array
 	// List of extra environment variables to be added to the PubSubPlusEventBroker container.
 	// A primary use case is to specify configuration keys, although the variables defined here will not override the ones defined in ConfigMap

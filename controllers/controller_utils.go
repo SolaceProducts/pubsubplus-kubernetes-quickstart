@@ -69,10 +69,11 @@ func brokerSpecHash(s eventbrokerv1alpha1.EventBrokerSpec) string {
 	// Mask anything that is not relevant to the StatefulSet / broker Pods
 	brokerSpecSubset.Monitoring = eventbrokerv1alpha1.Monitoring{}
 	brokerSpecSubset.Service.Annotations = nil
-	brokerSpecSubset.Service.ServiceType = corev1.ServiceTypeLoadBalancer // cannot use nil, setting it a constant value
-	brokerSpecSubset.Redundancy = false // change of redundancy is not supported for now
+	brokerSpecSubset.Service.ServiceType = corev1.ServiceTypeLoadBalancer        // cannot use nil, setting it a constant value
+	brokerSpecSubset.Redundancy = false                                          // change of redundancy is not supported for now
 	brokerSpecSubset.ServiceAccount = eventbrokerv1alpha1.BrokerServiceAccount{} // change of SA is not supported
-	// TODO: mask out adminCredentialsSecret, preSharedAuthKeySecret
+	brokerSpecSubset.AdminCredentialsSecret = ""
+	brokerSpecSubset.PreSharedAuthKeySecret = ""
 	brokerSpecSubset.PodDisruptionBudgetForHA = false // does not affect the statefulset/pod
 	return hash(brokerSpecSubset)
 }

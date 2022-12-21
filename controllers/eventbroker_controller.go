@@ -51,7 +51,7 @@ import (
 // PubSubPlusEventBrokerReconciler reconciles a PubSubPlusEventBroker object
 type PubSubPlusEventBrokerReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
+	Scheme   *runtime.Scheme
 	Recorder record.EventRecorder
 }
 
@@ -140,8 +140,8 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 			// ServiceAccount created successfully - return and requeue
 			r.Recorder.Event(pubsubpluseventbroker, corev1.EventTypeNormal, "Created",
 				fmt.Sprintf("ServiceAccount %s created in namespace %s",
-				saName,
-				pubsubpluseventbroker.Namespace),)
+					saName,
+					pubsubpluseventbroker.Namespace))
 			return ctrl.Result{Requeue: true}, nil
 		} else if err != nil {
 			log.Error(err, "Failed to get ServiceAccount")
@@ -303,8 +303,42 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 	} else {
 		err = r.Get(ctx, types.NamespacedName{Name: pubsubpluseventbroker.Spec.AdminCredentialsSecret, Namespace: pubsubpluseventbroker.Namespace}, secret)
 		if err != nil {
-			log.Error(err, "Failed to find specified Secret: '" + pubsubpluseventbroker.Spec.AdminCredentialsSecret + "'")
+			log.Error(err, "Failed to find specified Secret: '"+pubsubpluseventbroker.Spec.AdminCredentialsSecret+"'")
 			return ctrl.Result{}, err
+		}
+	}
+
+	preSharedAuthKeySecret := &corev1.Secret{}
+	//preSharedAuthKeySecret is only used in HA mode
+	if haDeployment {
+		if len(strings.TrimSpace(pubsubpluseventbroker.Spec.PreSharedAuthKeySecret)) == 0 {
+			preSharedAuthSecretName := getObjectName("PreSharedAuthSecret", pubsubpluseventbroker.Name)
+			err = r.Get(ctx, types.NamespacedName{Name: preSharedAuthSecretName, Namespace: pubsubpluseventbroker.Namespace}, preSharedAuthKeySecret)
+			if err != nil && errors.IsNotFound(err) {
+				// Define a new PreShareAuthSecret
+				preSharedAuthKeySecret := r.createPreSharedAuthKeySecret(preSharedAuthSecretName, pubsubpluseventbroker)
+				log.Info("Creating a new PreSharedAuthSecret", "Secret.Namespace", preSharedAuthKeySecret.Namespace, "Secret.Name", preSharedAuthKeySecret.Name)
+				err = r.Create(ctx, preSharedAuthKeySecret)
+				if err != nil {
+					log.Error(err, "Failed to create new PreSharedAuthSecret", "Secret.Namespace", preSharedAuthKeySecret.Namespace, "Secret.Name", preSharedAuthKeySecret.Name)
+					return ctrl.Result{}, err
+				}
+				// Secret created successfully - return and requeue
+				return ctrl.Result{Requeue: true}, nil
+			} else if err != nil {
+				log.Error(err, "Failed to get PreSharedAuthKeySecret")
+				return ctrl.Result{}, err
+			} else {
+				log.Info("Detected existing PreSharedAuthKeySecret", " Secret.Name", preSharedAuthKeySecret.Name)
+			}
+		} else {
+			err = r.Get(ctx, types.NamespacedName{Name: pubsubpluseventbroker.Spec.PreSharedAuthKeySecret, Namespace: pubsubpluseventbroker.Namespace}, preSharedAuthKeySecret)
+			if err != nil {
+				log.Error(err, "Failed to find specified PreSharedAuthKeySecret: '"+pubsubpluseventbroker.Spec.PreSharedAuthKeySecret+"'")
+				return ctrl.Result{}, err
+			} else{
+				log.Info("Detected PreSharedAuthKeySecret", " Secret.Name", preSharedAuthKeySecret.Name)
+			}
 		}
 	}
 
@@ -343,7 +377,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 	err = r.Get(ctx, types.NamespacedName{Name: stsPName, Namespace: pubsubpluseventbroker.Namespace}, stsP)
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new statefulset
-		stsP := r.createStatefulsetForEventBroker(stsPName, ctx, pubsubpluseventbroker, sa, secret)
+		stsP := r.createStatefulsetForEventBroker(stsPName, ctx, pubsubpluseventbroker, sa, secret, preSharedAuthKeySecret)
 		log.Info("Creating a new Primary StatefulSet", "StatefulSet.Namespace", stsP.Namespace, "StatefulSet.Name", stsP.Name)
 		err = r.Create(ctx, stsP)
 		if err != nil {
@@ -374,7 +408,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 				// Otherwise just continue
 			}
 			log.Info("Updating existing Primary StatefulSet", "StatefulSet.Namespace", stsP.Namespace, "StatefulSet.Name", stsP.Name)
-			r.updateStatefulsetForEventBroker(stsP, ctx, pubsubpluseventbroker, sa, secret)
+			r.updateStatefulsetForEventBroker(stsP, ctx, pubsubpluseventbroker, sa, secret, preSharedAuthKeySecret)
 			err = r.Update(ctx, stsP)
 			if err != nil {
 				log.Error(err, "Failed to update Primary StatefulSet", "StatefulSet.Namespace", stsP.Namespace, "StatefulSet.Name", stsP.Name)
@@ -394,7 +428,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 		err = r.Get(ctx, types.NamespacedName{Name: stsBName, Namespace: pubsubpluseventbroker.Namespace}, stsB)
 		if err != nil && errors.IsNotFound(err) {
 			// Define a new statefulset
-			stsB := r.createStatefulsetForEventBroker(stsBName, ctx, pubsubpluseventbroker, sa, secret)
+			stsB := r.createStatefulsetForEventBroker(stsBName, ctx, pubsubpluseventbroker, sa, secret, preSharedAuthKeySecret)
 			log.Info("Creating a new Backup StatefulSet", "StatefulSet.Namespace", stsB.Namespace, "StatefulSet.Name", stsB.Name)
 			err = r.Create(ctx, stsB)
 			if err != nil {
@@ -425,7 +459,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 					// Otherwise just continue
 				}
 				log.Info("Updating existing Backup StatefulSet", "StatefulSet.Namespace", stsB.Namespace, "StatefulSet.Name", stsB.Name)
-				r.updateStatefulsetForEventBroker(stsB, ctx, pubsubpluseventbroker, sa, secret)
+				r.updateStatefulsetForEventBroker(stsB, ctx, pubsubpluseventbroker, sa, secret, preSharedAuthKeySecret)
 				err = r.Update(ctx, stsB)
 				if err != nil {
 					log.Error(err, "Failed to update Backup StatefulSet", "StatefulSet.Namespace", stsB.Namespace, "StatefulSet.Name", stsB.Name)
@@ -443,7 +477,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 		err = r.Get(ctx, types.NamespacedName{Name: stsMName, Namespace: pubsubpluseventbroker.Namespace}, stsM)
 		if err != nil && errors.IsNotFound(err) {
 			// Define a new statefulset
-			stsM := r.createStatefulsetForEventBroker(stsMName, ctx, pubsubpluseventbroker, sa, secret)
+			stsM := r.createStatefulsetForEventBroker(stsMName, ctx, pubsubpluseventbroker, sa, secret, preSharedAuthKeySecret)
 			log.Info("Creating a new Monitor StatefulSet", "StatefulSet.Namespace", stsM.Namespace, "StatefulSet.Name", stsM.Name)
 			err = r.Create(ctx, stsM)
 			if err != nil {
@@ -474,7 +508,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 					// Otherwise just continue
 				}
 				log.Info("Updating existing Monitor StatefulSet", "StatefulSet.Namespace", stsM.Namespace, "StatefulSet.Name", stsM.Name)
-				r.updateStatefulsetForEventBroker(stsM, ctx, pubsubpluseventbroker, sa, secret)
+				r.updateStatefulsetForEventBroker(stsM, ctx, pubsubpluseventbroker, sa, secret, preSharedAuthKeySecret)
 				err = r.Update(ctx, stsM)
 				if err != nil {
 					log.Error(err, "Failed to update Monitor StatefulSet", "StatefulSet.Namespace", stsM.Namespace, "StatefulSet.Name", stsM.Name)

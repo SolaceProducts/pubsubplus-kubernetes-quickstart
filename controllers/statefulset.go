@@ -17,8 +17,8 @@ limitations under the License.
 package controllers
 
 import (
-	"encoding/json"
 	"context"
+	"encoding/json"
 	"strconv"
 	"strings"
 
@@ -34,7 +34,7 @@ import (
 )
 
 // statefulsetForEventBroker returns a new pubsubpluseventbroker StatefulSet object
-func (r *PubSubPlusEventBrokerReconciler) createStatefulsetForEventBroker(stsName string, ctx context.Context, m *eventbrokerv1alpha1.PubSubPlusEventBroker, sa *corev1.ServiceAccount, secret *corev1.Secret) *appsv1.StatefulSet {
+func (r *PubSubPlusEventBrokerReconciler) createStatefulsetForEventBroker(stsName string, ctx context.Context, m *eventbrokerv1alpha1.PubSubPlusEventBroker, sa *corev1.ServiceAccount, secret *corev1.Secret, preSharedAuthKeySecret *corev1.Secret) *appsv1.StatefulSet {
 	nodeType := getBrokerNodeType(stsName)
 
 	// Determine broker sizing
@@ -42,7 +42,7 @@ func (r *PubSubPlusEventBrokerReconciler) createStatefulsetForEventBroker(stsNam
 	if nodeType == "monitor" {
 		if len(strings.TrimSpace(m.Spec.Storage.MonitorNodeStorageSize)) == 0 {
 			storageSize = "3Gi"
-		}else{
+		} else {
 			storageSize = m.Spec.Storage.MonitorNodeStorageSize
 		}
 	} else {
@@ -93,14 +93,14 @@ func (r *PubSubPlusEventBrokerReconciler) createStatefulsetForEventBroker(stsNam
 		}
 	}
 
-	r.updateStatefulsetForEventBroker(dep, ctx, m, sa, secret)
+	r.updateStatefulsetForEventBroker(dep, ctx, m, sa, secret, preSharedAuthKeySecret)
 	// Set PubSubPlusEventBroker instance as the owner and controller
 	ctrl.SetControllerReference(m, dep, r.Scheme)
 	return dep
 }
 
 // statefulsetForEventBroker returns an updated pubsubpluseventbroker StatefulSet object
-func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(sts *appsv1.StatefulSet, ctx context.Context, m *eventbrokerv1alpha1.PubSubPlusEventBroker, sa *corev1.ServiceAccount, secret *corev1.Secret) {
+func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(sts *appsv1.StatefulSet, ctx context.Context, m *eventbrokerv1alpha1.PubSubPlusEventBroker, sa *corev1.ServiceAccount, secret *corev1.Secret, preSharedAuthKeySecret *corev1.Secret) {
 	brokerServicesName := getObjectName("Service", m.Name)
 	secretName := secret.Name
 	configmapName := getObjectName("ConfigMap", m.Name)
@@ -419,6 +419,28 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(sts *a
 		allContainerVolumeMounts = append(allContainerVolumeMounts, corev1.VolumeMount{
 			Name:      "server-certs",
 			MountPath: "/mnt/disks/certs/server",
+			ReadOnly:  true,
+		})
+		sts.Spec.Template.Spec.Volumes = allVolumes
+		sts.Spec.Template.Spec.Containers[0].VolumeMounts = allContainerVolumeMounts
+	}
+
+	//Mount PreSharedAuthSecret in HA mode
+	if m.Spec.Redundancy {
+		allVolumes := sts.Spec.Template.Spec.Volumes
+		allVolumes = append(allVolumes, corev1.Volume{
+			Name: "presharedauthkey-secret",
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  preSharedAuthKeySecret.Name,
+					DefaultMode: &[]int32{256}[0], // 256
+				},
+			},
+		})
+		allContainerVolumeMounts := sts.Spec.Template.Spec.Containers[0].VolumeMounts
+		allContainerVolumeMounts = append(allContainerVolumeMounts, corev1.VolumeMount{
+			Name:      "presharedauthkey-secret",
+			MountPath: "/mnt/disks/presharedauthkey-secret",
 			ReadOnly:  true,
 		})
 		sts.Spec.Template.Spec.Volumes = allVolumes
