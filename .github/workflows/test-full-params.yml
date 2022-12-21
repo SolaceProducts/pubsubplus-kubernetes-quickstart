@@ -36,6 +36,9 @@ jobs:
         run: |
           openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout tls.key -out tls.crt -subj "/CN=*"
           kubectl create secret tls test-tls --key="tls.key" --cert="tls.crt"
+          openssl x509 -in tls.crt -out tls.public.pem
+          openssl rsa -in tls.key -text > tls.private.pem
+          kubectl create secret tls monitoring-tls --key="tls.private.pem" --cert="tls.public.pem"
           kubectl apply -f ci/manifests/eventbroker-nonha.yaml | grep "test-nonha created"
           sleep 5 ; kubectl get all
           kubectl wait pods --selector app.kubernetes.io/instance=test-nonha --for condition=Ready --timeout=120s
@@ -57,4 +60,5 @@ jobs:
           kubectl port-forward svc/test-nonha-pubsubplus-prometheus-exporter-service 9628:9628 &
           sleep 1
           curl localhost:9628 | grep Exporter
+          # TLS not working on kind, use http for now.
           kubectl delete eventbroker test-nonha | grep deleted

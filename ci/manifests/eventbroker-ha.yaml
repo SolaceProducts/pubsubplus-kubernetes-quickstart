@@ -15,6 +15,12 @@ spec:
   podDisruptionBudgetForHA: true
   preSharedAuthKeySecret: preshared-auth-secret
   image: {}
+  podLabels:
+    "DeploymentType": "HA"
+    "DeploymentTestMode": "GithubAction"
+  podAnnotations:
+    "DeploymentType": "HA"
+    "DeploymentTestMode": "GithubAction"
   updateStrategy: manualPodRestart
   securityContext: {}
   tls:

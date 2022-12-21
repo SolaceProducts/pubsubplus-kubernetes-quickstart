@@ -165,15 +165,55 @@ spec:
                     default: false
                     description: Defines if Prometheus Exporter should include rates
                     type: boolean
-                  listenTLS:
-                    default: false
-                    description: Defines if Prometheus Exporter uses TLS configuration
-                    type: boolean
-                  port:
-                    default: 9628
-                    description: Container Port for  Prometheus Exporter
-                    format: int32
-                    type: number
+                  metricsEndpoint:
+                    description: MetricsEndpoint defines parameters to configure monitoring
+                      for the Prometheus Exporter.
+                    properties:
+                      containerPort:
+                        default: 9628
+                        description: ContainerPort is number of port to expose on
+                          the Prometheus Exporter pod.
+                        format: int32
+                        type: number
+                      endpointTlsConfigPrivateKeyName:
+                        default: tls.key
+                        description: EndpointTlsConfigPrivateKeyName is the file name
+                          of the Private Key used to set up TLS configuration
+                        type: string
+                      endpointTlsConfigSecret:
+                        description: EndpointTLSConfigSecret defines TLS secret name
+                          to set up TLS configuration
+                        type: string
+                      endpointTlsConfigServerCertName:
+                        default: tls.crt
+                        description: EndpointTlsConfigServerCertName is the file name
+                          of the Server Certificate used to set up TLS configuration
+                        type: string
+                      listenTLS:
+                        default: false
+                        description: Defines if Prometheus Exporter uses TLS configuration
+                        type: boolean
+                      name:
+                        description: Name is a unique name for the port that can be
+                          referred to by services.
+                        type: string
+                      protocol:
+                        default: TCP
+                        description: Protocol for port. Must be UDP, TCP, or SCTP.
+                        enum:
+                        - TCP
+                        - UDP
+                        - SCTP
+                        type: string
+                      servicePort:
+                        default: 9628
+                        description: ServicePort is number of port to expose on the
+                          service
+                        format: int32
+                        type: number
+                    required:
+                    - name
+                    type: object
                   serviceType:
                     default: ClusterIP
                     description: Defines the service type for Prometheus Exporter
@@ -187,9 +227,6 @@ spec:
                     description: Timeout configuration for Prometheus Exporter scrapper
                     format: int32
                     type: number
-                  tlsSecretName:
-                    description: Defines TLS secret name to set up TLS configuration
-                    type: string
                 type: object
               nodeAssignment:
                 description: NodeAssignment defines labels to constrain PubSubPlusEventBroker
@@ -1150,12 +1187,24 @@ spec:
                       type: object
                   type: object
                 type: array
+              podAnnotations:
+                additionalProperties:
+                  type: string
+                description: PodAnnotations allows adding provider-specific pod annotations
+                  to PubSubPlusEventBroker pods
+                type: object
               podDisruptionBudgetForHA:
                 default: false
                 description: PodDisruptionBudgetForHA enables setting up PodDisruptionBudget
                   for the broker pods in HA deployment. This parameter is ignored
                   for non-HA deployments (if redundancy is false).
                 type: boolean
+              podLabels:
+                additionalProperties:
+                  type: string
+                description: PodLabels allows adding provider-specific pod labels
+                  to PubSubPlusEventBroker pods
+                type: object
               preSharedAuthKeySecret:
                 description: PreSharedAuthKeySecret defines the PreSharedAuthKey Secret
                   for PubSubPlusEventBroker. Random one will be generated if not provided.
@@ -1168,7 +1217,7 @@ spec:
                   Non-HA.
                 type: boolean
               securityContext:
-                description: securityContext defines the pod security context for
+                description: SecurityContext defines the pod security context for
                   the event broker.
                 properties:
                   fsGroup:
@@ -1280,6 +1329,10 @@ spec:
                         protocol:
                           default: TCP
                           description: Protocol for port. Must be UDP, TCP, or SCTP.
+                          enum:
+                          - TCP
+                          - UDP
+                          - SCTP
                           type: string
                         servicePort:
                           description: Number of port to expose on the service

@@ -110,9 +110,9 @@ func main() {
 		os.Exit(1)
 	}
 	if err = (&controllers.PubSubPlusEventBrokerReconciler{
-		Client:   mgr.GetClient(),
-		Scheme:   mgr.GetScheme(),
-		Recorder: mgr.GetEventRecorderFor("PubSubPlusEventBroker"),
+		Client:      mgr.GetClient(),
+		Scheme:      mgr.GetScheme(),
+		Recorder:    mgr.GetEventRecorderFor("PubSubPlusEventBroker"),
 		IsOpenShift: detectOpenShift(cfg),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "PubSubPlusEventBroker")
@@ -174,5 +174,5 @@ func detectOpenShift(cfg *rest.Config) bool {
 
 // getDiscoveryClient returns a discovery client for the current reconciler
 func getDiscoveryClient(config *rest.Config) (*discovery.DiscoveryClient, error) {
-    return discovery.NewDiscoveryClientForConfig(config)
+	return discovery.NewDiscoveryClientForConfig(config)
 }

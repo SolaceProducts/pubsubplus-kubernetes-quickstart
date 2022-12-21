@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"encoding/json"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -80,6 +81,16 @@ type EventBrokerSpec struct {
 	// SystemScaling provides exact fine-grained specification of the event broker scaling parameters
 	// and the assigned CPU / memory resources to the Pod.
 	SystemScaling *SystemScaling `json:"systemScaling,omitempty"`
+	//+optional
+	//+kubebuilder:validation:Type:=object
+	//+kubebuilder:default:={}
+	// PodLabels allows adding provider-specific pod labels to PubSubPlusEventBroker pods
+	PodLabels map[string]string `json:"podLabels"`
+	//+optional
+	//+kubebuilder:validation:Type:=object
+	//+kubebuilder:default:={}
+	// PodAnnotations allows adding provider-specific pod annotations to PubSubPlusEventBroker pods
+	PodAnnotations map[string]string `json:"podAnnotations"`
 	//+kubebuilder:validation:Type:=object
 	// Image defines container image parameters for the event broker.
 	BrokerImage BrokerImage `json:"image,omitempty"`
@@ -87,7 +98,7 @@ type EventBrokerSpec struct {
 	// NodeAssignment defines labels to constrain PubSubPlusEventBroker nodes to run on particular node(s), or to prefer to run on particular nodes.
 	BrokerNodeAssignment []NodeAssignment `json:"nodeAssignment,omitempty"`
 	//+kubebuilder:validation:Type:=object
-	// securityContext defines the pod security context for the event broker.
+	// SecurityContext defines the pod security context for the event broker.
 	SecurityContext SecurityContext `json:"securityContext,omitempty"`
 	//+kubebuilder:validation:Type:=object
 	// ServiceAccount defines a ServiceAccount dedicated to the PubSubPlusEventBroker
@@ -115,10 +126,11 @@ const (
 
 // Port defines parameters configure Service details for the Broker
 type BrokerPort struct {
+	//+kubebuilder:validation:MaxLength:15
 	//+kubebuilder:validation:Type:=string
 	// Unique name for the port that can be referred to by services.
 	Name string `json:"name"`
-	//+kubebuilder:validation:Type:=string
+	//+kubebuilder:validation:Enum=TCP;UDP;SCTP
 	// Protocol for port. Must be UDP, TCP, or SCTP.
 	Protocol corev1.Protocol `json:"protocol"`
 	//+kubebuilder:validation:Type:=number
@@ -341,24 +353,14 @@ type Monitoring struct {
 	// Image defines container image parameters for the Prometheus Exporter.
 	MonitoringImage *MonitoringImage `json:"image,omitempty"`
 	//+optional
-	//+kubebuilder:validation:Type:=number
-	//+kubebuilder:default:=9628
-	// Container Port for  Prometheus Exporter
-	ContainerPort int32 `json:"port,omitempty"`
+	//+kubebuilder:validation:Type:=object
+	// MetricsEndpoint defines parameters to configure monitoring for the Prometheus Exporter.
+	MonitoringMetricEndpoint *MonitoringMetricEndpoint `json:"metricsEndpoint,omitempty"`
 	//+optional
 	//+kubebuilder:validation:Type:=number
 	//+kubebuilder:default:=5
 	// Timeout configuration for Prometheus Exporter scrapper
 	TimeOut int32 `json:"timeOut,omitempty"`
-	//+optional
-	//+kubebuilder:validation:Type:=boolean
-	//+kubebuilder:default:=false
-	// Defines if Prometheus Exporter uses TLS configuration
-	ListenTLS bool `json:"listenTLS,omitempty"`
-	//+optional
-	//+kubebuilder:validation:Type:=string
-	// Defines TLS secret name to set up TLS configuration
-	TLSSecret string `json:"tlsSecretName,omitempty"`
 	//+optional
 	//+kubebuilder:validation:Type:=boolean
 	//+kubebuilder:default:=false
@@ -386,6 +388,47 @@ type EventBrokerStatus struct {
 	BrokerPods []string `json:"brokerpods"`
 }
 
+// MonitoringMetricEndpoint defines parameters to configure Prometheus Exporter Endpoint
+type MonitoringMetricEndpoint struct {
+	//+kubebuilder:validation:MaxLength:15
+	//+kubebuilder:validation:Type:=string
+	// Name is a unique name for the port that can be referred to by services.
+	Name string `json:"name"`
+	//+optional
+	//+kubebuilder:validation:Type:=number
+	//+kubebuilder:default:=9628
+	// ContainerPort is number of port to expose on the Prometheus Exporter pod.
+	ContainerPort int32 `json:"containerPort"`
+	//+optional
+	//+kubebuilder:validation:Type:=number
+	//+kubebuilder:default:=9628
+	// ServicePort is number of port to expose on the service
+	ServicePort int32 `json:"servicePort"`
+	//+optional
+	//+kubebuilder:validation:Type:=boolean
+	//+kubebuilder:default:=false
+	// Defines if Prometheus Exporter uses TLS configuration
+	ListenTLS bool `json:"listenTLS"`
+	//+optional
+	//+kubebuilder:validation:Enum=TCP;UDP;SCTP
+	// Protocol for port. Must be UDP, TCP, or SCTP.
+	Protocol corev1.Protocol `json:"protocol"`
+	//+optional
+	//+kubebuilder:validation:Type:=string
+	// EndpointTLSConfigSecret defines TLS secret name to set up TLS configuration
+	EndpointTLSConfigSecret string `json:"endpointTlsConfigSecret,omitempty"`
+	//+optional
+	//+kubebuilder:validation:Type:=string
+	//+kubebuilder:default:=tls.crt
+	// EndpointTlsConfigServerCertName is the file name of the Server Certificate used to set up TLS configuration
+	EndpointTlsConfigServerCertName string `json:"endpointTlsConfigServerCertName,omitempty"`
+	//+optional
+	//+kubebuilder:validation:Type:=string
+	//+kubebuilder:default:=tls.key
+	// EndpointTlsConfigPrivateKeyName is the file name of the Private Key used to set up TLS configuration
+	EndpointTlsConfigPrivateKeyName string `json:"endpointTlsConfigPrivateKeyName,omitempty"`
+}
+
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 //+kubebuilder:resource:path=pubsubpluseventbrokers,shortName=eb;eventbroker
@@ -410,4 +453,19 @@ type PubSubPlusEventBrokerList struct {
 
 func init() {
 	SchemeBuilder.Register(&PubSubPlusEventBroker{}, &PubSubPlusEventBrokerList{})
+}
+
+func (spec EventBrokerSpec) String() string {
+	specString, _ := json.Marshal(spec)
+	return string(specString)
+}
+
+func (service Service) String() string {
+	serviceString, _ := json.Marshal(service)
+	return string(serviceString)
+}
+
+func (monitoring Monitoring) String() string {
+	monitoringString, _ := json.Marshal(monitoring)
+	return string(monitoringString)
 }

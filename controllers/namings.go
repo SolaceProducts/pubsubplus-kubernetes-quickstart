@@ -33,6 +33,7 @@ const (
 	secretKeyName                        = "username_admin_password"
 	preSharedAuthKeyName                 = "preshared_auth_key"
 	tcpSempPortName                      = "tcp-semp"
+	tlsSempPortName                      = "tls-semp"
 )
 
 type BrokerRole int // Notice that this is about the current role, not the broker node designation
@@ -119,9 +120,10 @@ func getPodDisruptionBudgetSelector(deploymentName string) map[string]string {
 // Provides the selector for the Monitoring Deployment, which is the Prometheus Exporter
 func getMonitoringDeploymentSelector(deploymentName string) map[string]string {
 	return map[string]string{
-		"app.kubernetes.io/instance": deploymentName,
-		"app.kubernetes.io/name":     appKubernetesIoNameLabel,
-		"solace-prometheus-exporter": "true",
+		"app.kubernetes.io/instance":   deploymentName,
+		"app.kubernetes.io/name":       appKubernetesIoNameLabel,
+		"solace-prometheus-exporter":   "true",
+		"app.kubernetes.io/managed-by": appKubernetesIoManagedByLabel,
 	}
 }
 
