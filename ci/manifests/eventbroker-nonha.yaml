@@ -14,6 +14,12 @@ spec:
   extraEnvVarsSecret: ""
   podDisruptionBudgetForHA: false
   image: {}
+  podLabels:
+    "DeploymentType": "NonHA"
+    "DeploymentTestMode": "GithubAction"
+  podAnnotations:
+    "DeploymentType": "NonHA"
+    "DeploymentTestMode": "GithubAction"
   nodeAssignment:
     - name: Primary
       spec:
@@ -33,15 +39,23 @@ spec:
           kubernetes.io/os: linux
   securityContext: {}
   tls:
-    enabled: true
+    enabled: false
     serverTlsConfigSecret: test-tls
   service: {}
   monitoring:
     enabled: true
-    listenTLS: false
     image:
       repository: ghcr.io/solacedev/solace_prometheus_exporter
       tag: sol-76199
       pullPolicy: Always
       pullSecretName:
       - name: regcred
+    metricsEndpoint:
+      listenTLS: false
+      servicePort: 9628
+      containerPort: 9628
+      protocol: TCP
+      name: broker-metrics
+      endpointTlsConfigSecret: monitoring-tls
+      endpointTlsConfigServerCertName: tls.crt
+      endpointTlsConfigPrivateKeyName: tls.key

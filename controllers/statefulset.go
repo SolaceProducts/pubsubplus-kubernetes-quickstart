@@ -155,18 +155,39 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(sts *a
 	}
 
 	// Update fields
-	// TODO: add support for podAnnotations, podLabels
+
+	podLabels := getPodLabels(m.Name, nodeType)
+	configPodLabels := m.Spec.PodLabels
+	if len(configPodLabels) > 0 {
+		for k, v := range m.Spec.PodLabels {
+			_, exists := podLabels[k]
+			if !exists {
+				podLabels[k] = v
+			}
+		}
+	}
+
+	podAnnotations := map[string]string{
+		brokerSpecSignatureAnnotationName: brokerSpecHash(m.Spec),
+		tlsSecretSignatureAnnotationName:  r.tlsSecretHash(ctx, m),
+	}
+	if len(m.Spec.PodAnnotations) > 0 {
+		for k, v := range m.Spec.PodAnnotations {
+			_, exists := podAnnotations[k]
+			if !exists {
+				podAnnotations[k] = v
+			}
+		}
+	}
+
 	sts.Spec.UpdateStrategy = appsv1.StatefulSetUpdateStrategy{
 		Type: appsv1.OnDeleteStatefulSetStrategyType,
 	}
 	sts.Spec.Template = corev1.PodTemplateSpec{
 		ObjectMeta: metav1.ObjectMeta{
-			Labels: getPodLabels(m.Name, nodeType),
+			Labels: podLabels,
 			// Note the resource version of upstream objects
-			Annotations: map[string]string{
-				brokerSpecSignatureAnnotationName: brokerSpecHash(m.Spec),
-				tlsSecretSignatureAnnotationName:  r.tlsSecretHash(ctx, m),
-			},
+			Annotations: podAnnotations,
 		},
 		Spec: corev1.PodSpec{
 			Containers: []corev1.Container{
@@ -281,16 +302,16 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(sts *a
 						},
 					},
 					SecurityContext: &corev1.SecurityContext{
-						Privileged: 			  &[]bool{false}[0], // Set to false
-						Capabilities:             &corev1.Capabilities{
+						Privileged: &[]bool{false}[0], // Set to false
+						Capabilities: &corev1.Capabilities{
 							Drop: []corev1.Capability{
 								corev1.Capability("ALL"),
 							},
 						},
-						RunAsNonRoot:             &[]bool{true}[0], // Set to true
+						RunAsNonRoot:             &[]bool{true}[0],  // Set to true
 						AllowPrivilegeEscalation: &[]bool{false}[0], // Set to false
-						SeccompProfile:           &corev1.SeccompProfile{
-							Type:             corev1.SeccompProfileTypeRuntimeDefault,
+						SeccompProfile: &corev1.SeccompProfile{
+							Type: corev1.SeccompProfileTypeRuntimeDefault,
 						},
 					},
 					VolumeMounts: []corev1.VolumeMount{
@@ -479,16 +500,18 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(sts *a
 		sts.Spec.Template.Spec.Containers[0].Ports = ports
 	} else {
 		portConfig := eventbrokerv1alpha1.Service{}
-		json.Unmarshal([]byte(DefaultServiceConfig), &portConfig)
-		ports := make([]corev1.ContainerPort, len(portConfig.Ports))
-		for idx, pbPort := range portConfig.Ports {
-			ports[idx] = corev1.ContainerPort{
-				Name:          pbPort.Name,
-				Protocol:      pbPort.Protocol,
-				ContainerPort: pbPort.ContainerPort,
+		err := json.Unmarshal([]byte(DefaultServiceConfig), &portConfig)
+		if err == nil {
+			ports := make([]corev1.ContainerPort, len(portConfig.Ports))
+			for idx, pbPort := range portConfig.Ports {
+				ports[idx] = corev1.ContainerPort{
+					Name:          pbPort.Name,
+					Protocol:      pbPort.Protocol,
+					ContainerPort: pbPort.ContainerPort,
+				}
 			}
+			sts.Spec.Template.Spec.Containers[0].Ports = ports
 		}
-		sts.Spec.Template.Spec.Containers[0].Ports = ports
 	}
 
 	//Set Extra environment variables

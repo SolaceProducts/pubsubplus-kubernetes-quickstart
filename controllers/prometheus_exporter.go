@@ -51,22 +51,22 @@ func (r *PubSubPlusEventBrokerReconciler) newDeploymentForPrometheusExporter(nam
 							Image:           m.Spec.Monitoring.MonitoringImage.Repository + ":" + m.Spec.Monitoring.MonitoringImage.Tag,
 							ImagePullPolicy: m.Spec.Monitoring.MonitoringImage.ImagePullPolicy,
 							Ports: []corev1.ContainerPort{{
-								Name:          getHttpProtocolType(&m.Spec.Monitoring),
-								ContainerPort: getPrometheusExporterPort(&m.Spec.Monitoring),
+								Name:          getExporterHttpProtocolType(&m.Spec.Monitoring),
+								ContainerPort: getExporterContainerPort(&m.Spec.Monitoring),
 							}},
 
 							Env: []corev1.EnvVar{
 								{
 									Name:  "SOLACE_WEB_LISTEN_ADDRESS",
-									Value: fmt.Sprintf("%s://%s.%s.svc.cluster.local:%d", getHttpProtocolType(&m.Spec.Monitoring), getObjectName("PrometheusExporterService", m.Name), m.Namespace, getPrometheusExporterPort(&m.Spec.Monitoring)),
+									Value: fmt.Sprintf("%s://%s.%s.svc.cluster.local:%d", getExporterHttpProtocolType(&m.Spec.Monitoring), getObjectName("PrometheusExporterService", m.Name), m.Namespace, getExporterContainerPort(&m.Spec.Monitoring)),
 								},
 								{
 									Name:  "SOLACE_SCRAPE_URI",
-									Value: fmt.Sprintf("http://%s.%s.svc.cluster.local:%d", getObjectName("Service", m.Name), m.Namespace, getPubSubPlusEventBrokerPort(&m.Spec.Service, &m.Spec.BrokerTLS)),
+									Value: fmt.Sprintf("%s://%s.%s.svc.cluster.local:%d", getPubSubPlusEventBrokerProtocol(&m.Spec), getObjectName("Service", m.Name), m.Namespace, getPubSubPlusEventBrokerPort(&m.Spec.Service, &m.Spec.BrokerTLS)),
 								},
 								{
 									Name:  "SOLACE_LISTEN_TLS",
-									Value: strconv.FormatBool(m.Spec.Monitoring.ListenTLS),
+									Value: getExporterTLSConfiguration(&m.Spec.Monitoring),
 								},
 								{
 									Name:  "SOLACE_USER",
@@ -98,13 +98,13 @@ func (r *PubSubPlusEventBrokerReconciler) newDeploymentForPrometheusExporter(nam
 	}
 
 	//Set TLS configuration
-	if m.Spec.Monitoring.ListenTLS && (len(strings.TrimSpace(m.Spec.Monitoring.TLSSecret)) > 0) {
+	if m.Spec.Monitoring.MonitoringMetricEndpoint != nil && len(strings.TrimSpace(m.Spec.Monitoring.MonitoringMetricEndpoint.EndpointTLSConfigSecret)) > 0 {
 		allVolumes := dep.Spec.Template.Spec.Volumes
 		allVolumes = append(allVolumes, corev1.Volume{
 			Name: "server-certs",
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName:  m.Spec.Monitoring.TLSSecret,
+					SecretName:  m.Spec.Monitoring.MonitoringMetricEndpoint.EndpointTLSConfigSecret,
 					DefaultMode: &[]int32{0400}[0],
 				},
 			},
@@ -119,11 +119,11 @@ func (r *PubSubPlusEventBrokerReconciler) newDeploymentForPrometheusExporter(nam
 
 		allEnv = append(allEnv, corev1.EnvVar{
 			Name:  "SOLACE_SERVER_CERT",
-			Value: "/mnt/disks/solace/tls.public.pem",
+			Value: "/mnt/disks/solace/" + m.Spec.Monitoring.MonitoringMetricEndpoint.EndpointTlsConfigServerCertName,
 		})
 		allEnv = append(allEnv, corev1.EnvVar{
 			Name:  "SOLACE_PRIVATE_KEY",
-			Value: "/mnt/disks/solace/tls.private.pem",
+			Value: "/mnt/disks/solace/" + m.Spec.Monitoring.MonitoringMetricEndpoint.EndpointTlsConfigPrivateKeyName,
 		})
 
 		dep.Spec.Template.Spec.Containers[0].Env = allEnv
@@ -133,11 +133,11 @@ func (r *PubSubPlusEventBrokerReconciler) newDeploymentForPrometheusExporter(nam
 		allEnv := dep.Spec.Template.Spec.Containers[0].Env
 		allEnv = append(allEnv, corev1.EnvVar{
 			Name:  "SOLACE_SERVER_CERT",
-			Value: "/path/to/your/cert.pem",
+			Value: ".", //This is a mandatory parameter.
 		})
 		allEnv = append(allEnv, corev1.EnvVar{
 			Name:  "SOLACE_PRIVATE_KEY",
-			Value: "/path/to/your/key.pem",
+			Value: ".", //This is a mandatory parameter.
 		})
 		dep.Spec.Template.Spec.Containers[0].Env = allEnv
 	}
@@ -152,16 +152,16 @@ func (r *PubSubPlusEventBrokerReconciler) newServiceForPrometheusExporter(export
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      svcName,
 			Namespace: m.Namespace,
-			Labels:    getObjectLabels(m.Name),
+			Labels:    getMonitoringDeploymentSelector(m.Name),
 		},
 		Spec: corev1.ServiceSpec{
 			Type: exporter.ServiceType,
 			Ports: []corev1.ServicePort{
 				{
-					Name:       getHttpProtocolType(&m.Spec.Monitoring),
-					Protocol:   corev1.ProtocolTCP,
-					Port:       getPrometheusExporterPort(exporter),
-					TargetPort: intstr.IntOrString{Type: intstr.Int, IntVal: getPrometheusExporterPort(exporter)},
+					Name:       getExporterHttpProtocolType(&m.Spec.Monitoring),
+					Protocol:   getExporterServiceProtocol(&m.Spec.Monitoring),
+					Port:       getExporterServicePort(exporter),
+					TargetPort: intstr.IntOrString{Type: intstr.Int, IntVal: getExporterContainerPort(exporter)},
 				},
 			},
 			Selector: getMonitoringDeploymentSelector(m.Name),
@@ -176,24 +176,61 @@ func getPubSubPlusEventBrokerPort(m *eventbrokerv1alpha1.Service, b *eventbroker
 		return 8080
 	}
 	for i := range m.Ports {
-		if m.Ports[i].Name == tcpSempPortName {
-			return m.Ports[i].ContainerPort
+		if b.Enabled {
+			if m.Ports[i].Name == tlsSempPortName {
+				return m.Ports[i].ContainerPort
+			}
+		} else {
+			if m.Ports[i].Name == tcpSempPortName {
+				return m.Ports[i].ContainerPort
+			}
 		}
 	}
-	//return default port as 8080
-	return 8080
+	return 0
 }
 
-func getPrometheusExporterPort(m *eventbrokerv1alpha1.Monitoring) int32 {
-	if m.ContainerPort == 0 {
-		return 9628
-	}
-	return m.ContainerPort
-}
-
-func getHttpProtocolType(broker *eventbrokerv1alpha1.Monitoring) string {
-	if broker.ListenTLS {
+func getPubSubPlusEventBrokerProtocol(m *eventbrokerv1alpha1.EventBrokerSpec) string {
+	if m.BrokerTLS.Enabled {
 		return "https"
 	}
 	return "http"
+}
+
+func getExporterContainerPort(m *eventbrokerv1alpha1.Monitoring) int32 {
+	if m.MonitoringMetricEndpoint == nil || m.MonitoringMetricEndpoint.ContainerPort == 0 {
+		return 9628
+	}
+	return m.MonitoringMetricEndpoint.ContainerPort
+}
+
+func getExporterServicePort(m *eventbrokerv1alpha1.Monitoring) int32 {
+	if m.MonitoringMetricEndpoint == nil || m.MonitoringMetricEndpoint.ServicePort == 0 {
+		return 9628
+	}
+	return m.MonitoringMetricEndpoint.ServicePort
+}
+
+func getExporterHttpProtocolType(m *eventbrokerv1alpha1.Monitoring) string {
+	if m.MonitoringMetricEndpoint != nil && len(strings.TrimSpace(m.MonitoringMetricEndpoint.Name)) > 0 {
+		return m.MonitoringMetricEndpoint.Name
+	} else if m.MonitoringMetricEndpoint == nil || !m.MonitoringMetricEndpoint.ListenTLS {
+		return "tcp-metrics"
+	} else if m.MonitoringMetricEndpoint.ListenTLS {
+		return "tls-metrics"
+	}
+	return "metrics"
+}
+
+func getExporterServiceProtocol(m *eventbrokerv1alpha1.Monitoring) corev1.Protocol {
+	if m.MonitoringMetricEndpoint == nil || m.MonitoringMetricEndpoint.Protocol == "" {
+		return corev1.ProtocolTCP
+	}
+	return m.MonitoringMetricEndpoint.Protocol
+}
+
+func getExporterTLSConfiguration(m *eventbrokerv1alpha1.Monitoring) string {
+	if m.MonitoringMetricEndpoint == nil || m.MonitoringMetricEndpoint.ListenTLS == false {
+		return "false"
+	}
+	return strconv.FormatBool(m.MonitoringMetricEndpoint.ListenTLS)
 }

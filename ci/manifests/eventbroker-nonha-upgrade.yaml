@@ -15,6 +15,12 @@ spec:
   extraEnvVarsSecret: ""
   podDisruptionBudgetForHA: false
   image: {}
+  podLabels:
+    "DeploymentType": "NonHAUpgrade"
+    "DeploymentTestMode": "GithubAction"
+  podAnnotations:
+    "DeploymentType": "NonHAUpgrade"
+    "DeploymentTestMode": "GithubAction"
   nodeAssignment:
     - name: Primary
       spec:
@@ -48,7 +54,6 @@ spec:
     useStorageClass: standard
   monitoring:
     enabled: true
-    listenTLS: false
     image:
       repository: ghcr.io/solacedev/solace_prometheus_exporter
       tag: sol-76199

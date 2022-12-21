@@ -65,17 +65,19 @@ func (r *PubSubPlusEventBrokerReconciler) updateServiceForEventBroker(service *c
 		service.Spec.Ports = ports
 	} else {
 		portConfig := eventbrokerv1alpha1.Service{}
-		json.Unmarshal([]byte(DefaultServiceConfig), &portConfig)
-		ports := make([]corev1.ServicePort, len(portConfig.Ports))
-		for idx, pbPort := range portConfig.Ports {
-			ports[idx] = corev1.ServicePort{
-				Name:       pbPort.Name,
-				Protocol:   pbPort.Protocol,
-				Port:       pbPort.ServicePort,
-				TargetPort: intstr.IntOrString{Type: intstr.Int, IntVal: pbPort.ContainerPort},
+		err := json.Unmarshal([]byte(DefaultServiceConfig), &portConfig)
+		if err == nil {
+			ports := make([]corev1.ServicePort, len(portConfig.Ports))
+			for idx, pbPort := range portConfig.Ports {
+				ports[idx] = corev1.ServicePort{
+					Name:       pbPort.Name,
+					Protocol:   pbPort.Protocol,
+					Port:       pbPort.ServicePort,
+					TargetPort: intstr.IntOrString{Type: intstr.Int, IntVal: pbPort.ContainerPort},
+				}
 			}
+			service.Spec.Ports = ports
 		}
-		service.Spec.Ports = ports
 	}
 }
 

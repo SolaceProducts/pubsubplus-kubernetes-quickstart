@@ -51,8 +51,8 @@ import (
 // PubSubPlusEventBrokerReconciler reconciles a PubSubPlusEventBroker object
 type PubSubPlusEventBrokerReconciler struct {
 	client.Client
-	Scheme   *runtime.Scheme
-	Recorder record.EventRecorder
+	Scheme      *runtime.Scheme
+	Recorder    record.EventRecorder
 	IsOpenShift bool
 }
 
@@ -337,7 +337,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 			if err != nil {
 				log.Error(err, "Failed to find specified PreSharedAuthKeySecret: '"+pubsubpluseventbroker.Spec.PreSharedAuthKeySecret+"'")
 				return ctrl.Result{}, err
-			} else{
+			} else {
 				log.Info("Detected PreSharedAuthKeySecret", " Secret.Name", preSharedAuthKeySecret.Name)
 			}
 		}
@@ -369,10 +369,11 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 		}
 	}
 
-	brokerSpecHash := brokerSpecHash(pubsubpluseventbroker.Spec)
-	tlsSecretHash := r.tlsSecretHash(ctx, pubsubpluseventbroker)
 	automatedPodUpdateStrategy := (pubsubpluseventbroker.Spec.UpdateStrategy != eventbrokerv1alpha1.ManualPodRestartUpdateStrategy)
 	// Check if Primary StatefulSet already exists, if not create a new one
+	brokerSpecHash := brokerSpecHash(pubsubpluseventbroker.Spec)
+	tlsSecretHash := r.tlsSecretHash(ctx, pubsubpluseventbroker)
+
 	stsP = &appsv1.StatefulSet{}
 	stsPName := getStatefulsetName(pubsubpluseventbroker.Name, "p")
 	err = r.Get(ctx, types.NamespacedName{Name: stsPName, Namespace: pubsubpluseventbroker.Namespace}, stsP)
