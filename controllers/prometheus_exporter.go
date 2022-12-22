@@ -229,7 +229,7 @@ func getExporterServiceProtocol(m *eventbrokerv1alpha1.Monitoring) corev1.Protoc
 }
 
 func getExporterTLSConfiguration(m *eventbrokerv1alpha1.Monitoring) string {
-	if m.MonitoringMetricEndpoint == nil || m.MonitoringMetricEndpoint.ListenTLS == false {
+	if m.MonitoringMetricEndpoint == nil || !m.MonitoringMetricEndpoint.ListenTLS {
 		return "false"
 	}
 	return strconv.FormatBool(m.MonitoringMetricEndpoint.ListenTLS)
