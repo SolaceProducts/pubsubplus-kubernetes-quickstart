@@ -382,10 +382,12 @@ type Monitoring struct {
 // Important: Run "make" to regenerate code after modifying this file
 // TODO: Ready to serve traffic
 
-// EventBrokerStatus defines the observed state of the event PubSubPlusEventBroker
+// EventBrokerStatus defines the observed state of the PubSubPlusEventBroker
 type EventBrokerStatus struct {
 	// BrokerPods are the names of the eventbroker pods
 	BrokerPods []string `json:"brokerpods"`
+	// Conditions provide information about the observed status of the deployment
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 
 // MonitoringMetricEndpoint defines parameters to configure Prometheus Exporter Endpoint

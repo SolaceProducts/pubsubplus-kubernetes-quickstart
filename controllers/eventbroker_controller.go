@@ -29,6 +29,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
 	"context"
@@ -39,7 +40,7 @@ import (
 	ctrllog "sigs.k8s.io/controller-runtime/pkg/log"
 
 	eventbrokerv1alpha1 "github.com/SolaceProducts/pubsubplus-operator/api/v1alpha1"
-
+	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/fields"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -103,8 +104,8 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 			log.Info("PubSubPlusEventBroker resource not found. Ignoring since object must be deleted")
 			return ctrl.Result{}, nil
 		}
-		// Error reading the object - requeue the request.
-		log.Error(err, "Failed to get PubSubPlusEventBroker")
+		// Error reading the object
+		r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to read PubSubPlusEventBroker manifest")
 		return ctrl.Result{}, err
 	} else {
 		log.V(1).Info("Detected existing pubsubpluseventbroker", " pubsubpluseventbroker.Name", pubsubpluseventbroker.Name)
@@ -112,8 +113,9 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 
 	// Check maintenance mode
 	if labelValue, ok := pubsubpluseventbroker.Labels[maintenanceLabel]; ok && labelValue == "true" {
-		log.Info(fmt.Sprintf("Found maintenance label '%s=true', reconcile paused.", maintenanceLabel))
-		// TODO: update status
+		msg := fmt.Sprintf("Found maintenance label '%s=true', reconcile paused.", maintenanceLabel)
+		log.Info(msg)
+		r.SetCondition(ctx, log, pubsubpluseventbroker, NoWarningsCondition, metav1.ConditionFalse, MaintenanceModeActiveReason, msg)
 		return ctrl.Result{}, nil
 	}
 
@@ -122,7 +124,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 	if len(strings.TrimSpace(pubsubpluseventbroker.Spec.ServiceAccount.Name)) > 0 {
 		err = r.Get(ctx, types.NamespacedName{Name: pubsubpluseventbroker.Spec.ServiceAccount.Name, Namespace: pubsubpluseventbroker.Namespace}, sa)
 		if err != nil && errors.IsNotFound(err) {
-			log.Error(err, "Failed to find specified ServiceAccount", "ServiceAccount.Namespace", sa.Namespace, "ServiceAccount.Name", pubsubpluseventbroker.Spec.ServiceAccount.Name)
+			r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to find specified ServiceAccount", "ServiceAccount.Namespace", sa.Namespace, "ServiceAccount.Name", pubsubpluseventbroker.Spec.ServiceAccount.Name)
 			return ctrl.Result{}, err
 		}
 		log.V(1).Info("Found specified ServiceAccount", "ServiceAccount.Namespace", sa.Namespace, "ServiceAccount.Name", sa.Name)
@@ -136,7 +138,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 			log.Info("Creating a new ServiceAccount", "ServiceAccount.Namespace", sa.Namespace, "ServiceAccount.Name", sa.Name)
 			err = r.Create(ctx, sa)
 			if err != nil {
-				log.Error(err, "Failed to create new ServiceAccount", "ServiceAccount.Namespace", sa.Namespace, "ServiceAccount.Name", sa.Name)
+				r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to create new ServiceAccount", "ServiceAccount.Namespace", sa.Namespace, "ServiceAccount.Name", sa.Name)
 				return ctrl.Result{}, err
 			}
 			// ServiceAccount created successfully - return and requeue
@@ -146,7 +148,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 					pubsubpluseventbroker.Namespace))
 			return ctrl.Result{Requeue: true}, nil
 		} else if err != nil {
-			log.Error(err, "Failed to get ServiceAccount")
+			r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to get ServiceAccount")
 			return ctrl.Result{}, err
 		} else {
 			log.V(1).Info("Detected existing ServiceAccount", " ServiceAccount.Name", sa.Name)
@@ -163,13 +165,13 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 		log.Info("Creating a new Role", "Role.Namespace", role.Namespace, "Role.Name", role.Name)
 		err = r.Create(ctx, role)
 		if err != nil {
-			log.Error(err, "Failed to create new Role", "Role.Namespace", role.Namespace, "Role.Name", role.Name)
+			r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to create new Role", "Role.Namespace", role.Namespace, "Role.Name", role.Name)
 			return ctrl.Result{}, err
 		}
 		// Role created successfully - return and requeue
 		return ctrl.Result{Requeue: true}, nil
 	} else if err != nil {
-		log.Error(err, "Failed to get Role")
+		r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to get Role")
 		return ctrl.Result{}, err
 	} else {
 		log.V(1).Info("Detected existing Role", " Role.Name", role.Name)
@@ -185,13 +187,13 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 		log.Info("Creating a new RoleBinding", "RoleBinding.Namespace", rb.Namespace, "RoleBinding.Name", rb.Name)
 		err = r.Create(ctx, rb)
 		if err != nil {
-			log.Error(err, "Failed to create new RoleBinding", "RoleBinding.Namespace", rb.Namespace, "RoleBinding.Name", rb.Name)
+			r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to create new RoleBinding", "RoleBinding.Namespace", rb.Namespace, "RoleBinding.Name", rb.Name)
 			return ctrl.Result{}, err
 		}
 		// RoleBinding created successfully - return and requeue
 		return ctrl.Result{Requeue: true}, nil
 	} else if err != nil {
-		log.Error(err, "Failed to get RoleBinding")
+		r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to get RoleBinding")
 		return ctrl.Result{}, err
 	} else {
 		log.V(1).Info("Detected existing RoleBinding", " RoleBinding.Name", rb.Name)
@@ -207,13 +209,13 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 		log.Info("Creating a new ConfigMap", "Configmap.Namespace", cm.Namespace, "Configmap.Name", cm.Name)
 		err = r.Create(ctx, cm)
 		if err != nil {
-			log.Error(err, "Failed to create new ConfigMap", "Configmap.Namespace", cm.Namespace, "Configmap.Name", cm.Name)
+			r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to create new ConfigMap", "Configmap.Namespace", cm.Namespace, "Configmap.Name", cm.Name)
 			return ctrl.Result{}, err
 		}
 		// ConfigMap created successfully - return and requeue
 		return ctrl.Result{Requeue: true}, nil
 	} else if err != nil {
-		log.Error(err, "Failed to get ConfigMap")
+		r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to get ConfigMap")
 		return ctrl.Result{}, err
 	} else {
 		log.V(1).Info("Detected existing ConfigMap", " ConfigMap.Name", cm.Name)
@@ -230,13 +232,13 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 		log.Info("Creating a new Broker Service", "Service.Namespace", svc.Namespace, "Service.Name", svc.Name)
 		err = r.Create(ctx, svc)
 		if err != nil {
-			log.Error(err, "Failed to create new Broker Service", "Service.Namespace", svc.Namespace, "Service.Name", svc.Name)
+			r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to create new Broker Service", "Service.Namespace", svc.Namespace, "Service.Name", svc.Name)
 			return ctrl.Result{}, err
 		}
 		// Broker Service created successfully - return and requeue
 		return ctrl.Result{Requeue: true}, nil
 	} else if err != nil {
-		log.Error(err, "Failed to get Broker Service")
+		r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to get Broker Service")
 		return ctrl.Result{}, err
 	} else {
 		// Check if existing service is not outdated at this point
@@ -245,7 +247,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 			r.updateServiceForEventBroker(svc, pubsubpluseventbroker)
 			err = r.Update(ctx, svc)
 			if err != nil {
-				log.Error(err, "Failed to update Broker Service", "Service.Namespace", svc.Namespace, "Service.Name", svc.Name)
+				r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to update Broker Service", "Service.Namespace", svc.Namespace, "Service.Name", svc.Name)
 				return ctrl.Result{}, err
 			}
 			// Service updated successfully - return and requeue
@@ -266,13 +268,13 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 			log.Info("Creating a new Discovery Service", "Service.Namespace", svc.Namespace, "Service.Name", svc.Name)
 			err = r.Create(ctx, svc)
 			if err != nil {
-				log.Error(err, "Failed to create new Discovery Service", "Service.Namespace", svc.Namespace, "Service.Name", svc.Name)
+				r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to create new Discovery Service", "Service.Namespace", svc.Namespace, "Service.Name", svc.Name)
 				return ctrl.Result{}, err
 			}
 			// Discovery Service created successfully - return and requeue
 			return ctrl.Result{Requeue: true}, nil
 		} else if err != nil {
-			log.Error(err, "Failed to get Discovery Service")
+			r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to get Discovery Service")
 			return ctrl.Result{}, err
 		} else {
 			log.V(1).Info("Detected existing Discovery Discovery Service", " Service.Name", dsvc.Name)
@@ -290,13 +292,13 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 			log.Info("Creating a new Admin Credentials Secret", "Secret.Namespace", secret.Namespace, "Secret.Name", secret.Name)
 			err = r.Create(ctx, secret)
 			if err != nil {
-				log.Error(err, "Failed to create new Admin Credentials Secret", "Secret.Namespace", secret.Namespace, "Secret.Name", secret.Name)
+				r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to create new Admin Credentials Secret", "Secret.Namespace", secret.Namespace, "Secret.Name", secret.Name)
 				return ctrl.Result{}, err
 			}
 			// Admin Credentials Secret created successfully - return and requeue
 			return ctrl.Result{Requeue: true}, nil
 		} else if err != nil {
-			log.Error(err, "Failed to get Admin Credentials Secret")
+			r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to get Admin Credentials Secret")
 			return ctrl.Result{}, err
 		} else {
 			log.V(1).Info("Detected existing Admin Credentials Secret", " Secret.Name", brokerAdminCredentialsSecret.Name)
@@ -304,7 +306,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 	} else {
 		err = r.Get(ctx, types.NamespacedName{Name: pubsubpluseventbroker.Spec.AdminCredentialsSecret, Namespace: pubsubpluseventbroker.Namespace}, brokerAdminCredentialsSecret)
 		if err != nil {
-			log.Error(err, "Failed to find specified Admin Credentials Secret: '"+pubsubpluseventbroker.Spec.AdminCredentialsSecret+"'")
+			r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to find specified Admin Credentials Secret: '"+pubsubpluseventbroker.Spec.AdminCredentialsSecret+"'")
 			return ctrl.Result{}, err
 		} else {
 			log.V(1).Info("Detected specified Admin Credentials Secret", " Secret.Name", brokerAdminCredentialsSecret.Name)
@@ -323,13 +325,13 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 				log.Info("Creating a new PreSharedAuthKey Secret", "Secret.Namespace", preSharedAuthKeySecret.Namespace, "Secret.Name", preSharedAuthKeySecret.Name)
 				err = r.Create(ctx, preSharedAuthKeySecret)
 				if err != nil {
-					log.Error(err, "Failed to create new PreSharedAuthKey Secret", "Secret.Namespace", preSharedAuthKeySecret.Namespace, "Secret.Name", preSharedAuthKeySecret.Name)
+					r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to create new PreSharedAuthKey Secret", "Secret.Namespace", preSharedAuthKeySecret.Namespace, "Secret.Name", preSharedAuthKeySecret.Name)
 					return ctrl.Result{}, err
 				}
 				// Secret created successfully - return and requeue
 				return ctrl.Result{Requeue: true}, nil
 			} else if err != nil {
-				log.Error(err, "Failed to get PreSharedAuthKey Secret")
+				r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to get PreSharedAuthKey Secret")
 				return ctrl.Result{}, err
 			} else {
 				log.V(1).Info("Detected existing PreSharedAuthKey Secret", " Secret.Name", preSharedAuthKeySecret.Name)
@@ -337,7 +339,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 		} else {
 			err = r.Get(ctx, types.NamespacedName{Name: pubsubpluseventbroker.Spec.PreSharedAuthKeySecret, Namespace: pubsubpluseventbroker.Namespace}, preSharedAuthKeySecret)
 			if err != nil {
-				log.Error(err, "Failed to find specified PreSharedAuthKey Secret: '"+pubsubpluseventbroker.Spec.PreSharedAuthKeySecret+"'")
+				r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to find specified PreSharedAuthKey Secret: '"+pubsubpluseventbroker.Spec.PreSharedAuthKeySecret+"'")
 				return ctrl.Result{}, err
 			} else {
 				log.V(1).Info("Detected specified PreSharedAuthKey Secret", " Secret.Name", preSharedAuthKeySecret.Name)
@@ -368,6 +370,15 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 	}
 	// TODO: add else branch to delete PDB if it existed to support dynamic update of PDB
 
+	// At this point update service ready status
+	if _, err = r.getBrokerPod(ctx, pubsubpluseventbroker, Active); err != nil {
+		// No active pod found, not service ready
+		r.SetCondition(ctx, log, pubsubpluseventbroker, ServiceReadyCondition, metav1.ConditionFalse, WaitingForActivePodReason, "Waiting for active pod to provide broker service")
+	} else {
+		// Found active pod, service ready
+		r.SetCondition(ctx, log, pubsubpluseventbroker, ServiceReadyCondition, metav1.ConditionTrue, ActivePodAndServiceExistsReason, "Found active broker pod and service exists")
+	}
+
 	// prep variables to be used next
 	automatedPodUpdateStrategy := (pubsubpluseventbroker.Spec.UpdateStrategy != eventbrokerv1alpha1.ManualPodRestartUpdateStrategy)
 	brokerSpecHash := brokerSpecHash(pubsubpluseventbroker.Spec)
@@ -382,16 +393,19 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 		log.Info("Creating a new Primary StatefulSet", "StatefulSet.Namespace", stsP.Namespace, "StatefulSet.Name", stsP.Name)
 		err = r.Create(ctx, stsP)
 		if err != nil {
-			log.Error(err, "Failed to create new Primary StatefulSet", "StatefulSet.Namespace", stsP.Namespace, "StatefulSet.Name", stsP.Name)
+			r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to create new Primary StatefulSet", "StatefulSet.Namespace", stsP.Namespace, "StatefulSet.Name", stsP.Name)
 			return ctrl.Result{}, err
 		}
 		// StatefulSet created successfully - return and requeue
 		return ctrl.Result{Requeue: true}, nil
 	} else if err != nil {
-		log.Error(err, "Failed to get StatefulSet")
+		r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to get Primary StatefulSet")
 		return ctrl.Result{}, err
 	} else {
 		if brokerStsOutdated(stsP, brokerSpecHash, tlsSecretHash) {
+			/////
+			///// Reset HAReady condition to false
+			/////
 			// If resource versions differ it means recreate or update is required
 			if stsP.Status.ReadyReplicas < 1 {
 				// Related pod is still starting up but already outdated. Remove this statefulset (if delete has not already been initiated) to force pod restart
@@ -400,7 +414,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 					log.Info("Existing Primary StatefulSet requires update and its Pod is outdated and not ready - recreating StatefulSet to force pod update", " StatefulSet.Name", stsP.Name)
 					err = r.Delete(ctx, stsP)
 					if err != nil {
-						log.Error(err, "Failed to delete Primary StatefulSet", "StatefulSet.Namespace", stsP.Namespace, "StatefulSet.Name", stsP.Name)
+						r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to delete Primary StatefulSet", "StatefulSet.Namespace", stsP.Namespace, "StatefulSet.Name", stsP.Name)
 						return ctrl.Result{}, err
 					}
 					// StatefulSet deleted successfully
@@ -412,7 +426,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 			r.updateStatefulsetForEventBroker(stsP, ctx, pubsubpluseventbroker, sa, brokerAdminCredentialsSecret, preSharedAuthKeySecret)
 			err = r.Update(ctx, stsP)
 			if err != nil {
-				log.Error(err, "Failed to update Primary StatefulSet", "StatefulSet.Namespace", stsP.Namespace, "StatefulSet.Name", stsP.Name)
+				r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to update Primary StatefulSet", "StatefulSet.Namespace", stsP.Namespace, "StatefulSet.Name", stsP.Name)
 				return ctrl.Result{}, err
 			}
 			// StatefulSet updated successfully - return and requeue
@@ -433,16 +447,19 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 			log.Info("Creating a new Backup StatefulSet", "StatefulSet.Namespace", stsB.Namespace, "StatefulSet.Name", stsB.Name)
 			err = r.Create(ctx, stsB)
 			if err != nil {
-				log.Error(err, "Failed to create new Backup StatefulSet", "StatefulSet.Namespace", stsB.Namespace, "StatefulSet.Name", stsB.Name)
+				r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to create new Backup StatefulSet", "StatefulSet.Namespace", stsB.Namespace, "StatefulSet.Name", stsB.Name)
 				return ctrl.Result{}, err
 			}
 			// StatefulSet created successfully - return and requeue
 			return ctrl.Result{Requeue: true}, nil
 		} else if err != nil {
-			log.Error(err, "Failed to get StatefulSet")
+			r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to get Backup StatefulSet")
 			return ctrl.Result{}, err
 		} else {
 			if brokerStsOutdated(stsB, brokerSpecHash, tlsSecretHash) {
+				/////
+				///// Reset HAReady condition to false
+				/////
 				// If resource versions differ it means recreate or update is required
 				if stsB.Status.ReadyReplicas < 1 {
 					// Related pod is still starting up but already outdated. Remove this statefulset (if delete has not already been initiated) to force pod restart
@@ -451,7 +468,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 						log.Info("Existing Backup StatefulSet requires update and its Pod is outdated and not ready - recreating StatefulSet to force pod update", " StatefulSet.Name", stsB.Name)
 						err = r.Delete(ctx, stsB)
 						if err != nil {
-							log.Error(err, "Failed to delete Backup StatefulSet", "StatefulSet.Namespace", stsB.Namespace, "StatefulSet.Name", stsB.Name)
+							r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to delete Backup StatefulSet", "StatefulSet.Namespace", stsB.Namespace, "StatefulSet.Name", stsB.Name)
 							return ctrl.Result{}, err
 						}
 						// StatefulSet deleted successfully
@@ -463,7 +480,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 				r.updateStatefulsetForEventBroker(stsB, ctx, pubsubpluseventbroker, sa, brokerAdminCredentialsSecret, preSharedAuthKeySecret)
 				err = r.Update(ctx, stsB)
 				if err != nil {
-					log.Error(err, "Failed to update Backup StatefulSet", "StatefulSet.Namespace", stsB.Namespace, "StatefulSet.Name", stsB.Name)
+					r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to update Backup StatefulSet", "StatefulSet.Namespace", stsB.Namespace, "StatefulSet.Name", stsB.Name)
 					return ctrl.Result{}, err
 				}
 				// StatefulSet updated successfully - return and requeue
@@ -482,16 +499,19 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 			log.Info("Creating a new Monitor StatefulSet", "StatefulSet.Namespace", stsM.Namespace, "StatefulSet.Name", stsM.Name)
 			err = r.Create(ctx, stsM)
 			if err != nil {
-				log.Error(err, "Failed to create new Monitor StatefulSet", "StatefulSet.Namespace", stsM.Namespace, "StatefulSet.Name", stsM.Name)
+				r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to create new Monitor StatefulSet", "StatefulSet.Namespace", stsM.Namespace, "StatefulSet.Name", stsM.Name)
 				return ctrl.Result{}, err
 			}
 			// StatefulSet created successfully - return and requeue
 			return ctrl.Result{Requeue: true}, nil
 		} else if err != nil {
-			log.Error(err, "Failed to get StatefulSet")
+			r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to get Monitor StatefulSet")
 			return ctrl.Result{}, err
 		} else {
 			if brokerStsOutdated(stsM, brokerSpecHash, tlsSecretHash) {
+				/////
+				///// Reset HAReady condition to false
+				/////
 				// If resource versions differ it means recreate or update is required
 				if stsM.Status.ReadyReplicas < 1 {
 					// Related pod is still starting up but already outdated. Remove this statefulset (if delete has not already been initiated) to force pod restart
@@ -500,7 +520,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 						log.Info("Existing Monitor StatefulSet requires update and its Pod is outdated and not ready - recreating StatefulSet to force pod update", " StatefulSet.Name", stsM.Name)
 						err = r.Delete(ctx, stsM)
 						if err != nil {
-							log.Error(err, "Failed to delete Monitor StatefulSet", "StatefulSet.Namespace", stsM.Namespace, "StatefulSet.Name", stsM.Name)
+							r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to delete Monitor StatefulSet", "StatefulSet.Namespace", stsM.Namespace, "StatefulSet.Name", stsM.Name)
 							return ctrl.Result{}, err
 						}
 						// StatefulSet deleted successfully
@@ -512,7 +532,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 				r.updateStatefulsetForEventBroker(stsM, ctx, pubsubpluseventbroker, sa, brokerAdminCredentialsSecret, preSharedAuthKeySecret)
 				err = r.Update(ctx, stsM)
 				if err != nil {
-					log.Error(err, "Failed to update Monitor StatefulSet", "StatefulSet.Namespace", stsM.Namespace, "StatefulSet.Name", stsM.Name)
+					r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to update Monitor StatefulSet", "StatefulSet.Namespace", stsM.Namespace, "StatefulSet.Name", stsM.Name)
 					return ctrl.Result{}, err
 				}
 				// StatefulSet updated successfully - return and requeue
@@ -544,6 +564,8 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 	}
 	log.Info("All broker pods are in ready state")
 
+	// At this point all statefulsets including their managed pods are ready
+
 	// Next restart any out-of-sync broker pods to sync with their config dependencies
 	// Skip it though if updateStrategy is set to manual - in this case this is supposed to be done manually by the user. TODO: Emit events to let the user know
 	if automatedPodUpdateStrategy {
@@ -553,16 +575,19 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 			// The algorithm is to process the Monitor, then the pod with `active=false`, finally `active=true`
 			// == Monitor
 			if brokerPod, err = r.getBrokerPod(ctx, pubsubpluseventbroker, Monitor); err != nil {
-				log.Error(err, "Failed to list Monitor pod", "PubSubPlusEventBroker.Namespace", pubsubpluseventbroker.Namespace, "PubSubPlusEventBroker.Name", pubsubpluseventbroker.Name)
+				r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to list Monitor pod", "PubSubPlusEventBroker.Namespace", pubsubpluseventbroker.Namespace, "PubSubPlusEventBroker.Name", pubsubpluseventbroker.Name)
 				return ctrl.Result{}, err
 			}
 			if brokerPodOutdated(brokerPod, brokerSpecHash, tlsSecretHash) {
+				/////
+				///// Reset HAReady condition to false
+				/////
 				if brokerPod.ObjectMeta.DeletionTimestamp == nil {
 					// Restart the Monitor pod to sync with its Statefulset config
 					log.Info("Monitor pod outdated, restarting to reflect latest updates", "Pod.Namespace", &brokerPod.Namespace, "Pod.Name", &brokerPod.Name)
 					err := r.Delete(ctx, brokerPod)
 					if err != nil {
-						log.Error(err, "Failed to delete the Monitor pod", "Pod.Namespace", &brokerPod.Namespace, "Pod.Name", &brokerPod.Name)
+						r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to delete the Monitor pod", "Pod.Namespace", &brokerPod.Namespace, "Pod.Name", &brokerPod.Name)
 						return ctrl.Result{}, err
 					}
 				}
@@ -571,11 +596,14 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 			}
 			// == Standby
 			if brokerPod, err = r.getBrokerPod(ctx, pubsubpluseventbroker, Standby); err != nil {
-				log.Error(err, "Failed to list a single Standby pod", "PubSubPlusEventBroker.Namespace", pubsubpluseventbroker.Namespace, "PubSubPlusEventBroker.Name", pubsubpluseventbroker.Name)
+				r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to list a single Standby pod", "PubSubPlusEventBroker.Namespace", pubsubpluseventbroker.Namespace, "PubSubPlusEventBroker.Name", pubsubpluseventbroker.Name)
 				// This may be a temporary issue, most likely more than one pod labelled	 active=false, just requeue
 				return ctrl.Result{RequeueAfter: time.Duration(5) * time.Second}, nil
 			}
 			if brokerPodOutdated(brokerPod, brokerSpecHash, tlsSecretHash) {
+				/////
+				///// Reset HAReady condition to false
+				/////
 				if brokerPod.ObjectMeta.DeletionTimestamp == nil {
 					// Restart the Standby pod to sync with its Statefulset config
 					// TODO: it may be a better idea to let control come here even if
@@ -583,7 +611,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 					log.Info("Standby pod outdated, restarting to reflect latest updates", "Pod.Namespace", &brokerPod.Namespace, "Pod.Name", &brokerPod.Name)
 					err := r.Delete(ctx, brokerPod)
 					if err != nil {
-						log.Error(err, "Failed to delete the Standby pod", "Pod.Namespace", &brokerPod.Namespace, "Pod.Name", &brokerPod.Name)
+						r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to delete the Standby pod", "Pod.Namespace", &brokerPod.Namespace, "Pod.Name", &brokerPod.Name)
 						return ctrl.Result{}, err
 					}
 				}
@@ -595,7 +623,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 		if brokerPod, err = r.getBrokerPod(ctx, pubsubpluseventbroker, Active); err != nil {
 			if haDeployment {
 				// In case of HA it is expected that there is an active pod if control got this far
-				log.Error(err, "Failed to list the Active pod", "PubSubPlusEventBroker.Namespace", pubsubpluseventbroker.Namespace, "PubSubPlusEventBroker.Name", pubsubpluseventbroker.Name)
+				r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to list the Active pod", "PubSubPlusEventBroker.Namespace", pubsubpluseventbroker.Namespace, "PubSubPlusEventBroker.Name", pubsubpluseventbroker.Name)
 				return ctrl.Result{}, err
 			} else {
 				// In case of non-HA this means that there is no active pod (likely restarting)
@@ -604,12 +632,15 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 			}
 		}
 		if brokerPodOutdated(brokerPod, brokerSpecHash, tlsSecretHash) {
+			/////
+			///// Reset HAReady condition to false
+			/////
 			if brokerPod.ObjectMeta.DeletionTimestamp == nil {
 				// Restart the Active Pod to sync with its Statefulset config
 				log.Info("Active pod outdated, restarting to reflect latest updates", "Pod.Namespace", &brokerPod.Namespace, "Pod.Name", &brokerPod.Name)
 				err := r.Delete(ctx, brokerPod)
 				if err != nil {
-					log.Error(err, "Failed to delete the Active pod", "Pod.Namespace", &brokerPod.Namespace, "Pod.Name", &brokerPod.Name)
+					r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to delete the Active pod", "Pod.Namespace", &brokerPod.Namespace, "Pod.Name", &brokerPod.Name)
 					return ctrl.Result{}, err
 				}
 			}
@@ -618,54 +649,61 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 		}
 	}
 
-	// At this point the broker is all up and healthy
+	// At this point the broker is all up-to-date and healthy
+	r.SetCondition(ctx, log, pubsubpluseventbroker, NoWarningsCondition, metav1.ConditionTrue, NoIssuesReason, "No issues to report")
+	if haDeployment {
+		r.SetCondition(ctx, log, pubsubpluseventbroker, HAReadyCondition, metav1.ConditionTrue, AllBrokersHAReadyInRedundancyGroupReason, "All broker nodes in the redundancy group are HA ready")
+	}
 
-	// Check if Prometheus Exporter is enabled
+	// Check if Monitoring Exporter is enabled
 	prometheusExporterEnabled := pubsubpluseventbroker.Spec.Monitoring.Enabled
 	if prometheusExporterEnabled {
-		// Check if the Deployment to manage the Prometheus Exporter Pod already exists
+		// Check if the Deployment to manage the Monitoring Exporter Pod already exists
 		prometheusExporterDeployment := &appsv1.Deployment{}
 		prometheusExporterDeploymentName := getObjectName("PrometheusExporterDeployment", pubsubpluseventbroker.Name)
 		err = r.Get(ctx, types.NamespacedName{Name: prometheusExporterDeploymentName, Namespace: pubsubpluseventbroker.Namespace}, prometheusExporterDeployment)
 		if err != nil && errors.IsNotFound(err) {
 			//exporter not available create new one
 			prometheusExporterDeployment = r.newDeploymentForPrometheusExporter(prometheusExporterDeploymentName, brokerAdminCredentialsSecret, pubsubpluseventbroker)
-			log.Info("Creating new Prometheus Exporter Deployment", "Deployment.Namespace", prometheusExporterDeployment.Namespace, "Deployment.Name", prometheusExporterDeploymentName)
+			log.Info("Creating new Monitoring Exporter Deployment", "Deployment.Namespace", prometheusExporterDeployment.Namespace, "Deployment.Name", prometheusExporterDeploymentName)
 			err = r.Create(ctx, prometheusExporterDeployment)
 			if err != nil {
+				r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to create new Monitoring Exporter Deployment", "Deployment.Namespace", prometheusExporterDeployment.Namespace, "Deployment.Name", prometheusExporterDeploymentName)
 				return ctrl.Result{}, err
 			}
 			// Deployment created successfully - return requeue
 			return ctrl.Result{Requeue: true}, nil
 		} else if err != nil {
+			r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to get Monitoring Exporter Deployment")
 			return ctrl.Result{}, err
 		}
 		// Deployment already exists - don't requeue
-		log.V(1).Info("Detected existing Prometheus Exporter Deployment", "Deployment.Name", prometheusExporterDeployment.Name)
+		log.V(1).Info("Detected existing Monitoring Exporter Deployment", "Deployment.Name", prometheusExporterDeployment.Name)
 
-		// Check if this Service for Prometheus Exporter Pod already exists
+		// Check if this Service for Monitoring Exporter Pod already exists
 		prometheusExporterSvc := &corev1.Service{}
 		prometheusExporterSvcName := getObjectName("PrometheusExporterService", pubsubpluseventbroker.Name)
 		err = r.Get(ctx, types.NamespacedName{Name: prometheusExporterSvcName, Namespace: pubsubpluseventbroker.Namespace}, prometheusExporterSvc)
 		if err != nil && errors.IsNotFound(err) {
-			// New service for Prometheus Exporter
+			// New service for Monitoring Exporter
 			prometheusExporterSvc = r.newServiceForPrometheusExporter(&pubsubpluseventbroker.Spec.Monitoring, prometheusExporterSvcName, pubsubpluseventbroker)
-			log.Info("Creating a new Service for Prometheus Exporter", "Service.Namespace", prometheusExporterSvc.Namespace, "Service.Name", prometheusExporterSvc.Name)
+			log.Info("Creating a new Service for Monitoring Exporter", "Service.Namespace", prometheusExporterSvc.Namespace, "Service.Name", prometheusExporterSvc.Name)
 
 			err = r.Create(ctx, prometheusExporterSvc)
 			if err != nil {
-				log.Error(err, "Failed to create new Service", "Service.Namespace", svc.Namespace, "Service.Name", svc.Name)
+				r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to create new Monitoring Exporter Service", "Service.Namespace", svc.Namespace, "Service.Name", svc.Name)
 				return ctrl.Result{}, err
 			}
 			// Service created successfully - return and requeue
 			return ctrl.Result{Requeue: true}, nil
 		} else if err != nil {
-			log.Error(err, "Failed to get Service")
+			r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to get Monitoring Exporter Service")
 			return ctrl.Result{}, err
 		} else {
 			log.V(1).Info("Detected existing Monitoring Exporter Service", " Service.Name", prometheusExporterSvc.Name)
 		}
-		return ctrl.Result{}, nil
+		// At this point monitoring is setup
+		r.SetCondition(ctx, log, pubsubpluseventbroker, MonitoringReadyCondition, metav1.ConditionTrue, MonitoringReadyReason, "All checks passed")
 	}
 
 	// Update the PubSubPlusEventBroker status with the pod names
@@ -677,7 +715,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 		client.MatchingLabels(baseLabels(pubsubpluseventbroker.Name)),
 	}
 	if err = r.List(ctx, podList, listOpts...); err != nil {
-		log.Error(err, "Failed to list pods", "PubSubPlusEventBroker.Namespace", pubsubpluseventbroker.Namespace, "PubSubPlusEventBroker.Name", pubsubpluseventbroker.Name)
+		r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to list pods", "PubSubPlusEventBroker.Namespace", pubsubpluseventbroker.Namespace, "PubSubPlusEventBroker.Name", pubsubpluseventbroker.Name)
 		return ctrl.Result{}, err
 	}
 	podNames := getPodNames(podList.Items)
@@ -687,7 +725,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 		pubsubpluseventbroker.Status.BrokerPods = podNames
 		err := r.Status().Update(ctx, pubsubpluseventbroker)
 		if err != nil {
-			log.Error(err, "Failed to update PubSubPlusEventBroker status")
+			r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to update PubSubPlusEventBroker status")
 			return ctrl.Result{}, err
 		}
 	}
@@ -712,6 +750,13 @@ func getPodNames(pods []corev1.Pod) []string {
 		podNames = append(podNames, pod.Name)
 	}
 	return podNames
+}
+
+// recordErrorState is the central point to log, emit event and set warning status condition if an error has been detected
+func (r *PubSubPlusEventBrokerReconciler) recordErrorState(ctx context.Context, log logr.Logger, pubsubpluseventbroker *eventbrokerv1alpha1.PubSubPlusEventBroker, err error, reason ConditionReason, msg string, keysAndValues ...interface{}) {
+	log.Error(err, msg, keysAndValues)
+	r.Recorder.Event(pubsubpluseventbroker, corev1.EventTypeWarning, string(reason), msg)
+	r.SetCondition(ctx, log, pubsubpluseventbroker, NoWarningsCondition, metav1.ConditionFalse, reason, msg)
 }
 
 // SetupWithManager sets up the controller with the Manager.
