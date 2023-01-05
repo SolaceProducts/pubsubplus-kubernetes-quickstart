@@ -23,6 +23,7 @@ import (
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 type ConditionName string
@@ -49,16 +50,21 @@ const (
 
 // sets or updates a status condition using helper from meta
 func (r *PubSubPlusEventBrokerReconciler) SetCondition(ctx context.Context, log logr.Logger, eb *eventbrokerv1alpha1.PubSubPlusEventBroker, condition ConditionName, status metav1.ConditionStatus, reason ConditionReason, message string) error {
-	if eb.Status.Conditions == nil {
-		eb.Status.Conditions = []metav1.Condition{}
+    // Work with the latest version otherwise there may be conflict
+	latestpubsubpluseventbroker := &eventbrokerv1alpha1.PubSubPlusEventBroker{}
+    error := r.Get(ctx, types.NamespacedName{Name: eb.Name, Namespace: eb.Namespace}, latestpubsubpluseventbroker)
+	if error == nil {
+		if latestpubsubpluseventbroker.Status.Conditions == nil {
+			latestpubsubpluseventbroker.Status.Conditions = []metav1.Condition{}
+		}
+		meta.SetStatusCondition(&latestpubsubpluseventbroker.Status.Conditions, metav1.Condition{
+			Type:    string(condition),
+			Status:  status,
+			Reason:  string(reason),
+			Message: message,
+		})
+		error = r.Status().Update(ctx, latestpubsubpluseventbroker)
 	}
-	meta.SetStatusCondition(&eb.Status.Conditions, metav1.Condition{
-		Type:    string(condition),
-		Status:  status,
-		Reason:  string(reason),
-		Message: message,
-	})
-	error := r.Status().Update(ctx, eb)
 	if error != nil {
 		log.Error(error, "Unable to update status with condition", "Condition", condition)
 	}

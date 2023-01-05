@@ -713,6 +713,11 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 		pubsubpluseventbroker.Status.BrokerPods = podNames
 		err := r.Status().Update(ctx, pubsubpluseventbroker)
 		if err != nil {
+			if errors.IsConflict(err) {
+				// Just requeue to try again with with refreshed resource
+				return ctrl.Result{Requeue: true}, nil
+			}
+			// log any other error
 			r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to update PubSubPlusEventBroker status")
 			return ctrl.Result{}, err
 		}

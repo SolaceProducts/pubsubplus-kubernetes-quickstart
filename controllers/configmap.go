@@ -112,7 +112,7 @@ echo "$(date) INFO: ${APP}-PubSub+ broker node starting. HA flags: HA_configured
 echo "$(date) INFO: ${APP}-Waiting for management API to become available"
 password=$(cat /mnt/disks/secrets/username_admin_password)
 INITIAL_STARTUP_FILE=/var/lib/solace/var/k8s_initial_startup_marker
-loop_guard=60
+loop_guard=120
 pause=10
 count=0
 while [ ${count} -lt ${loop_guard} ]; do 
