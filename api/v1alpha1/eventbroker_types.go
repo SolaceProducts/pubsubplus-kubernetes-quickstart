@@ -385,7 +385,7 @@ type Monitoring struct {
 // EventBrokerStatus defines the observed state of the PubSubPlusEventBroker
 type EventBrokerStatus struct {
 	// BrokerPods are the names of the eventbroker pods
-	BrokerPods []string `json:"brokerpods"`
+	BrokerPods []string `json:"brokerpods,omitempty"`
 	// Conditions provide information about the observed status of the deployment
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }

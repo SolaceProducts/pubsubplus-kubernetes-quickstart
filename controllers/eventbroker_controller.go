@@ -403,9 +403,6 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 		return ctrl.Result{}, err
 	} else {
 		if brokerStsOutdated(stsP, brokerSpecHash, tlsSecretHash) {
-			/////
-			///// Reset HAReady condition to false
-			/////
 			// If resource versions differ it means recreate or update is required
 			if stsP.Status.ReadyReplicas < 1 {
 				// Related pod is still starting up but already outdated. Remove this statefulset (if delete has not already been initiated) to force pod restart
@@ -457,9 +454,6 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 			return ctrl.Result{}, err
 		} else {
 			if brokerStsOutdated(stsB, brokerSpecHash, tlsSecretHash) {
-				/////
-				///// Reset HAReady condition to false
-				/////
 				// If resource versions differ it means recreate or update is required
 				if stsB.Status.ReadyReplicas < 1 {
 					// Related pod is still starting up but already outdated. Remove this statefulset (if delete has not already been initiated) to force pod restart
@@ -509,9 +503,6 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 			return ctrl.Result{}, err
 		} else {
 			if brokerStsOutdated(stsM, brokerSpecHash, tlsSecretHash) {
-				/////
-				///// Reset HAReady condition to false
-				/////
 				// If resource versions differ it means recreate or update is required
 				if stsM.Status.ReadyReplicas < 1 {
 					// Related pod is still starting up but already outdated. Remove this statefulset (if delete has not already been initiated) to force pod restart
@@ -540,25 +531,31 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 			}
 			log.V(1).Info("Detected up-to-date existing Monitor StatefulSet", " StatefulSet.Name", stsM.Name)
 		}
-
 	}
 
 	// At this point all required operator-managed broker artifacts are in place.
 
-	// Check if pods are out-of-sync and need to be restarted
 	// First check for readiness of all broker nodes to continue
 	// TODO: where it makes sense emit events here additional to logs
 	if stsP.Status.ReadyReplicas < 1 {
 		log.Info("Detected unready Primary StatefulSet, waiting to be ready")
+		if haDeployment {
+			// Reset HAReady condition to false
+			r.SetCondition(ctx, log, pubsubpluseventbroker, HAReadyCondition, metav1.ConditionFalse, MissingReadyPodReason, "Primary broker node is not HA ready")
+		}
 		return ctrl.Result{RequeueAfter: time.Duration(5) * time.Second}, nil
 	}
 	if haDeployment {
 		if stsB.Status.ReadyReplicas < 1 {
 			log.Info("Detected unready Backup StatefulSet, waiting to be ready")
+			// Reset HAReady condition to false
+			r.SetCondition(ctx, log, pubsubpluseventbroker, HAReadyCondition, metav1.ConditionFalse, MissingReadyPodReason, "Backup broker node is not HA ready")
 			return ctrl.Result{RequeueAfter: time.Duration(5) * time.Second}, nil
 		}
 		if stsM.Status.ReadyReplicas < 1 {
 			log.Info("Detected unready Monitor StatefulSet, waiting to be ready")
+			// Reset HAReady condition to false
+			r.SetCondition(ctx, log, pubsubpluseventbroker, HAReadyCondition, metav1.ConditionFalse, MissingReadyPodReason, "Monitor broker node is not HA ready")
 			return ctrl.Result{RequeueAfter: time.Duration(5) * time.Second}, nil
 		}
 	}
@@ -579,9 +576,6 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 				return ctrl.Result{}, err
 			}
 			if brokerPodOutdated(brokerPod, brokerSpecHash, tlsSecretHash) {
-				/////
-				///// Reset HAReady condition to false
-				/////
 				if brokerPod.ObjectMeta.DeletionTimestamp == nil {
 					// Restart the Monitor pod to sync with its Statefulset config
 					log.Info("Monitor pod outdated, restarting to reflect latest updates", "Pod.Namespace", &brokerPod.Namespace, "Pod.Name", &brokerPod.Name)
@@ -601,9 +595,6 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 				return ctrl.Result{RequeueAfter: time.Duration(5) * time.Second}, nil
 			}
 			if brokerPodOutdated(brokerPod, brokerSpecHash, tlsSecretHash) {
-				/////
-				///// Reset HAReady condition to false
-				/////
 				if brokerPod.ObjectMeta.DeletionTimestamp == nil {
 					// Restart the Standby pod to sync with its Statefulset config
 					// TODO: it may be a better idea to let control come here even if
@@ -632,9 +623,6 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 			}
 		}
 		if brokerPodOutdated(brokerPod, brokerSpecHash, tlsSecretHash) {
-			/////
-			///// Reset HAReady condition to false
-			/////
 			if brokerPod.ObjectMeta.DeletionTimestamp == nil {
 				// Restart the Active Pod to sync with its Statefulset config
 				log.Info("Active pod outdated, restarting to reflect latest updates", "Pod.Namespace", &brokerPod.Namespace, "Pod.Name", &brokerPod.Name)
@@ -655,52 +643,52 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 		r.SetCondition(ctx, log, pubsubpluseventbroker, HAReadyCondition, metav1.ConditionTrue, AllBrokersHAReadyInRedundancyGroupReason, "All broker nodes in the redundancy group are HA ready")
 	}
 
-	// Check if Monitoring Exporter is enabled
+	// Check if Prometheus Exporter is enabled
 	prometheusExporterEnabled := pubsubpluseventbroker.Spec.Monitoring.Enabled
 	if prometheusExporterEnabled {
-		// Check if the Deployment to manage the Monitoring Exporter Pod already exists
+		// Check if the Deployment to manage the Prometheus Exporter Pod already exists
 		prometheusExporterDeployment := &appsv1.Deployment{}
 		prometheusExporterDeploymentName := getObjectName("PrometheusExporterDeployment", pubsubpluseventbroker.Name)
 		err = r.Get(ctx, types.NamespacedName{Name: prometheusExporterDeploymentName, Namespace: pubsubpluseventbroker.Namespace}, prometheusExporterDeployment)
 		if err != nil && errors.IsNotFound(err) {
 			//exporter not available create new one
 			prometheusExporterDeployment = r.newDeploymentForPrometheusExporter(prometheusExporterDeploymentName, brokerAdminCredentialsSecret, pubsubpluseventbroker)
-			log.Info("Creating new Monitoring Exporter Deployment", "Deployment.Namespace", prometheusExporterDeployment.Namespace, "Deployment.Name", prometheusExporterDeploymentName)
+			log.Info("Creating new Prometheus Exporter Deployment", "Deployment.Namespace", prometheusExporterDeployment.Namespace, "Deployment.Name", prometheusExporterDeploymentName)
 			err = r.Create(ctx, prometheusExporterDeployment)
 			if err != nil {
-				r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to create new Monitoring Exporter Deployment", "Deployment.Namespace", prometheusExporterDeployment.Namespace, "Deployment.Name", prometheusExporterDeploymentName)
+				r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to create new Prometheus Exporter Deployment", "Deployment.Namespace", prometheusExporterDeployment.Namespace, "Deployment.Name", prometheusExporterDeploymentName)
 				return ctrl.Result{}, err
 			}
 			// Deployment created successfully - return requeue
 			return ctrl.Result{Requeue: true}, nil
 		} else if err != nil {
-			r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to get Monitoring Exporter Deployment")
+			r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to get Prometheus Exporter Deployment")
 			return ctrl.Result{}, err
 		}
 		// Deployment already exists - don't requeue
-		log.V(1).Info("Detected existing Monitoring Exporter Deployment", "Deployment.Name", prometheusExporterDeployment.Name)
+		log.V(1).Info("Detected existing Prometheus Exporter Deployment", "Deployment.Name", prometheusExporterDeployment.Name)
 
-		// Check if this Service for Monitoring Exporter Pod already exists
+		// Check if this Service for Prometheus Exporter Pod already exists
 		prometheusExporterSvc := &corev1.Service{}
 		prometheusExporterSvcName := getObjectName("PrometheusExporterService", pubsubpluseventbroker.Name)
 		err = r.Get(ctx, types.NamespacedName{Name: prometheusExporterSvcName, Namespace: pubsubpluseventbroker.Namespace}, prometheusExporterSvc)
 		if err != nil && errors.IsNotFound(err) {
-			// New service for Monitoring Exporter
+			// New service for Prometheus Exporter
 			prometheusExporterSvc = r.newServiceForPrometheusExporter(&pubsubpluseventbroker.Spec.Monitoring, prometheusExporterSvcName, pubsubpluseventbroker)
-			log.Info("Creating a new Service for Monitoring Exporter", "Service.Namespace", prometheusExporterSvc.Namespace, "Service.Name", prometheusExporterSvc.Name)
+			log.Info("Creating a new Service for Prometheus Exporter", "Service.Namespace", prometheusExporterSvc.Namespace, "Service.Name", prometheusExporterSvc.Name)
 
 			err = r.Create(ctx, prometheusExporterSvc)
 			if err != nil {
-				r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to create new Monitoring Exporter Service", "Service.Namespace", svc.Namespace, "Service.Name", svc.Name)
+				r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to create new Prometheus Exporter Service", "Service.Namespace", svc.Namespace, "Service.Name", svc.Name)
 				return ctrl.Result{}, err
 			}
 			// Service created successfully - return and requeue
 			return ctrl.Result{Requeue: true}, nil
 		} else if err != nil {
-			r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to get Monitoring Exporter Service")
+			r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to get Prometheus Exporter Service")
 			return ctrl.Result{}, err
 		} else {
-			log.V(1).Info("Detected existing Monitoring Exporter Service", " Service.Name", prometheusExporterSvc.Name)
+			log.V(1).Info("Detected existing Prometheus Exporter Service", " Service.Name", prometheusExporterSvc.Name)
 		}
 		// At this point monitoring is setup
 		r.SetCondition(ctx, log, pubsubpluseventbroker, MonitoringReadyCondition, metav1.ConditionTrue, MonitoringReadyReason, "All checks passed")

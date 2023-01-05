@@ -44,6 +44,7 @@ const (
 	MonitoringReadyReason                    = "MonitoringReady"
 	WaitingForActivePodReason                = "WaitingForActivePod"
 	ActivePodAndServiceExistsReason          = "ActivePodAndServiceExists"
+	MissingReadyPodReason                    = "MissingReadyPod"
 )
 
 // sets or updates a status condition using helper from meta
