@@ -559,7 +559,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 			return ctrl.Result{RequeueAfter: time.Duration(5) * time.Second}, nil
 		}
 	}
-	log.Info("All broker pods are in ready state")
+	log.V(1).Info("All broker pods are in ready state")
 
 	// At this point all statefulsets including their managed pods are ready
 
@@ -747,7 +747,7 @@ func getPodNames(pods []corev1.Pod) []string {
 
 // recordErrorState is the central point to log, emit event and set warning status condition if an error has been detected
 func (r *PubSubPlusEventBrokerReconciler) recordErrorState(ctx context.Context, log logr.Logger, pubsubpluseventbroker *eventbrokerv1alpha1.PubSubPlusEventBroker, err error, reason ConditionReason, msg string, keysAndValues ...interface{}) {
-	log.Error(err, msg, keysAndValues)
+	log.Error(err, msg, keysAndValues...)
 	r.Recorder.Event(pubsubpluseventbroker, corev1.EventTypeWarning, string(reason), msg)
 	r.SetCondition(ctx, log, pubsubpluseventbroker, NoWarningsCondition, metav1.ConditionFalse, reason, msg)
 }
