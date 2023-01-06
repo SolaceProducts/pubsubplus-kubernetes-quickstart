@@ -50,23 +50,23 @@ const (
 
 // sets or updates a status condition using helper from meta
 func (r *PubSubPlusEventBrokerReconciler) SetCondition(ctx context.Context, log logr.Logger, eb *eventbrokerv1alpha1.PubSubPlusEventBroker, condition ConditionName, status metav1.ConditionStatus, reason ConditionReason, message string) error {
-    // Work with the latest version otherwise there may be conflict
-	latestpubsubpluseventbroker := &eventbrokerv1alpha1.PubSubPlusEventBroker{}
-    error := r.Get(ctx, types.NamespacedName{Name: eb.Name, Namespace: eb.Namespace}, latestpubsubpluseventbroker)
+	// Work with the latest version of PubSubPlusEventBroker otherwise there may be conflict
+	latesteb := &eventbrokerv1alpha1.PubSubPlusEventBroker{}
+	error := r.Get(ctx, types.NamespacedName{Name: eb.Name, Namespace: eb.Namespace}, latesteb)
 	if error == nil {
-		if latestpubsubpluseventbroker.Status.Conditions == nil {
-			latestpubsubpluseventbroker.Status.Conditions = []metav1.Condition{}
+		if latesteb.Status.Conditions == nil {
+			latesteb.Status.Conditions = []metav1.Condition{}
 		}
-		meta.SetStatusCondition(&latestpubsubpluseventbroker.Status.Conditions, metav1.Condition{
+		meta.SetStatusCondition(&latesteb.Status.Conditions, metav1.Condition{
 			Type:    string(condition),
 			Status:  status,
 			Reason:  string(reason),
 			Message: message,
 		})
-		error = r.Status().Update(ctx, latestpubsubpluseventbroker)
+		error = r.Status().Update(ctx, latesteb)
 	}
 	if error != nil {
-		log.Error(error, "Unable to update status with condition", "Condition", condition)
+		log.Info("Unable to update status with condition, will try next time", "Condition", condition)
 	}
 	return error
 }

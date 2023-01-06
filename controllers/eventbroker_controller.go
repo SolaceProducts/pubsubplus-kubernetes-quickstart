@@ -142,10 +142,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 				return ctrl.Result{}, err
 			}
 			// ServiceAccount created successfully - return and requeue
-			r.Recorder.Event(pubsubpluseventbroker, corev1.EventTypeNormal, "Created",
-				fmt.Sprintf("ServiceAccount %s created in namespace %s",
-					saName,
-					pubsubpluseventbroker.Namespace))
+			r.createResourceSuccessEvent(pubsubpluseventbroker, "ServiceAccount", saName)
 			return ctrl.Result{Requeue: true}, nil
 		} else if err != nil {
 			r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to get ServiceAccount")
@@ -155,7 +152,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 		}
 	}
 
-	// Check if podtagupdater Role already exists, if not create a new one
+	// Check if Podtagupdater Role already exists, if not create a new one
 	role := &rbacv1.Role{}
 	roleName := getObjectName("Role", pubsubpluseventbroker.Name)
 	err = r.Get(ctx, types.NamespacedName{Name: roleName, Namespace: pubsubpluseventbroker.Namespace}, role)
@@ -169,6 +166,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 			return ctrl.Result{}, err
 		}
 		// Role created successfully - return and requeue
+		r.createResourceSuccessEvent(pubsubpluseventbroker, "Podtagupdater Role", roleName)
 		return ctrl.Result{Requeue: true}, nil
 	} else if err != nil {
 		r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to get Role")
@@ -191,6 +189,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 			return ctrl.Result{}, err
 		}
 		// RoleBinding created successfully - return and requeue
+		r.createResourceSuccessEvent(pubsubpluseventbroker, "RoleBinding", rbName)
 		return ctrl.Result{Requeue: true}, nil
 	} else if err != nil {
 		r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to get RoleBinding")
@@ -213,6 +212,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 			return ctrl.Result{}, err
 		}
 		// ConfigMap created successfully - return and requeue
+		r.createResourceSuccessEvent(pubsubpluseventbroker, "ConfigMap", cmName)
 		return ctrl.Result{Requeue: true}, nil
 	} else if err != nil {
 		r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to get ConfigMap")
@@ -236,6 +236,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 			return ctrl.Result{}, err
 		}
 		// Broker Service created successfully - return and requeue
+		r.createResourceSuccessEvent(pubsubpluseventbroker, "Broker Service", svcName)
 		return ctrl.Result{Requeue: true}, nil
 	} else if err != nil {
 		r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to get Broker Service")
@@ -272,6 +273,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 				return ctrl.Result{}, err
 			}
 			// Discovery Service created successfully - return and requeue
+			r.createResourceSuccessEvent(pubsubpluseventbroker, "Discovery Service", dsvcName)
 			return ctrl.Result{Requeue: true}, nil
 		} else if err != nil {
 			r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to get Discovery Service")
@@ -296,6 +298,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 				return ctrl.Result{}, err
 			}
 			// Admin Credentials Secret created successfully - return and requeue
+			r.createResourceSuccessEvent(pubsubpluseventbroker, "Admin Credentials Secret", secretName)
 			return ctrl.Result{Requeue: true}, nil
 		} else if err != nil {
 			r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to get Admin Credentials Secret")
@@ -328,7 +331,8 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 					r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to create new PreSharedAuthKey Secret", "Secret.Namespace", preSharedAuthKeySecret.Namespace, "Secret.Name", preSharedAuthKeySecret.Name)
 					return ctrl.Result{}, err
 				}
-				// Secret created successfully - return and requeue
+				// PreSharedAuthKey Secret created successfully - return and requeue
+				r.createResourceSuccessEvent(pubsubpluseventbroker, "PreSharedAuthKey Secret", preSharedAuthSecretName)
 				return ctrl.Result{Requeue: true}, nil
 			} else if err != nil {
 				r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to get PreSharedAuthKey Secret")
@@ -362,7 +366,8 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 			if err != nil {
 				return ctrl.Result{}, err
 			}
-			// Pod Disruption Budget created successfully - return requeue
+			// PodDisruptionBudget created successfully - return and requeue
+			r.createResourceSuccessEvent(pubsubpluseventbroker, "PodDisruptionBudget", podDisruptionBudgetHAName)
 			return ctrl.Result{Requeue: true}, nil
 		} else if err != nil {
 			return ctrl.Result{}, err
@@ -396,7 +401,8 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 			r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to create new Primary StatefulSet", "StatefulSet.Namespace", stsP.Namespace, "StatefulSet.Name", stsP.Name)
 			return ctrl.Result{}, err
 		}
-		// StatefulSet created successfully - return and requeue
+		// Primary StatefulSet created successfully - return and requeue
+		r.createResourceSuccessEvent(pubsubpluseventbroker, "Primary StatefulSet", stsPName)
 		return ctrl.Result{Requeue: true}, nil
 	} else if err != nil {
 		r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to get Primary StatefulSet")
@@ -447,7 +453,8 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 				r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to create new Backup StatefulSet", "StatefulSet.Namespace", stsB.Namespace, "StatefulSet.Name", stsB.Name)
 				return ctrl.Result{}, err
 			}
-			// StatefulSet created successfully - return and requeue
+			// Backup StatefulSet created successfully - return and requeue
+			r.createResourceSuccessEvent(pubsubpluseventbroker, "Backup StatefulSet", stsBName)
 			return ctrl.Result{Requeue: true}, nil
 		} else if err != nil {
 			r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to get Backup StatefulSet")
@@ -496,7 +503,8 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 				r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to create new Monitor StatefulSet", "StatefulSet.Namespace", stsM.Namespace, "StatefulSet.Name", stsM.Name)
 				return ctrl.Result{}, err
 			}
-			// StatefulSet created successfully - return and requeue
+			// Monitor StatefulSet created successfully - return and requeue
+			r.createResourceSuccessEvent(pubsubpluseventbroker, "Monitor StatefulSet", stsMName)
 			return ctrl.Result{Requeue: true}, nil
 		} else if err != nil {
 			r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to get Monitor StatefulSet")
@@ -659,7 +667,8 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 				r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to create new Prometheus Exporter Deployment", "Deployment.Namespace", prometheusExporterDeployment.Namespace, "Deployment.Name", prometheusExporterDeploymentName)
 				return ctrl.Result{}, err
 			}
-			// Deployment created successfully - return requeue
+			// Prometheus Exporter Deployment created successfully - return and requeue
+			r.createResourceSuccessEvent(pubsubpluseventbroker, "Prometheus Exporter Deployment", prometheusExporterDeploymentName)
 			return ctrl.Result{Requeue: true}, nil
 		} else if err != nil {
 			r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to get Prometheus Exporter Deployment")
@@ -682,7 +691,8 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 				r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to create new Prometheus Exporter Service", "Service.Namespace", svc.Namespace, "Service.Name", svc.Name)
 				return ctrl.Result{}, err
 			}
-			// Service created successfully - return and requeue
+			// Prometheus Exporter Service created successfully - return and requeue
+			r.createResourceSuccessEvent(pubsubpluseventbroker, "Prometheus Exporter Service", prometheusExporterSvcName)
 			return ctrl.Result{Requeue: true}, nil
 		} else if err != nil {
 			r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to get Prometheus Exporter Service")
@@ -743,6 +753,11 @@ func getPodNames(pods []corev1.Pod) []string {
 		podNames = append(podNames, pod.Name)
 	}
 	return podNames
+}
+
+// createResourceSuccessEvent
+func (r *PubSubPlusEventBrokerReconciler) createResourceSuccessEvent(pubsubpluseventbroker *eventbrokerv1alpha1.PubSubPlusEventBroker, resourceType string, resourceName string) {
+	r.Recorder.Event(pubsubpluseventbroker, corev1.EventTypeNormal, "Created", fmt.Sprintf("Created %s %s", resourceType, resourceName))
 }
 
 // recordErrorState is the central point to log, emit event and set warning status condition if an error has been detected
