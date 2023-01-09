@@ -707,6 +707,13 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 		r.SetCondition(ctx, log, pubsubpluseventbroker, MonitoringReadyCondition, metav1.ConditionTrue, MonitoringReadyReason, "All checks passed")
 	}
 
+	// Now update the deployment status
+	// Get the latest status
+	err = r.Get(ctx, req.NamespacedName, pubsubpluseventbroker)
+	if err != nil {
+		// If any error then requeue, this will be handled at the beginning of the next reconcile
+		return ctrl.Result{Requeue: true}, nil
+	}
 	// Gather information if not readily available to update elements of the PubSubPlusEventBroker status
 	podList := &corev1.PodList{}
 	listOpts := []client.ListOption{
@@ -755,7 +762,8 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 		r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to update PubSubPlusEventBroker status")
 		return ctrl.Result{}, err
 	}
-	// After status update just reconcile periodically
+
+	// When finished still reconcile periodically to wake up periodically
 	return ctrl.Result{RequeueAfter: 10 * time.Minute}, nil
 
 } // End of Reconcile
