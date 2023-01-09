@@ -35,6 +35,7 @@ const (
 	tcpSempPortName                      = "tcp-semp"
 	tlsSempPortName                      = "tls-semp"
 	brokerNodeComponent                  = "brokernode"
+	metricsMonitorComponent              = "metricsmonitor"
 )
 
 type BrokerRole int // Notice that this is about the current role, not the broker node designation
@@ -135,7 +136,7 @@ func getMonitoringDeploymentSelector(deploymentName string) map[string]string {
 	return map[string]string{
 		"app.kubernetes.io/instance":   deploymentName,
 		"app.kubernetes.io/name":       appKubernetesIoNameLabel,
-		"solace-prometheus-exporter":   "true",
+		"app.kubernetes.io/component":  metricsMonitorComponent,
 		"app.kubernetes.io/managed-by": appKubernetesIoManagedByLabel,
 	}
 }
