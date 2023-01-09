@@ -34,6 +34,7 @@ const (
 	preSharedAuthKeyName                 = "preshared_auth_key"
 	tcpSempPortName                      = "tcp-semp"
 	tlsSempPortName                      = "tls-semp"
+	brokerNodeComponent                  = "brokernode"
 )
 
 type BrokerRole int // Notice that this is about the current role, not the broker node designation
@@ -86,11 +87,22 @@ func getBrokerNodeType(statefulSetDeploymentName string) string {
 // Provides the labels for a broker Pod in the current PubSubPlusEventBroker deployment
 func getPodLabels(deploymentName string, nodeType string) map[string]string {
 	return map[string]string{
-		"app.kubernetes.io/instance": deploymentName,
-		"app.kubernetes.io/name":     appKubernetesIoNameLabel,
-		"node-type":                  nodeType,
+		"app.kubernetes.io/instance":  deploymentName,
+		"app.kubernetes.io/name":      appKubernetesIoNameLabel,
+		"app.kubernetes.io/component": brokerNodeComponent,
+		"node-type":                   nodeType,
 	}
 }
+
+// baseLabels returns the labels for selecting the resources
+// belonging to the given pubsubpluseventbroker deployment name.
+func baseLabels(deploymentName string) map[string]string {
+	return map[string]string{
+		"app.kubernetes.io/instance": deploymentName,
+		"app.kubernetes.io/name":     appKubernetesIoNameLabel,
+	}
+}
+
 
 // Provides the selector (from Pods) to be used for broker services
 func getServiceSelector(deploymentName string) map[string]string {
@@ -101,11 +113,12 @@ func getServiceSelector(deploymentName string) map[string]string {
 	}
 }
 
-// Provides the selector (from Pods) to be used for broker nodes discovery services
+// Provides the selector (from Pods) to be used for broker nodes discovery service
 func getDiscoveryServiceSelector(deploymentName string) map[string]string {
 	return map[string]string{
 		"app.kubernetes.io/instance": deploymentName,
 		"app.kubernetes.io/name":     appKubernetesIoNameLabel,
+		"app.kubernetes.io/component": brokerNodeComponent,
 	}
 }
 

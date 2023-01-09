@@ -380,14 +380,34 @@ type Monitoring struct {
 
 // INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 // Important: Run "make" to regenerate code after modifying this file
-// TODO: Ready to serve traffic
 
 // EventBrokerStatus defines the observed state of the PubSubPlusEventBroker
 type EventBrokerStatus struct {
-	// BrokerPods are the names of the eventbroker pods
-	BrokerPods []string `json:"brokerpods,omitempty"`
+	// PodsList are the names of the eventbroker and optionally the monitoring pods
+	PodsList []string `json:"podsList,omitempty"`
 	// Conditions provide information about the observed status of the deployment
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
+	// Broker section provides the broker status
+	Broker BrokerSubStatus `json:"broker,omitempty"`
+	// Monitoring sectionprovides monitoring support status
+	Monitoring MonitoringSubStatus `json:"monitoring,omitempty"`
+}
+
+type BrokerSubStatus struct {
+    HADeployment string `json:"haDeployment,omitempty"`
+    TLSSupport string `json:"tlsSupport,omitempty"`
+    TLSSecret string `json:"tlsSecret,omitempty"`
+    AdminCredentialsSecret  string `json:"adminCredentialsSecret,omitempty"`
+    ServiceName  string `json:"serviceName,omitempty"`
+    ServiceType  string `json:"serviceType,omitempty"`
+	StatefulSets []string `json:"statefulSets,omitempty"`
+	BrokerImage string `json:"brokerImage,omitempty"`
+}
+
+type MonitoringSubStatus struct {
+    Enabled string `json:"enabled,omitempty"`
+	ServiceName  string `json:"serviceName,omitempty"`
+	ExporterImage string `json:"exporterImage,omitempty"`
 }
 
 // MonitoringMetricEndpoint defines parameters to configure Prometheus Exporter Endpoint

@@ -186,7 +186,7 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(sts *a
 	sts.Spec.Template = corev1.PodTemplateSpec{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels: podLabels,
-			// Note the resource version of upstream objects
+			// Place to note the resource version of upstream objects
 			Annotations: podAnnotations,
 		},
 		Spec: corev1.PodSpec{

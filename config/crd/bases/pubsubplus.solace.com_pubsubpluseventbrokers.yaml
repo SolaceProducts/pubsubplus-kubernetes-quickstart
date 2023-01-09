@@ -1475,11 +1475,28 @@ spec:
           status:
             description: EventBrokerStatus defines the observed state of the PubSubPlusEventBroker
             properties:
-              brokerpods:
-                description: BrokerPods are the names of the eventbroker pods
-                items:
-                  type: string
-                type: array
+              broker:
+                description: Broker section provides the broker status
+                properties:
+                  adminCredentialsSecret:
+                    type: string
+                  brokerImage:
+                    type: string
+                  haDeployment:
+                    type: string
+                  serviceName:
+                    type: string
+                  serviceType:
+                    type: string
+                  statefulSets:
+                    items:
+                      type: string
+                    type: array
+                  tlsSecret:
+                    type: string
+                  tlsSupport:
+                    type: string
+                type: object
               conditions:
                 description: Conditions provide information about the observed status
                   of the deployment
@@ -1549,6 +1566,22 @@ spec:
                   - status
                   - type
                   type: object
+                type: array
+              monitoring:
+                description: Monitoring sectionprovides monitoring support status
+                properties:
+                  enabled:
+                    type: string
+                  exporterImage:
+                    type: string
+                  serviceName:
+                    type: string
+                type: object
+              podsList:
+                description: PodsList are the names of the eventbroker and optionally
+                  the monitoring pods
+                items:
+                  type: string
                 type: array
             type: object
         type: object
