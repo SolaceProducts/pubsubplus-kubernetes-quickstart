@@ -407,36 +407,6 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 	} else if err != nil {
 		r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to get Primary StatefulSet")
 		return ctrl.Result{}, err
-	} else {
-		if brokerStsOutdated(stsP, brokerSpecHash, tlsSecretHash) {
-			// If resource versions differ it means recreate or update is required
-			if stsP.Status.ReadyReplicas < 1 {
-				// Related pod is still starting up but already outdated. Remove this statefulset (if delete has not already been initiated) to force pod restart
-				// and a next reconcile will recreate it from scratch
-				if stsP.ObjectMeta.DeletionTimestamp == nil {
-					log.Info("Existing Primary StatefulSet requires update and its Pod is outdated and not ready - recreating StatefulSet to force pod update", " StatefulSet.Name", stsP.Name)
-					err = r.Delete(ctx, stsP)
-					if err != nil {
-						r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to delete Primary StatefulSet", "StatefulSet.Namespace", stsP.Namespace, "StatefulSet.Name", stsP.Name)
-						return ctrl.Result{}, err
-					}
-					// StatefulSet deleted successfully
-					r.emitResourceRestartEvent(pubsubpluseventbroker, "Primary StatefulSet", stsP.Name)
-				}
-				// In any case requeue
-				return ctrl.Result{RequeueAfter: time.Duration(1) * time.Second}, nil
-			}
-			log.Info("Updating existing Primary StatefulSet", "StatefulSet.Namespace", stsP.Namespace, "StatefulSet.Name", stsP.Name)
-			r.updateStatefulsetForEventBroker(stsP, ctx, pubsubpluseventbroker, sa, brokerAdminCredentialsSecret, preSharedAuthKeySecret)
-			err = r.Update(ctx, stsP)
-			if err != nil {
-				r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to update Primary StatefulSet", "StatefulSet.Namespace", stsP.Namespace, "StatefulSet.Name", stsP.Name)
-				return ctrl.Result{}, err
-			}
-			// StatefulSet updated successfully - return and requeue
-			return ctrl.Result{Requeue: true}, nil
-		}
-		log.V(1).Info("Detected up-to-date existing Primary StatefulSet", " StatefulSet.Name", stsP.Name)
 	}
 
 	if haDeployment {
@@ -460,36 +430,6 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 		} else if err != nil {
 			r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to get Backup StatefulSet")
 			return ctrl.Result{}, err
-		} else {
-			if brokerStsOutdated(stsB, brokerSpecHash, tlsSecretHash) {
-				// If resource versions differ it means recreate or update is required
-				if stsB.Status.ReadyReplicas < 1 {
-					// Related pod is still starting up but already outdated. Remove this statefulset (if delete has not already been initiated) to force pod restart
-					// and a next reconcile will recreate it from scratch
-					if stsB.ObjectMeta.DeletionTimestamp == nil {
-						log.Info("Existing Backup StatefulSet requires update and its Pod is outdated and not ready - recreating StatefulSet to force pod update", " StatefulSet.Name", stsB.Name)
-						err = r.Delete(ctx, stsB)
-						if err != nil {
-							r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to delete Backup StatefulSet", "StatefulSet.Namespace", stsB.Namespace, "StatefulSet.Name", stsB.Name)
-							return ctrl.Result{}, err
-						}
-						// StatefulSet deleted successfully
-						r.emitResourceRestartEvent(pubsubpluseventbroker, "Backup StatefulSet", stsP.Name)
-					}
-					// In any case requeue
-					return ctrl.Result{RequeueAfter: time.Duration(1) * time.Second}, nil
-				}
-				log.Info("Updating existing Backup StatefulSet", "StatefulSet.Namespace", stsB.Namespace, "StatefulSet.Name", stsB.Name)
-				r.updateStatefulsetForEventBroker(stsB, ctx, pubsubpluseventbroker, sa, brokerAdminCredentialsSecret, preSharedAuthKeySecret)
-				err = r.Update(ctx, stsB)
-				if err != nil {
-					r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to update Backup StatefulSet", "StatefulSet.Namespace", stsB.Namespace, "StatefulSet.Name", stsB.Name)
-					return ctrl.Result{}, err
-				}
-				// StatefulSet updated successfully - return and requeue
-				return ctrl.Result{Requeue: true}, nil
-			}
-			log.V(1).Info("Detected up-to-date existing Backup StatefulSet", " StatefulSet.Name", stsB.Name)
 		}
 
 		// == Check if Monitor StatefulSet already exists, if not create a new one
@@ -511,38 +451,106 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 		} else if err != nil {
 			r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to get Monitor StatefulSet")
 			return ctrl.Result{}, err
-		} else {
-			if brokerStsOutdated(stsM, brokerSpecHash, tlsSecretHash) {
-				// If resource versions differ it means recreate or update is required
-				if stsM.Status.ReadyReplicas < 1 {
-					// Related pod is still starting up but already outdated. Remove this statefulset (if delete has not already been initiated) to force pod restart
-					// and a next reconcile will recreate it from scratch
-					if stsM.ObjectMeta.DeletionTimestamp == nil {
-						log.Info("Existing Monitor StatefulSet requires update and its Pod is outdated and not ready - recreating StatefulSet to force pod update", " StatefulSet.Name", stsM.Name)
-						err = r.Delete(ctx, stsM)
-						if err != nil {
-							r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to delete Monitor StatefulSet", "StatefulSet.Namespace", stsM.Namespace, "StatefulSet.Name", stsM.Name)
-							return ctrl.Result{}, err
-						}
-						// StatefulSet deleted successfully
-						r.emitResourceRestartEvent(pubsubpluseventbroker, "Monitor StatefulSet", stsP.Name)
-					}
-					// In any case requeue
-					return ctrl.Result{RequeueAfter: time.Duration(1) * time.Second}, nil
-				}
-				log.Info("Updating existing Monitor StatefulSet", "StatefulSet.Namespace", stsM.Namespace, "StatefulSet.Name", stsM.Name)
-				r.updateStatefulsetForEventBroker(stsM, ctx, pubsubpluseventbroker, sa, brokerAdminCredentialsSecret, preSharedAuthKeySecret)
-				err = r.Update(ctx, stsM)
-				if err != nil {
-					r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to update Monitor StatefulSet", "StatefulSet.Namespace", stsM.Namespace, "StatefulSet.Name", stsM.Name)
-					return ctrl.Result{}, err
-				}
-				// StatefulSet updated successfully - return and requeue
-				return ctrl.Result{Requeue: true}, nil
-			}
-			log.V(1).Info("Detected up-to-date existing Monitor StatefulSet", " StatefulSet.Name", stsM.Name)
 		}
 	}
+
+	// Check and address if statefulsets require update
+	if haDeployment {
+		// Monitor
+		if brokerStsOutdated(stsM, brokerSpecHash, tlsSecretHash) {
+			// If resource versions differ it means recreate or update is required
+			if stsM.Status.ReadyReplicas < 1 {
+				// Related pod is still starting up but already outdated. Remove this statefulset (if delete has not already been initiated) to force pod restart
+				// and a next reconcile will recreate it from scratch
+				if stsM.ObjectMeta.DeletionTimestamp == nil {
+					log.Info("Existing Monitor StatefulSet requires update and its Pod is outdated and not ready - recreating StatefulSet to force pod update", " StatefulSet.Name", stsM.Name)
+					err = r.Delete(ctx, stsM)
+					if err != nil {
+						r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to delete Monitor StatefulSet", "StatefulSet.Namespace", stsM.Namespace, "StatefulSet.Name", stsM.Name)
+						return ctrl.Result{}, err
+					}
+					// StatefulSet deleted successfully
+					r.emitResourceRestartEvent(pubsubpluseventbroker, "Monitor StatefulSet", stsP.Name)
+				}
+				// In any case requeue
+				return ctrl.Result{RequeueAfter: time.Duration(1) * time.Second}, nil
+			}
+			log.Info("Updating existing Monitor StatefulSet", "StatefulSet.Namespace", stsM.Namespace, "StatefulSet.Name", stsM.Name)
+			r.updateStatefulsetForEventBroker(stsM, ctx, pubsubpluseventbroker, sa, brokerAdminCredentialsSecret, preSharedAuthKeySecret)
+			err = r.Update(ctx, stsM)
+			if err != nil {
+				r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to update Monitor StatefulSet", "StatefulSet.Namespace", stsM.Namespace, "StatefulSet.Name", stsM.Name)
+				return ctrl.Result{}, err
+			}
+			// StatefulSet updated successfully - return and requeue
+			return ctrl.Result{Requeue: true}, nil
+		}
+		log.V(1).Info("Detected up-to-date existing Monitor StatefulSet", " StatefulSet.Name", stsM.Name)
+		// Backup
+		if brokerStsOutdated(stsB, brokerSpecHash, tlsSecretHash) {
+			// If resource versions differ it means recreate or update is required
+			if stsB.Status.ReadyReplicas < 1 {
+				// Related pod is still starting up but already outdated. Remove this statefulset (if delete has not already been initiated) to force pod restart
+				// and a next reconcile will recreate it from scratch
+				// But only delete if the other two statefulsets are up. Otherwise HA split brain happens.
+				if stsB.ObjectMeta.DeletionTimestamp == nil && stsP.Status.ReadyReplicas == 1 && stsM.Status.ReadyReplicas == 1 {
+					log.Info("Existing Backup StatefulSet requires update and its Pod is outdated and not ready - recreating StatefulSet to force pod update", " StatefulSet.Name", stsB.Name)
+					err = r.Delete(ctx, stsB)
+					if err != nil {
+						r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to delete Backup StatefulSet", "StatefulSet.Namespace", stsB.Namespace, "StatefulSet.Name", stsB.Name)
+						return ctrl.Result{}, err
+					}
+					// StatefulSet deleted successfully
+					r.emitResourceRestartEvent(pubsubpluseventbroker, "Backup StatefulSet", stsP.Name)
+				}
+				// In any case requeue
+				return ctrl.Result{RequeueAfter: time.Duration(1) * time.Second}, nil
+			}
+			log.Info("Updating existing Backup StatefulSet", "StatefulSet.Namespace", stsB.Namespace, "StatefulSet.Name", stsB.Name)
+			r.updateStatefulsetForEventBroker(stsB, ctx, pubsubpluseventbroker, sa, brokerAdminCredentialsSecret, preSharedAuthKeySecret)
+			err = r.Update(ctx, stsB)
+			if err != nil {
+				r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to update Backup StatefulSet", "StatefulSet.Namespace", stsB.Namespace, "StatefulSet.Name", stsB.Name)
+				return ctrl.Result{}, err
+			}
+			// StatefulSet updated successfully - return and requeue
+			return ctrl.Result{Requeue: true}, nil
+		}
+		log.V(1).Info("Detected up-to-date existing Backup StatefulSet", " StatefulSet.Name", stsB.Name)
+	}
+	// Primary (includes non-HA case)
+	if brokerStsOutdated(stsP, brokerSpecHash, tlsSecretHash) {
+		// If resource versions differ it means recreate or update is required
+		if stsP.Status.ReadyReplicas < 1 {
+			// Related pod is still starting up but already outdated. Remove this statefulset (if delete has not already been initiated) to force pod restart
+			// and a next reconcile will recreate it from scratch
+			if stsP.ObjectMeta.DeletionTimestamp == nil {
+				// Go ahead if either non-HA or HA and the other two statefulsets are up
+				if !haDeployment || haDeployment && stsB.Status.ReadyReplicas == 1 && stsM.Status.ReadyReplicas == 1 {
+					log.Info("Existing Primary StatefulSet requires update and its Pod is outdated and not ready - recreating StatefulSet to force pod update", " StatefulSet.Name", stsP.Name)
+					err = r.Delete(ctx, stsP)
+					if err != nil {
+						r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to delete Primary StatefulSet", "StatefulSet.Namespace", stsP.Namespace, "StatefulSet.Name", stsP.Name)
+						return ctrl.Result{}, err
+					}
+					// StatefulSet deleted successfully
+					r.emitResourceRestartEvent(pubsubpluseventbroker, "Primary StatefulSet", stsP.Name)
+				}
+			}
+			// In any case requeue
+			return ctrl.Result{RequeueAfter: time.Duration(1) * time.Second}, nil
+		}
+		log.Info("Updating existing Primary StatefulSet", "StatefulSet.Namespace", stsP.Namespace, "StatefulSet.Name", stsP.Name)
+		r.updateStatefulsetForEventBroker(stsP, ctx, pubsubpluseventbroker, sa, brokerAdminCredentialsSecret, preSharedAuthKeySecret)
+		err = r.Update(ctx, stsP)
+		if err != nil {
+			r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to update Primary StatefulSet", "StatefulSet.Namespace", stsP.Namespace, "StatefulSet.Name", stsP.Name)
+			return ctrl.Result{}, err
+		}
+		// StatefulSet updated successfully - return and requeue
+		return ctrl.Result{Requeue: true}, nil
+	}
+	log.V(1).Info("Detected up-to-date existing Primary StatefulSet", " StatefulSet.Name", stsP.Name)
 
 	// At this point all required operator-managed broker artifacts are in place.
 
