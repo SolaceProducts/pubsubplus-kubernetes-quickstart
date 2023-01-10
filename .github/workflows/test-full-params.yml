@@ -41,7 +41,10 @@ jobs:
           kubectl create secret tls monitoring-tls --key="tls.private.pem" --cert="tls.public.pem"
           kubectl apply -f ci/manifests/eventbroker-nonha.yaml | grep "test-nonha created"
           sleep 5 ; kubectl get all
-          kubectl wait pods --selector app.kubernetes.io/instance=test-nonha --for condition=Ready --timeout=120s
+          kubectl wait --for=condition=ServiceReady eb test-nonha --timeout=120s
+          kubectl wait --for=condition=NoWarnings eb test-nonha
+          kubectl wait --for=condition=MonitoringReady eb test-nonha
+          kubectl wait pods --selector app.kubernetes.io/instance=test-nonha --for condition=Ready
           kubectl get po --show-labels | grep test-nonha | grep "1/1"
           kubectl get po --show-labels | grep test-nonha | grep active=true
           kubectl get sts | grep test-nonha
