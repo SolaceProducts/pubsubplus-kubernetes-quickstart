@@ -19,6 +19,7 @@ package controllers
 import (
 	"fmt"
 	"strconv"
+
 	// "reflect"
 	"strings"
 	"time"
@@ -395,8 +396,8 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 	}
 	for _, s := range podList.Items {
 		if s.Status.Phase == corev1.PodPending {
-			r.SetCondition(ctx, log, pubsubpluseventbroker, NoWarningsCondition, metav1.ConditionFalse, AtLestOnePodPendingReason, "At least one pod is Pending, check for underlying issues if not transient")
-            break
+			r.SetCondition(ctx, log, pubsubpluseventbroker, NoWarningsCondition, metav1.ConditionFalse, AtLeastOnePodPendingReason, "At least one pod is Pending, check for underlying issues if not transient")
+			break
 		}
 	}
 
@@ -687,11 +688,11 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 		return ctrl.Result{}, err
 	}
 	pubsubpluseventbroker.Status.PodsList = getPodNames(podList.Items)
-    statefulSets := []string{stsP.Name,}
+	statefulSets := []string{stsP.Name}
 	if haDeployment {
 		statefulSets = append(statefulSets, stsB.Name, stsM.Name)
 	}
-    var brokerImage string
+	var brokerImage string
 	for _, s := range stsP.Spec.Template.Spec.Containers {
 		if s.Name == "pubsubplus" {
 			brokerImage = s.Image
@@ -712,7 +713,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 	}
 	if prometheusExporterEnabled {
 		pubsubpluseventbroker.Status.Monitoring.ServiceName = prometheusExporterSvc.Name
-        pubsubpluseventbroker.Status.Monitoring.ExporterImage = prometheusExporterDeployment.Spec.Template.Spec.Containers[0].Image
+		pubsubpluseventbroker.Status.Monitoring.ExporterImage = prometheusExporterDeployment.Spec.Template.Spec.Containers[0].Image
 	}
 	err = r.Status().Update(ctx, pubsubpluseventbroker)
 	if err != nil {

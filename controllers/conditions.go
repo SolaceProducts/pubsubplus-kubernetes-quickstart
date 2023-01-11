@@ -46,7 +46,7 @@ const (
 	WaitingForActivePodReason                = "WaitingForActivePod"
 	ActivePodAndServiceExistsReason          = "ActivePodAndServiceExists"
 	MissingReadyPodReason                    = "MissingReadyPod"
-	AtLestOnePodPendingReason                = "AtLestOnePodPending"
+	AtLeastOnePodPendingReason               = "AtLeastOnePodPending"
 )
 
 // sets or updates a status condition using helper from meta
