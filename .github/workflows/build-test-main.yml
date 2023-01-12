@@ -35,18 +35,28 @@ jobs:
     # if: ${{ false }}  # disable for now
     needs: build
     uses: ./.github/workflows/test-full-params.yml
+    secrets: inherit
 
   test-helm-upgrade:
     # if: ${{ false }}  # disable for now
     needs: build
-    uses: ./.github/workflows/test-helm-upgrade.yml 
+    uses: ./.github/workflows/test-helm-upgrade.yml
+    secrets: inherit
 
   test-minimal-params:
     # if: ${{ false }}  # disable for now
     needs: build
     uses: ./.github/workflows/test-minimal-params.yml
+    secrets: inherit
+
+  test-minimal-params-ha:
+    # if: ${{ false }}  # disable for now
+    needs: build
+    uses: ./.github/workflows/test-minimal-params-ha.yml
+    secrets: inherit
 
   test-broker-upgrade-update:
     # if: ${{ false }}  # disable for now
     needs: build
     uses: ./.github/workflows/test-broker-upgrade-update.yml
+    secrets: inherit
