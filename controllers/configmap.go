@@ -27,8 +27,8 @@ import (
 )
 
 var (
-    //go:embed brokerscripts
-    scripts embed.FS
+	//go:embed brokerscripts
+	scripts embed.FS
 )
 
 func (r *PubSubPlusEventBrokerReconciler) configmapForEventBroker(cmName string, m *eventbrokerv1alpha1.PubSubPlusEventBroker) *corev1.ConfigMap {

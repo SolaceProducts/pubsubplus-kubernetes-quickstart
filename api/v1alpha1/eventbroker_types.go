@@ -394,19 +394,19 @@ type EventBrokerStatus struct {
 }
 
 type BrokerSubStatus struct {
-    HADeployment string `json:"haDeployment,omitempty"`
-    TLSSupport string `json:"tlsSupport,omitempty"`
-    TLSSecret string `json:"tlsSecret,omitempty"`
-    AdminCredentialsSecret  string `json:"adminCredentialsSecret,omitempty"`
-    ServiceName  string `json:"serviceName,omitempty"`
-    ServiceType  string `json:"serviceType,omitempty"`
-	StatefulSets []string `json:"statefulSets,omitempty"`
-	BrokerImage string `json:"brokerImage,omitempty"`
+	HADeployment           string   `json:"haDeployment,omitempty"`
+	TLSSupport             string   `json:"tlsSupport,omitempty"`
+	TLSSecret              string   `json:"tlsSecret,omitempty"`
+	AdminCredentialsSecret string   `json:"adminCredentialsSecret,omitempty"`
+	ServiceName            string   `json:"serviceName,omitempty"`
+	ServiceType            string   `json:"serviceType,omitempty"`
+	StatefulSets           []string `json:"statefulSets,omitempty"`
+	BrokerImage            string   `json:"brokerImage,omitempty"`
 }
 
 type MonitoringSubStatus struct {
-    Enabled string `json:"enabled,omitempty"`
-	ServiceName  string `json:"serviceName,omitempty"`
+	Enabled       string `json:"enabled,omitempty"`
+	ServiceName   string `json:"serviceName,omitempty"`
 	ExporterImage string `json:"exporterImage,omitempty"`
 }
 

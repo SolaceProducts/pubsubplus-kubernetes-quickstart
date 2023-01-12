@@ -62,7 +62,7 @@ func (r *PubSubPlusEventBrokerReconciler) newDeploymentForPrometheusExporter(nam
 								},
 								{
 									Name:  "SOLACE_SCRAPE_URI",
-									Value: fmt.Sprintf("%s://%s.%s.svc.cluster.local:%d", getPubSubPlusEventBrokerProtocol(&m.Spec), getObjectName("Service", m.Name), m.Namespace, getPubSubPlusEventBrokerPort(&m.Spec.Service, &m.Spec.BrokerTLS)),
+									Value: fmt.Sprintf("%s://%s.%s.svc.cluster.local:%d", getPubSubPlusEventBrokerProtocol(&m.Spec), getObjectName("BrokerService", m.Name), m.Namespace, getPubSubPlusEventBrokerPort(&m.Spec.Service, &m.Spec.BrokerTLS)),
 								},
 								{
 									Name:  "SOLACE_LISTEN_TLS",

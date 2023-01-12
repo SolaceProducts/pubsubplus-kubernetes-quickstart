@@ -35,7 +35,7 @@ const (
 	tcpSempPortName                      = "tcp-semp"
 	tlsSempPortName                      = "tls-semp"
 	brokerNodeComponent                  = "brokernode"
-	metricsMonitorComponent              = "metricsmonitor"
+	metricsExporterComponent             = "metricsexporter"
 )
 
 type BrokerRole int // Notice that this is about the current role, not the broker node designation
@@ -104,7 +104,6 @@ func baseLabels(deploymentName string) map[string]string {
 	}
 }
 
-
 // Provides the selector (from Pods) to be used for broker services
 func getServiceSelector(deploymentName string) map[string]string {
 	return map[string]string{
@@ -117,8 +116,8 @@ func getServiceSelector(deploymentName string) map[string]string {
 // Provides the selector (from Pods) to be used for broker nodes discovery service
 func getDiscoveryServiceSelector(deploymentName string) map[string]string {
 	return map[string]string{
-		"app.kubernetes.io/instance": deploymentName,
-		"app.kubernetes.io/name":     appKubernetesIoNameLabel,
+		"app.kubernetes.io/instance":  deploymentName,
+		"app.kubernetes.io/name":      appKubernetesIoNameLabel,
 		"app.kubernetes.io/component": brokerNodeComponent,
 	}
 }
@@ -136,7 +135,7 @@ func getMonitoringDeploymentSelector(deploymentName string) map[string]string {
 	return map[string]string{
 		"app.kubernetes.io/instance":   deploymentName,
 		"app.kubernetes.io/name":       appKubernetesIoNameLabel,
-		"app.kubernetes.io/component":  metricsMonitorComponent,
+		"app.kubernetes.io/component":  metricsExporterComponent,
 		"app.kubernetes.io/managed-by": appKubernetesIoManagedByLabel,
 	}
 }
