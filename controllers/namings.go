@@ -34,6 +34,8 @@ const (
 	preSharedAuthKeyName                 = "preshared_auth_key"
 	tcpSempPortName                      = "tcp-semp"
 	tlsSempPortName                      = "tls-semp"
+	brokerNodeComponent                  = "brokernode"
+	metricsExporterComponent             = "metricsexporter"
 )
 
 type BrokerRole int // Notice that this is about the current role, not the broker node designation
@@ -51,9 +53,9 @@ func getObjectName(objectType string, deploymentName string) string {
 		"Role":                         "-pubsubplus-podtagupdater",
 		"RoleBinding":                  "-pubsubplus-sa-to-podtagupdater",
 		"ServiceAccount":               "-pubsubplus-sa",
-		"Secret":                       "-pubsubplus-secrets",
+		"AdminCredentialsSecret":       "-pubsubplus-secrets",
 		"PreSharedAuthSecret":          "-pubsubplus-preshared-auth-secrets",
-		"Service":                      "-pubsubplus",
+		"BrokerService":                "-pubsubplus",
 		"StatefulSet":                  "-pubsubplus-%s",
 		"PodDisruptionBudget":          "-pubsubplus-poddisruptionbudget",
 		"PrometheusExporterDeployment": "-pubsubplus-prometheus-exporter",
@@ -86,9 +88,19 @@ func getBrokerNodeType(statefulSetDeploymentName string) string {
 // Provides the labels for a broker Pod in the current PubSubPlusEventBroker deployment
 func getPodLabels(deploymentName string, nodeType string) map[string]string {
 	return map[string]string{
+		"app.kubernetes.io/instance":  deploymentName,
+		"app.kubernetes.io/name":      appKubernetesIoNameLabel,
+		"app.kubernetes.io/component": brokerNodeComponent,
+		"node-type":                   nodeType,
+	}
+}
+
+// baseLabels returns the labels for selecting the resources
+// belonging to the given pubsubpluseventbroker deployment name.
+func baseLabels(deploymentName string) map[string]string {
+	return map[string]string{
 		"app.kubernetes.io/instance": deploymentName,
 		"app.kubernetes.io/name":     appKubernetesIoNameLabel,
-		"node-type":                  nodeType,
 	}
 }
 
@@ -101,11 +113,12 @@ func getServiceSelector(deploymentName string) map[string]string {
 	}
 }
 
-// Provides the selector (from Pods) to be used for broker nodes discovery services
+// Provides the selector (from Pods) to be used for broker nodes discovery service
 func getDiscoveryServiceSelector(deploymentName string) map[string]string {
 	return map[string]string{
-		"app.kubernetes.io/instance": deploymentName,
-		"app.kubernetes.io/name":     appKubernetesIoNameLabel,
+		"app.kubernetes.io/instance":  deploymentName,
+		"app.kubernetes.io/name":      appKubernetesIoNameLabel,
+		"app.kubernetes.io/component": brokerNodeComponent,
 	}
 }
 
@@ -122,7 +135,7 @@ func getMonitoringDeploymentSelector(deploymentName string) map[string]string {
 	return map[string]string{
 		"app.kubernetes.io/instance":   deploymentName,
 		"app.kubernetes.io/name":       appKubernetesIoNameLabel,
-		"solace-prometheus-exporter":   "true",
+		"app.kubernetes.io/component":  metricsExporterComponent,
 		"app.kubernetes.io/managed-by": appKubernetesIoManagedByLabel,
 	}
 }

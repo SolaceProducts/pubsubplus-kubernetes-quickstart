@@ -17,9 +17,9 @@ limitations under the License.
 package controllers
 
 import (
-	"math/rand"
+	"crypto/rand"
+	"math/big"
 	"strings"
-	"time"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -55,7 +55,7 @@ func (r *PubSubPlusEventBrokerReconciler) secretForEventBroker(secretName string
 // createPreSharedAuthKeySecret returns an PubSubPlusEventBroker PreSharedAuthKeySecret object
 func (r *PubSubPlusEventBrokerReconciler) createPreSharedAuthKeySecret(secretName string, m *eventbrokerv1alpha1.PubSubPlusEventBroker) *corev1.Secret {
 
-	randomPassword := generateSimplePassword(10)
+	randomPassword := generateSimplePassword(50)
 
 	dep := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
@@ -73,13 +73,13 @@ func (r *PubSubPlusEventBrokerReconciler) createPreSharedAuthKeySecret(secretNam
 }
 
 func generateSimplePassword(length int) string {
-	rand.Seed(time.Now().UnixNano())
 	chars := []rune("ABCDEFGHIJKLMNOPQRSTUVWXYZ" +
 		"abcdefghijklmnopqrstuvwxyz" +
 		"0123456789")
 	var b strings.Builder
 	for i := 0; i < length; i++ {
-		b.WriteRune(chars[rand.Intn(len(chars))])
+		nBig, _ := rand.Int(rand.Reader, big.NewInt(int64(len(chars))))
+		b.WriteRune(chars[nBig.Int64()])
 	}
 	return b.String()
 }

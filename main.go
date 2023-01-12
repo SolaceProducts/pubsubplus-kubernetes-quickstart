@@ -156,11 +156,11 @@ func detectOpenShift(cfg *rest.Config) bool {
 	if err == nil && dclient != nil {
 		apiGroupList, err := dclient.ServerGroups()
 		if err == nil {
-			openShiftApiGroupOccurrenceCount := 0 // Let's ensure to have a number of (>5) evidences that this is indeed OpenShift
+			openShiftAPIGroupOccurrenceCount := 0 // Let's ensure to have a number of (>5) evidences that this is indeed OpenShift
 			for i := 0; i < len(apiGroupList.Groups); i++ {
 				if strings.HasSuffix(apiGroupList.Groups[i].Name, ".openshift.io") {
-					openShiftApiGroupOccurrenceCount++
-					if openShiftApiGroupOccurrenceCount > 5 {
+					openShiftAPIGroupOccurrenceCount++
+					if openShiftAPIGroupOccurrenceCount > 5 {
 						setupLog.Info("Identified OpenShift environment")
 						return true
 					}

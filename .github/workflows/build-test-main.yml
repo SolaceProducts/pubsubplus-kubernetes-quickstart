@@ -16,8 +16,10 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v1
 
-      - name: Build
-        run: make docker-build
+      - name: Lint and Build
+        run: |
+          go fmt ./... | wc -l | grep 0
+          make docker-build
 
       - name: Login to Github Packages
         uses: docker/login-action@v2
