@@ -32,7 +32,7 @@ import (
 )
 
 var (
-	//go:embed brokerscripts
+	//go:embed brokerscripts configs
 	scripts embed.FS
 )
 

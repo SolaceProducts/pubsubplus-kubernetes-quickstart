@@ -40,7 +40,7 @@ func (r *PubSubPlusEventBrokerReconciler) createServiceForEventBroker(svcName st
 }
 
 func (r *PubSubPlusEventBrokerReconciler) updateServiceForEventBroker(service *corev1.Service, m *eventbrokerv1alpha1.PubSubPlusEventBroker) {
-	DefaultServiceConfig, _ := scripts.ReadFile("brokerscripts/configs/default-service.json")
+	DefaultServiceConfig, _ := scripts.ReadFile("configs/default-service.json")
 	if m.Spec.Service.Annotations != nil && len(m.Spec.Service.Annotations) > 0 {
 		service.Annotations = m.Spec.Service.Annotations
 	} else {
