@@ -17,18 +17,12 @@ limitations under the License.
 package controllers
 
 import (
-	"embed"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	eventbrokerv1alpha1 "github.com/SolaceProducts/pubsubplus-operator/api/v1alpha1"
-)
-
-var (
-	//go:embed brokerscripts
-	scripts embed.FS
 )
 
 func (r *PubSubPlusEventBrokerReconciler) configmapForEventBroker(cmName string, m *eventbrokerv1alpha1.PubSubPlusEventBroker) *corev1.ConfigMap {

@@ -1,0 +1,79 @@
+name: Build and Test for HA Minimal Deployment
+
+on: workflow_call
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+
+    # Add "id-token" with the intended permissions.
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+      packages: 'read'
+
+    steps:
+      - name: Set env and tools
+        run: |
+          echo "TESTNAMESPACE=op-test-$(date +%s)" >> $GITHUB_ENV
+
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      - id: 'auth'
+        name: 'Authenticate to Google Cloud'
+        uses: 'google-github-actions/auth@v1.0.0'
+        with:
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          access_token_lifetime: 600s
+
+      - name: Use the GKE Autopilot test cluster
+        uses: 'google-github-actions/get-gke-credentials@v1.0.0'
+        with:
+          cluster_name: 'dev-integrationtesting'
+          location: 'us-central1'
+
+      - name: Login to Github Packages
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ secrets.USERNAME_PAT }}
+          password: ${{ secrets.PAT }}
+
+      - name: Testing operator deployment
+        run: |
+          kubectl cluster-info
+          kubectl get pods -n kube-system
+          echo "current-context:" $(kubectl config current-context)
+          echo "environment-kubeconfig:" ${KUBECONFIG}
+          kubectl create ns pubsubplus-operator-system --save-config
+          kubectl create secret generic regcred --from-file=.dockerconfigjson=${HOME}/.docker/config.json --type=kubernetes.io/dockerconfigjson -n pubsubplus-operator-system
+          make deploy | grep created
+          kubectl rollout status deployment pubsubplus-eventbroker-operator -n pubsubplus-operator-system --timeout=240s
+          kubectl get crd | grep eventbrokers
+
+      - name: Testing the Operator - HA Minimal
+        run: |
+          kubectl create ns $TESTNAMESPACE; kubectl config set-context --current --namespace=$TESTNAMESPACE
+          kubectl apply -f ci/manifests/eventbroker-ha-minimal.yaml | grep "test-ha-minimal created"
+          sleep 10 ; kubectl get all
+          kubectl wait pods --selector app.kubernetes.io/instance=test-ha-minimal --for condition=Ready --timeout=300s
+          kubectl get po --show-labels -n $TESTNAMESPACE | grep test-ha-minimal | grep "1/1"
+          kubectl get po --show-labels -n $TESTNAMESPACE | grep test-ha-minimal | grep active=true
+          kubectl get sts -n $TESTNAMESPACE | grep test-ha-minimal
+          kubectl port-forward svc/test-ha-minimal-pubsubplus -n $TESTNAMESPACE 55555:55555 &
+          sleep 5
+          curl -O https://sftp.solace.com/download/SDKPERF_C_LINUX64
+          tar -xvf SDKPERF_C_LINUX64
+          pubSubTools/sdkperf_c -cip=tcp://localhost:55555 -mn=1000 -mr=0 -ptl=t1 -stl=t1 | grep "Total Messages"
+          kubectl delete eventbroker test-ha-minimal -n $TESTNAMESPACE | grep deleted
+
+      - name: Operator cleanup
+        if: ${{ always() }}
+        run: |
+          kubectl delete ns pubsubplus-operator-system --ignore-not-found
+          kubectl delete crd pubsubpluseventbrokers.pubsubplus.solace.com --ignore-not-found
+          kubectl delete pvc --all --ignore-not-found
+          kubectl delete ns $TESTNAMESPACE --ignore-not-found
