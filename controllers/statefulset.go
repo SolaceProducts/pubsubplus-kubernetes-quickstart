@@ -101,7 +101,7 @@ func (r *PubSubPlusEventBrokerReconciler) createStatefulsetForEventBroker(stsNam
 
 // statefulsetForEventBroker returns an updated pubsubpluseventbroker StatefulSet object
 func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(sts *appsv1.StatefulSet, ctx context.Context, m *eventbrokerv1alpha1.PubSubPlusEventBroker, sa *corev1.ServiceAccount, secret *corev1.Secret, preSharedAuthKeySecret *corev1.Secret) {
-	DefaultServiceConfig, _ := scripts.ReadFile("brokerscripts/default-service-config.json")
+	DefaultServiceConfig, _ := scripts.ReadFile("brokerscripts/configs/default-service.json")
 	brokerServicesName := getObjectName("BrokerService", m.Name)
 	secretName := secret.Name
 	configmapName := getObjectName("ConfigMap", m.Name)
