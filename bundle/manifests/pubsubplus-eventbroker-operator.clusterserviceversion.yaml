@@ -29,7 +29,7 @@ metadata:
               "enabled": true,
               "image": {
                 "pullPolicy": "Always",
-                "pullSecretName": [
+                "pullSecrets": [
                   {
                     "name": "regcred"
                   }

@@ -18,6 +18,7 @@ package v1alpha1
 
 import (
 	"encoding/json"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -279,8 +280,8 @@ type BrokerImage struct {
 	ImagePullPolicy corev1.PullPolicy `json:"pullPolicy"`
 	//+optional
 	//+kubebuilder:validation:Type:=array
-	// ImagePullSecrets is an optional list of references to secrets in the same namespace to use for pulling any of the images used by this PodSpec.
-	ImagePullSecrets []corev1.LocalObjectReference `json:"pullSecretName,omitempty"`
+	// pullSecrets is an optional list of references to secrets in the same namespace to use for pulling any of the images used by this PodSpec.
+	ImagePullSecrets []corev1.LocalObjectReference `json:"pullSecrets,omitempty"`
 }
 
 // NodeAssignment defines labels to constrain PubSubPlusEventBroker nodes to specific nodes
@@ -335,10 +336,10 @@ type MonitoringImage struct {
 	//+kubebuilder:default:=IfNotPresent
 	// Specifies ImagePullPolicy of the container image for the Prometheus Exporter.
 	ImagePullPolicy corev1.PullPolicy `json:"pullPolicy,omitempty"`
-	// ImagePullSecrets is an optional list of references to secrets in the same namespace to use for pulling any of the images used by this PodSpec.
+	// pullSecrets is an optional list of references to secrets in the same namespace to use for pulling any of the images used by this PodSpec.
 	// +optional
 	//+kubebuilder:validation:Type:=array
-	ImagePullSecrets []corev1.LocalObjectReference `json:"pullSecretName,omitempty"`
+	ImagePullSecrets []corev1.LocalObjectReference `json:"pullSecrets,omitempty"`
 }
 
 // Monitoring defines parameters to use Prometheus Exporter
