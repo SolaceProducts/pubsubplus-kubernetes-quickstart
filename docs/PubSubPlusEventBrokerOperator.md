@@ -24,6 +24,7 @@ Contents:
     - [Deployment Topology](#deployment-topology)
       - [High Availability](#high-availability)
       - [Node Assignment](#node-assignment)
+      - [Enabling Pod Disruption Budget](#enabling-pod-disruption-budget)
     - [Container Images](#container-images)
       - [Using a public registry](#using-a-public-registry)
       - [Using a private registry](#using-a-private-registry)
@@ -40,7 +41,7 @@ Contents:
     - [Accessing Broker Services](#accessing-broker-services)
       - [Serving Pod Selection](#serving-pod-selection)
       - [Using a Service Type](#using-a-service-type)
-      - [Configuring TLS for services](#configuring-tls-for-services)
+      - [Configuring TLS for broker services](#configuring-tls-for-broker-services)
         - [Setting up TLS](#setting-up-tls)
         - [Rotating the TLS certificate](#rotating-the-tls-certificate)
       - [Using Ingress](#using-ingress)
@@ -50,10 +51,16 @@ Contents:
         - [HTTPS with TLS re-encrypt at ingress](#https-with-tls-re-encrypt-at-ingress)
         - [General TCP over TLS with passthrough to broker](#general-tcp-over-tls-with-passthrough-to-broker)
     - [Broker Pod additional properties](#broker-pod-additional-properties)
-  - [Security Considerations](#security-considerations)
+    - [Security Considerations](#security-considerations)
+      - [Operator controlled namespaces](#operator-controlled-namespaces)
+      - [Operator RBAC](#operator-rbac)
+      - [Broker deployment RBAC](#broker-deployment-rbac)
+      - [Operator image from private registry](#operator-image-from-private-registry)
+      - [Broker secrets](#broker-secrets)
+      - [Broker Security Context](#broker-security-context)
+      - [Using Network Policies](#using-network-policies)
   - [Exposing health and performance metrics](#exposing-health-and-performance-metrics)
-  - [---------------------------](#---------------------------)
-  - [Broker Deployment Guide](#broker-deployment-guide)
+  - [Deployment Guide](#deployment-guide)
 
 
 ## The Solace PubSub+ Software Event Broker
@@ -131,6 +138,12 @@ The Operator supports deploying a single non-HA broker and also HA deployment fo
 #### Node Assignment
 
 No single point of failure is important for HA deployments. Kubernetes by default tries to spread broker pods of an HA redundancy group across Availability Zones. For more deterministic deployments, specific control is enabled through the `spec.nodeAssignment` section of the broker spec for the Primary, Backup and Monitor brokers where Kubernetes standard [Affinity and NodeSelector](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/) definitions can be provided.
+
+#### Enabling Pod Disruption Budget
+
+In an HA deployment with Primary, Backup and Monitor nodes, a minimum of two nodes need to be available to reach quorum. Specifying a [Pod Disruption Budget](https://kubernetes.io/docs/tasks/run-application/configure-pdb/) is recommended to limit situations where quorum may be lost.
+
+This can be enabled setting the `spec.podDisruptionBudgetForHA` parameter to `true`. This will create a PodDisruptionBudget resource adapted to the broker deployment's needs, that is the number of minimum available pods set to two. Note that the parameter is ignored for a non-HA deployment.
 
 ### Container Images
 
@@ -376,7 +389,7 @@ The first criteria for a broker Pod to be selected for service is its readiness 
 
 The second, additional criteria is the pod label set to `active=true`.
 
-Both pod readiness and label are updated periodically (every 5 seconds) triggered by the pod readiness probe which invokes the `readiness_check.sh` script that is mounted on the broker container.
+Both pod readiness and label are updated periodically (every 5 seconds) triggered by the pod readiness probe which invokes the `readiness_check.sh` script which is mounted on the broker container.
 
 The requirements for a broker pod to satisfy both criteria are:
 * The broker must be in Guaranteed Active service state, that is providing [Guaranteed Messaging Quality-of-Service (QoS) level of event messages persistence](https://docs.solace.com/PubSub-Basics/Guaranteed-Messages.htm). If service level is degraded even to [Direct Messages QoS](//docs.solace.com/PubSub-Basics/Direct-Messages.htm) this is no longer sufficient.
@@ -417,7 +430,7 @@ spec:
       - ...
 ```
 
-#### Configuring TLS for services
+#### Configuring TLS for broker services
 
 ##### Setting up TLS
 
@@ -637,22 +650,85 @@ One of the primary use of environment variables is to define [configuration keys
 
 Finally, the timezone can be passed to the the event broker container.
 
-## Security Considerations
+### Security Considerations
 
-7.7.1	Production recommendations
-7.7.2	ref to Secrets
-7.7.3	ref to Namespace
-7.7.4 Ref to Signalling active state requires permissions to update pod labels so this needs to be configured through RBAC settings for the deployment
+The default installation of the Operator is optimized for easy deployment and getting started in a wide range of Kubernetes environments even by developers. Production use requires more tightened security. This section provides considerations for that.
 
+#### Operator controlled namespaces
+
+The Operator can be configured with which namespaces to watch, so it will pick up all broker specs created in the watched namespaces and create deployments there. However all other namespaces will be ignored.
+
+Watched namespaces can be configured by providing the comma-separated list of namespaces in the `WATCH_NAMESPACE` environment variable defined in the container spec of the [Deployment](#operator) which controls the Operator pod. Assingning an empty string (default) means watching all namespaces.
+
+It is recommended to restrict the watched namespaces for Production use. It is generally also recommended to not include the Operator's own namespace in the list because it is easier to separate RBAC settings for the operator from the broker's deployment - see next section.
+
+#### Operator RBAC
+
+The Operator requires CRUD permissions to manage all broker deployment resource types (e.g.: secrets) and the broker spec itself. This is defined in a ClusterRole which is bound to the Operator's service account using a ClusterRoleBinding if using the default Operator deployment. This enables the Operator to manage any of those resource types in all namespaces even if they don't belong to a broker deployment.
+
+This needs to be restricted in a Production environment by creating a service account for the Operator in each watched namespace and use RoleBinding to bind the defined ClusterRole in each.
+
+#### Broker deployment RBAC
+
+A broker deployment only needs permission to update pod labels. This is defined in a Role, and a RoleBinding is created to the ServiceAccount used for the deployment. Note that without this permission the deployment will not work.
+
+#### Operator image from private registry
+
+The default deployment of the Operator will pull the Operator image from a public registry. If a Production deployment needs to pull the Operator image from a private registry then the [Deployment](#operator) which controls the Operator pod requires `imagePullSecrets` added for that repo:
+
+```
+kind: Deployment
+metadata:
+  name: operator
+  ...
+spec:
+  template:
+    spec:
+      imagePullSecrets:
+        - name: regcred
+      ...
+      containers:
+      - name: manager
+        image: private/controller:latest
+      ...
+```
+
+#### Broker secrets
+
+Using secrets to store passwords, TLS server keys and certificates in the broker deployment namespace follows Kubernetes recommendations.
+
+In a Production environment additional steps are required to ensure there is only authorized access to these secrets. Is recommended to follow industry Kubernetes security best practices including setting tight RBAC permissions for the namespace and harden security of the API server's underlying data store (etcd).
+
+#### Broker Security Context
+
+The following container-level security context configuration is automatically set by the operator:
+
+```
+capabilities:
+  drop:
+    - ALL
+privileged: false
+runAsNonRoot: true
+allowPrivilegeEscalation: false
+```
+
+Following additional settings are configurable through broker spec parameters:
+```
+spec:
+  securityContext:
+    runAsUser: 1000001
+    fsGroup: 1000002
+```
+Above are generally the defaults if not provided. It shall be noted that the Operator will detect if the current Kubernetes environment is OpenShift and in that case, if not provided, the default `runAsUser` and `fsGroup` will be set to unspecified because otherwise they would conflict with the OpenShift "restricted" Security Context Constraint settings for a project.
+
+#### Using Network Policies
+
+In a controlled environment it may be necessary to configure a [NetworkPolicy](https://kubernetes.io/docs/concepts/services-networking/network-policies/ ) to enable [required communication](#serving-pod-selection) between the broker nodes as well as between the broker container and the API server to set the Pod label.
 
 ##	Exposing health and performance metrics
 
 
-## ---------------------------
-
-
-
-## Broker Deployment Guide
+## Deployment Guide
 
 Deployment pre-requisites 
 8.1	Install Operator
