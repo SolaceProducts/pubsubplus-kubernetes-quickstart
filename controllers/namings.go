@@ -125,8 +125,9 @@ func getDiscoveryServiceSelector(deploymentName string) map[string]string {
 // Provides the selector for the Pod Disruption Budget
 func getPodDisruptionBudgetSelector(deploymentName string) map[string]string {
 	return map[string]string{
-		"app.kubernetes.io/instance": deploymentName,
-		"app.kubernetes.io/name":     appKubernetesIoNameLabel,
+		"app.kubernetes.io/instance":  deploymentName,
+		"app.kubernetes.io/name":      appKubernetesIoNameLabel,
+		"app.kubernetes.io/component": brokerNodeComponent,
 	}
 }
 
