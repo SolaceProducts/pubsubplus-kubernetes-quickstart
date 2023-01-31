@@ -10,7 +10,7 @@ node(label: 'centos7_router_devserver') {
 
     String KUBERNETES_BRANCH = env.BRANCH_NAME
     stage("kubernetes-operator-build") {
-        job = build job: 'pubsubplus-kubernetes-operator-build', propagate: true, parameters:
+        job = build job: 'kubernetes-operator-build', propagate: true, parameters:
         [
             string(name: 'KUBERNETES_BRANCH', value: KUBERNETES_BRANCH),
         ]
