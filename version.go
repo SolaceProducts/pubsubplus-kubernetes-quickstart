@@ -16,6 +16,8 @@
 
 package messaging
 
+go get solace.dev/go/messaging/internal/impl/core
+
 import "solace.dev/go/messaging/internal/impl/core"
 
 // On load, the version of the API is set.
