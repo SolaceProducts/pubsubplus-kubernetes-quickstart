@@ -61,6 +61,25 @@ Contents:
       - [Using Network Policies](#using-network-policies)
   - [Exposing health and performance metrics](#exposing-health-and-performance-metrics)
   - [Deployment Guide](#deployment-guide)
+    - [Deployment pre-requisites](#deployment-pre-requisites)
+      - [Platform and tools](#platform-and-tools)
+        - [Install the `kubectl` command-line tool](#install-the-kubectl-command-line-tool)
+        - [Perform any necessary Kubernetes platform-specific setup](#perform-any-necessary-kubernetes-platform-specific-setup)
+    - [Install Operator](#install-operator)
+      - [OLM](#olm)
+        - [Standard OperatorHub install](#standard-operatorhub-install)
+        - [Manual install with options, from GitHub repo Deploy](#manual-install-with-options-from-github-repo-deploy)
+      - [kubectl](#kubectl)
+    - [Deploy Broker](#deploy-broker)
+      - [Samples](#samples)
+      - [Validating the deployment](#validating-the-deployment)
+      - [How to connect, etc.](#how-to-connect-etc)
+    - [Operate broker](#operate-broker)
+    - [Update / upgrade broker](#update--upgrade-broker)
+    - [Undeploy Broker](#undeploy-broker)
+    - [Re-Install Broker](#re-install-broker)
+    - [Troubleshooting](#troubleshooting)
+  - [Migration from Helm-based deployment](#migration-from-helm-based-deployment)
 
 
 ## The Solace PubSub+ Software Event Broker
@@ -730,30 +749,66 @@ In a controlled environment it may be necessary to configure a [NetworkPolicy](h
 
 ## Deployment Guide
 
-Deployment pre-requisites 
-8.1	Install Operator
-8.1.1	kubectl
-8.1.2	OLM
-8.1.3	GitHub repo
-8.2	Deploy Broker
-8.2.1	Samples
-8.3	Operate broker
-8.3.1	Validating the deployment
+### Deployment pre-requisites
+
+#### Platform and tools
+
+##### Install the `kubectl` command-line tool
+
+Refer to [these instructions](//kubernetes.io/docs/tasks/tools/install-kubectl/) to install `kubectl` if your environment does not already provide this tool or equivalent (like `oc` in OpenShift).
+
+##### Perform any necessary Kubernetes platform-specific setup
+
+This refers to getting your platform ready either by creating a new one or getting access to an existing one. Supported platforms include but are not restricted to:
+* Amazon EKS
+* Azure AKS
+* Google GCP
+* OpenShift
+* MiniKube
+* VMWare PKS
+
+Check your platform running the `kubectl get nodes` command from your command-line client.
+
+Also ensure Kubernetes CPU, Memory and Disk resources available to how the intended [scale of deployment](#broker-scaling).
+
+###	Install Operator
+####	OLM
+
+OLM has evolved as the standard way to discover, acquire and manage Kubernetes operators. This is the also preferred way to install the PubSub+ Event Broker Operator.
+
+Follow this [link to the Operator on OperatorHub]().
+
+##### Standard OperatorHub install
+##### Manual install with options, from GitHub repo Deploy
+
+####	kubectl
+
+* Install script from GitHub repo Deploy
+
+
+
+###	Deploy Broker
+
+
+
+####	Samples
+####	Validating the deployment
 Pod status
-8.3.2	How to connect, etc.
+####	How to connect, etc.
 how to obtain the service addresses and ports specific to your deployment
 List of services
 Expose services
-8.4	Update / upgrade broker
+###	Operate broker
+###	Update / upgrade broker
 7.6.1	Enable or disable for an existing deployment is manual only
 
 8.4.1	Rolling vs. Manual update
 8.4.2	Mechanics of picking up changes
 8.4.3	AutoReconfiguration-enabled parameters
 8.4.4	Maintenance mode
-8.5	Undeploy Broker
-8.6	Re-Install Broker
-9	Troubleshooting
+###	Undeploy Broker
+###	Re-Install Broker
+###	Troubleshooting
 
 CRD in place
 Check operator running
@@ -766,6 +821,6 @@ Check operator logs
 9.2	Status, Logs, Events, Conditions
 9.3	Broker stuck in bad state
 9.4	Using of Metrics
-10	Migration from Helm-based deployment
+##	Migration from Helm-based deployment
 10.1	Possible IP address change
 10.a    PVC, admin password
