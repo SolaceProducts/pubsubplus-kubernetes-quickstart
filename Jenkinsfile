@@ -3,10 +3,6 @@ node(label: 'centos7_router_devserver') {
     
     library 'jenkins-pipeline-library@main'
     cleanWs()
-    
-    agent {
-        dockerfile true;
-    }
 
     String KUBERNETES_BRANCH = env.BRANCH_NAME
     stage("kubernetes-operator-build") {
