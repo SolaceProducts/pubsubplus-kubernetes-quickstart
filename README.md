@@ -13,9 +13,9 @@ Contents:
       - [a) OperatorHub and OLM Option](#a-operatorhub-and-olm-option)
       - [b) Direct Option](#b-direct-option)
     - [3. Install the Solace PubSub+ Software Event Broker with default configuration](#3-install-the-solace-pubsub-software-event-broker-with-default-configuration)
-      - [a) Deployment for Developers](#a-deployment-for-developers)
-      - [b) non-HA Deployment](#b-non-ha-deployment)
-      - [c) HA Deployment](#c-ha-deployment)
+      - [a) Example Deployment for Developers](#a-example-deployment-for-developers)
+      - [b) Example non-HA Deployment](#b-example-non-ha-deployment)
+      - [c) Example HA Deployment](#c-example-ha-deployment)
   - [Contributing](#contributing)
   - [Authors](#authors)
   - [License](#license)
@@ -102,35 +102,66 @@ For other PubSub+ Software Event Broker configurations or sizes, refer to the [P
 
 >Important: While the non-HA and HA deployments will be ready for Production performance, consult the [Security Considerations]() documentation for adequate security hardening in your environment.
 
-#### a) Deployment for Developers
+#### a) Example Deployment for Developers
 
 This deployment requires a minimum of 1 CPU and 4 GB of memory available to the event broker pod.
 ```bash
-# Deploy PubSub+ Software Event Broker Standard edition for developers
-helm install my-release solacecharts/pubsubplus-dev
+# Create deployment manifest
+echo "
+apiVersion: pubsubplus.solace.com/v1alpha1
+kind: PubSubPlusEventBroker
+metadata:
+  name: dev-example
+spec:
+  developer: true" > developer.yaml
+# Then apply it
+kubectl apply -f developer.yaml
 ```
 
-#### b) non-HA Deployment
+#### b) Example non-HA Deployment
 
 A minimum of 2 CPUs and 4 GB of memory must be available to the event broker pod.
 ```bash
-# Deploy PubSub+ Software Event Broker Standard edition, standalone
-helm install my-release solacecharts/pubsubplus
+# Create deployment manifest
+echo "
+apiVersion: pubsubplus.solace.com/v1alpha1
+kind: PubSubPlusEventBroker
+metadata:
+  name: non-ha-example
+spec:
+  redundancy: false  # Default, not strictly required
+" > nonha.yaml
+# Then apply it
+kubectl apply -f nonha.yaml
 ```
 
-#### c) HA Deployment
+#### c) Example HA Deployment
 
 The minimum resource requirements are 2 CPU and 4 GB of memory available to each of the three event broker pods.
 ```bash
-# Deploy PubSub+ Software Event Broker Standard edition, HA
-helm install my-release solacecharts/pubsubplus-ha
+# Create deployment manifest
+echo "
+apiVersion: pubsubplus.solace.com/v1alpha1
+kind: PubSubPlusEventBroker
+metadata:
+  name: ha-example
+spec:
+  redundancy: true
+" > ha.yaml
+# Then apply it
+kubectl apply -f ha.yaml
 ```
 
 The above options will start the deployment and write related information and notes to the screen.
 
 > Note: When using MiniKube, there is no integrated Load Balancer, which is the default service type. For a workaround, execute `minikube service my-release-pubsubplus-ha` to expose the services. Services will be accessible directly using the NodePort instead of direct Port access, for which the mapping can be obtained from `kubectl describe service my-release-pubsubplus-ha`.
 
-Wait for the deployment to complete following the information printed on the console.
+Wait for the deployment to complete 
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+following the information printed on the console.
 
 Refer to the detailed PubSub+ Kubernetes documentation for:
 * [Validating the deployment](); or
