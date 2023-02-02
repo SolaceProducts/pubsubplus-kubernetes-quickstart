@@ -8,4 +8,4 @@ spec:
   name: pubsubplus-eventbroker-operator
   source: solace-catalog
   sourceNamespace: olm
-  installPlanApproval: Manual
+  installPlanApproval: Automatic
