@@ -75,13 +75,15 @@ Follow the steps from [OperatorHub](https://operatorhub.io/operator/pubsubplus-e
 Apply this manifest to setup the Operator in the `pubsubplus-operator-system` namespace:
 
 ```bash
-# For internal use only, DELETE when publishing
+# BEGIN: For internal use only, DELETE when publishing
 # Pre-requisite: Docker login into the private registry that hosts the Operator image
+# Run: docker login ghcr.io/solacedev
 kubectl create ns pubsubplus-operator-system --save-config
 kubectl create secret generic regcred \
   --from-file=.dockerconfigjson=${HOME}/.docker/config.json \
   --type=kubernetes.io/dockerconfigjson \
   -n pubsubplus-operator-system
+# END: internal use
 # Manifest creates a namespace and all K8s resources for the Operator deployment
 kubectl apply -f https://raw.githubusercontent.com/SolaceDev/pubsubplus-kubernetes-operator/v1alpha1/deploy/deploy.yaml
 # Wait for deployment to complete
@@ -116,6 +118,8 @@ spec:
   developer: true" > developer.yaml
 # Then apply it
 kubectl apply -f developer.yaml
+# Wait for broker deployment to complete; adjust timeout if image pull is slow
+kubectl wait --for=condition=ServiceReady eventbroker dev-example --timeout=120s
 ```
 
 #### b) Example non-HA Deployment
@@ -133,6 +137,8 @@ spec:
 " > nonha.yaml
 # Then apply it
 kubectl apply -f nonha.yaml
+# Wait for broker deployment to complete; adjust timeout if image pull is slow
+kubectl wait --for=condition=ServiceReady eventbroker non-ha-example --timeout=120s
 ```
 
 #### c) Example HA Deployment
@@ -150,18 +156,18 @@ spec:
 " > ha.yaml
 # Then apply it
 kubectl apply -f ha.yaml
+# Wait for broker deployment to complete - service-ready and then HA-ready
+# adjust timeout if image pull is slow
+kubectl wait --for=condition=ServiceReady eventbroker ha-example --timeout=300s
+kubectl wait --for=condition=HAReady eventbroker ha-example
 ```
 
-The above options will start the deployment and write related information and notes to the screen.
+The above options will create a deployment. Check the event broker deployment status and get information about the service name and type to access the broker services, and the secret that contains the credentials to be used for admin access:
+```
+kubectl describe eventbroker <deployment-name>
+```
 
 > Note: When using MiniKube, there is no integrated Load Balancer, which is the default service type. For a workaround, execute `minikube service my-release-pubsubplus-ha` to expose the services. Services will be accessible directly using the NodePort instead of direct Port access, for which the mapping can be obtained from `kubectl describe service my-release-pubsubplus-ha`.
-
-Wait for the deployment to complete 
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-following the information printed on the console.
 
 Refer to the detailed PubSub+ Kubernetes documentation for:
 * [Validating the deployment](); or
