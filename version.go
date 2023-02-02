@@ -14,13 +14,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package messaging
-
-import "solace.dev/go/messaging/internal/impl/core"
-
-// On load, the version of the API is set.
-func init() {
-	core.SetVersion(version)
-}
+package pubsubplus-kubernetes-operator
 
 const version = "1.0.0"
