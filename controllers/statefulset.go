@@ -40,7 +40,7 @@ func (r *PubSubPlusEventBrokerReconciler) createStatefulsetForEventBroker(stsNam
 	// Determine broker sizing
 	var storageSize string
 	if nodeType == "monitor" {
-		if len(strings.TrimSpace(m.Spec.Storage.MonitorNodeStorageSize)) == 0 {
+		if len(strings.TrimSpace(m.Spec.Storage.MonitorNodeStorageSize)) == 0 || m.Spec.Storage.MonitorNodeStorageSize == "0" {
 			storageSize = "3Gi"
 		} else {
 			storageSize = m.Spec.Storage.MonitorNodeStorageSize
@@ -69,8 +69,7 @@ func (r *PubSubPlusEventBrokerReconciler) createStatefulsetForEventBroker(stsNam
 		},
 	}
 
-	//Set Custom Volume
-	if len(m.Spec.Storage.CustomVolumeMount) == 0 {
+	if len(m.Spec.Storage.CustomVolumeMount) == 0 && !usesEphemeralStorageForMonitoringNode(&m.Spec.Storage, nodeType) && !usesEphemeralStorageForMessageNode(&m.Spec.Storage, nodeType) {
 		dep.Spec.VolumeClaimTemplates = []corev1.PersistentVolumeClaim{
 			{
 				ObjectMeta: metav1.ObjectMeta{
@@ -400,6 +399,7 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(sts *a
 		},
 	}
 
+	//Set custom volume
 	if len(m.Spec.Storage.CustomVolumeMount) > 0 {
 		allVolumes := sts.Spec.Template.Spec.Volumes
 		for _, customVolume := range m.Spec.Storage.CustomVolumeMount {
@@ -568,6 +568,31 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(sts *a
 		sts.Spec.Template.Spec.Volumes = allVolumes
 		sts.Spec.Template.Spec.Containers[0].VolumeMounts = allContainerVolumeMounts
 	}
+
+	//determine storage type is ephemeral
+	var useEphemeralStorageForMonitoringNode = usesEphemeralStorageForMonitoringNode(&m.Spec.Storage, nodeType)
+	var useEphemeralStorageForMessageNode = usesEphemeralStorageForMessageNode(&m.Spec.Storage, nodeType)
+
+	if useEphemeralStorageForMessageNode || useEphemeralStorageForMonitoringNode {
+		allVolumes := sts.Spec.Template.Spec.Volumes
+		if useEphemeralStorageForMonitoringNode && nodeType == "monitor" {
+			allVolumes = append(allVolumes, corev1.Volume{
+				Name: "data",
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{},
+				},
+			})
+		} else if useEphemeralStorageForMessageNode && nodeType != "monitor" {
+			allVolumes = append(allVolumes, corev1.Volume{
+				Name: "data",
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{},
+				},
+			})
+		}
+		sts.Spec.Template.Spec.Volumes = allVolumes
+	}
+
 }
 
 func getBrokerImageDetails(bm *eventbrokerv1alpha1.BrokerImage) string {
@@ -590,7 +615,7 @@ func getTimezone(tz string) string {
 }
 
 func getBrokerMessageNodeStorageSize(st *eventbrokerv1alpha1.Storage) string {
-	if st == nil || len(strings.TrimSpace(st.MessagingNodeStorageSize)) == 0 {
+	if st == nil || len(strings.TrimSpace(st.MessagingNodeStorageSize)) == 0 || st.MessagingNodeStorageSize == "0" {
 		return "30Gi"
 	}
 	return st.MessagingNodeStorageSize
@@ -620,4 +645,28 @@ func getNodeSelectorDetails(na []eventbrokerv1alpha1.NodeAssignment, nodeType st
 		}
 	}
 	return nodeSelector
+}
+
+func usesEphemeralStorageForMonitoringNode(st *eventbrokerv1alpha1.Storage, nodeType string) bool {
+	var useEphemeralStorageForMonitoringNode = false
+	if st == nil && nodeType == "monitor" {
+		useEphemeralStorageForMonitoringNode = false
+	} else if len(strings.TrimSpace(st.MonitorNodeStorageSize)) == 0 && nodeType == "monitor" {
+		useEphemeralStorageForMonitoringNode = false
+	} else if st.MonitorNodeStorageSize == "0" && nodeType == "monitor" {
+		useEphemeralStorageForMonitoringNode = true
+	}
+	return useEphemeralStorageForMonitoringNode
+}
+
+func usesEphemeralStorageForMessageNode(st *eventbrokerv1alpha1.Storage, nodeType string) bool {
+	var useEphemeralStorageForMessageNode = false
+	if st == nil && nodeType != "monitor" {
+		useEphemeralStorageForMessageNode = false
+	} else if len(strings.TrimSpace(st.MessagingNodeStorageSize)) == 0 && nodeType != "monitor" {
+		useEphemeralStorageForMessageNode = false
+	} else if st.MessagingNodeStorageSize == "0" && nodeType != "monitor" {
+		useEphemeralStorageForMessageNode = true
+	}
+	return useEphemeralStorageForMessageNode
 }
