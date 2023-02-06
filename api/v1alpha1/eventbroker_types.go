@@ -391,7 +391,7 @@ type EventBrokerStatus struct {
 	// Broker section provides the broker status
 	Broker BrokerSubStatus `json:"broker,omitempty"`
 	// Monitoring sectionprovides monitoring support status
-	Monitoring MonitoringSubStatus `json:"monitoring,omitempty"`
+	Monitoring MonitoringSubStatus `json:"prometheusMonitoring,omitempty"`
 }
 
 type BrokerSubStatus struct {

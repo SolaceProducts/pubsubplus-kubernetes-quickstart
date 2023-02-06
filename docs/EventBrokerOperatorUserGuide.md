@@ -125,7 +125,7 @@ The activity of the Operator can be followed from its Pod logs as described in t
 
 ### Event Broker Deployment
 
-The following diagram illustrates a [Highly Available (HA)](https://docs.solace.com/Features/HA-Redundancy/SW-Broker-Redundancy-and-Fault-Tolerance.htm) PubSub+ Event Broker deployment in Kubernetes. HA deployment requires three brokers in designated roles of Primary, Backup and Monitor in an HA group.
+The diagram illustrates a [Highly Available (HA)](https://docs.solace.com/Features/HA-Redundancy/SW-Broker-Redundancy-and-Fault-Tolerance.htm) PubSub+ Event Broker deployment in Kubernetes. HA deployment requires three brokers in designated roles of Primary, Backup and Monitor in an HA group.
 
 ![alt text](/docs/images/BrokerDeployment.png "HA broker deployment")
 
@@ -141,6 +141,11 @@ The Operator ensures that all above objects are in place with the exeception of 
 A non-HA deployment differs from HA in that (1) there is only one StatefulSet managing one Pod that hosts the single broker, (2) there is no Discovery Service for internal communication, and (3) there is no PreShared AuthenticationKey to secure internal communication.
 
 ### Prometheus Monitoring
+
+Support can be enabled for [Prometheus Monitoring](https://prometheus.io/docs/introduction/overview/).
+time series collection happens via a pull model over HTTP
+Prometheus requires an exporter running that pulls requested metrics from the monitored application - the broker in this case. 
+
 
 **To be added: diagram and components description.**
 
@@ -815,6 +820,7 @@ Check operator running
 Check operator settings
 - namespace
 Check operator logs
+Check pod logs
 
 
 9.1	Common K8s issues

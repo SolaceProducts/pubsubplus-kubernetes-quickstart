@@ -27,7 +27,7 @@ This project is a best practice template intended for development and demo purpo
 
 This document provides a quick getting started guide to install a software event broker in various configurations onto a [Kubernetes](https://kubernetes.io/docs/home/) cluster using the PubSub+ Event Broker Operator.
 
-Detailed documentation is provided in the [Solace PubSub+ Event Broker Operator User Guide](PubSubPlusEventBrokerOperator.md). Consult the [Deployment Considerations](PubSubPlusEventBrokerOperator.md#deployment-planning) section of the User Guide when planning your deployment.
+Detailed documentation is provided in the [Solace PubSub+ Event Broker Operator User Guide](docs/EventBrokerOperatorUserGuide.md). Consult the [Deployment Planning](docs/EventBrokerOperatorUserGuide.md#deployment-planning) section of the User Guide when planning your deployment.
 
 This document is applicable to any platform supporting Kubernetes, with specific hints on how to set up a simple [MiniKube or Kind]() deployment on a Linux-based machine. To view examples of other Kubernetes platforms see:
 
@@ -60,9 +60,9 @@ kubectl get nodes
 
 The Operator is available from the Registry for Kubernetes Operators, [OperatorHub.io](https://operatorhub.io/). When using OperatorHub, operator lifecycle including installation and upgrades is managed by the Operator Lifecycle Manager (OLM), which needs to be added first or may already be pre-installed on your Kubernetes distribution.
 
-While OLM is the recommended way to install the PubSub+ Event Broker Operator because of the lifecycle-services, a Direct install method is also available that doesn't require OLM.
+While OLM is the recommended way to install the PubSub+ Event Broker Operator because of the lifecycle-services it provides, a simpler Direct install method is also available that doesn't require OLM.
 
-By completing any of the install options with default settings the Event Broker Operator shall be up and running watching all namespaces, ready for the next step.
+By completing any of the following install options with default settings the Event Broker Operator shall be [up and running, watching all namespaces for `PubSubPlusEventBroker` Custom Resources](docs/EventBrokerOperatorUserGuide.md#operator), ready for the next step. 
 
 >Note: ensure there is only one installation of the Operator at any time to avoid conflicts.
 
@@ -97,9 +97,11 @@ kubectl get po -n operators -w
 # END: internal use
 ```
 
+By default this method has installed the Operator in the `operators` namespace.
+
 #### b) Direct Option
 
-Apply this manifest to setup the Operator in the `pubsubplus-operator-system` namespace:
+Following steps will directly install the Operator:
 
 ```bash
 # BEGIN: For internal use only, DELETE when publishing
@@ -117,6 +119,8 @@ kubectl apply -f https://raw.githubusercontent.com/SolaceDev/pubsubplus-kubernet
 kubectl rollout status deployment pubsubplus-eventbroker-operator \
   -n pubsubplus-operator-system
 ```
+
+By default this method has installed the Operator in the `pubsubplus-operator-system` namespace.
 
 ### 3. Install the Solace PubSub+ Software Event Broker with default configuration
 
