@@ -89,6 +89,20 @@ func (r *PubSubPlusEventBrokerReconciler) newDeploymentForPrometheusExporter(nam
 									Value: strconv.FormatBool(m.Spec.Monitoring.IncludeRates),
 								},
 							},
+							SecurityContext: &corev1.SecurityContext{
+								Privileged: &[]bool{false}[0], // Set to false
+								Capabilities: &corev1.Capabilities{
+									Drop: []corev1.Capability{
+										corev1.Capability("ALL"),
+									},
+								},
+								RunAsUser:                &[]int64{10001}[0],
+								RunAsNonRoot:             &[]bool{true}[0],  // Set to true
+								AllowPrivilegeEscalation: &[]bool{false}[0], // Set to false
+								SeccompProfile: &corev1.SeccompProfile{
+									Type: corev1.SeccompProfileTypeRuntimeDefault,
+								},
+							},
 						},
 					},
 					ImagePullSecrets: m.Spec.Monitoring.MonitoringImage.ImagePullSecrets,
