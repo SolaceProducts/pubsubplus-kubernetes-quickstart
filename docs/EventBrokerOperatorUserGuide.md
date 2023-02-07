@@ -19,7 +19,7 @@ Contents:
   - [Deployment Architecture](#deployment-architecture)
     - [Operator](#operator)
     - [Event Broker Deployment](#event-broker-deployment)
-    - [Prometheus Monitoring](#prometheus-monitoring)
+    - [Prometheus Monitoring Support](#prometheus-monitoring-support)
   - [Deployment Planning](#deployment-planning)
     - [Deployment Topology](#deployment-topology)
       - [High Availability](#high-availability)
@@ -56,7 +56,8 @@ Contents:
       - [Operator RBAC](#operator-rbac)
       - [Broker deployment RBAC](#broker-deployment-rbac)
       - [Operator image from private registry](#operator-image-from-private-registry)
-      - [Broker secrets](#broker-secrets)
+      - [Admin and Monitor Users and Passwords](#admin-and-monitor-users-and-passwords)
+      - [Secrets](#secrets)
       - [Broker Security Context](#broker-security-context)
       - [Using Network Policies](#using-network-policies)
   - [Exposing health and performance metrics](#exposing-health-and-performance-metrics)
@@ -140,14 +141,17 @@ The Operator ensures that all above objects are in place with the exeception of 
 
 A non-HA deployment differs from HA in that (1) there is only one StatefulSet managing one Pod that hosts the single broker, (2) there is no Discovery Service for internal communication, and (3) there is no PreShared AuthenticationKey to secure internal communication.
 
-### Prometheus Monitoring
+### Prometheus Monitoring Support
 
-Support can be enabled for [Prometheus Monitoring](https://prometheus.io/docs/introduction/overview/).
-time series collection happens via a pull model over HTTP
-Prometheus requires an exporter running that pulls requested metrics from the monitored application - the broker in this case. 
+Support can be enabled for exposing broker metrics to [Prometheus Monitoring](https://prometheus.io/docs/introduction/overview/). Prometheus requires an exporter running that pulls requested metrics from the monitored application - the broker in this case.
 
+![alt text](/docs/images/MonitoringDeployment.png "Monitoring deployment")
 
-**To be added: diagram and components description.**
+* When monitoring is enabled the Operator will add to the broker deployment an Exporter Pod, which acts as a bridge between Prometheus and the broker deployment to deliver metrics.
+* On one side, the Exporter Pod obtains metrics from the broker through SEMP requests. To access the broker, it uses the username and password from the MonitoringCredentials secret, and uses TLS access to the broker if Broker TLS has been configured.
+* The metrics are exposed to Prometheus through the Prometheus Exporter Service via the metrics port. Metrics port will be accessible using TLS if Metrics TLS has been enabled.
+* As Kubernetes recommended practice, it is assumed that the Prometheus stack has been deployed using the [Prometheus operator](https://github.com/prometheus-operator/prometheus-operator#overview) in a dedicated Prometheus Monitoring namespace. In this setup a `ServiceMonitor` custom resource, placed in the Event Broker namespace, defines how Prometheus can access the broker metrics: which service to select and which endpoint to use.
+* Prometheus comes installed with strict security by default and its ClusterRole RBAC settings must be edited to enable watch ServiceMonitor in the Event Broker namespace.
 
 ## Deployment Planning
 
@@ -398,7 +402,7 @@ Regarding providers, note that for [EKS](https://docs.solace.com/Cloud/Deploymen
 
 ### Accessing Broker Services
 
-Broker services (messaging, management) are available through the service ports of the [Service object](#event-broker-deployment) created as part of the deployment.
+Broker services (messaging, management) are available through the service ports of the [Broker Service](#event-broker-deployment) object created as part of the deployment.
 
 Clients may access the service ports directly through a configured [standard Kubernetes service type](https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types). Alternatively, services can be mapped to Kubernetes [Ingress](https://kubernetes.io/docs/concepts/services-networking/ingress). These options are discussed in details in the upcoming [Using Service Type](#using-a-service-type) and [Using Ingress](#using-ingress) sections.
 >Note: an OpenShift-specific alternative of exposing services through Routes is described in the [PubSub+ Openshift Deployment Guide](https://github.com/SolaceProducts/pubsubplus-openshift-quickstart/blob/master/docs/PubSubPlusOpenShiftDeployment.md).
@@ -717,7 +721,23 @@ spec:
       ...
 ```
 
-#### Broker secrets
+#### Admin and Monitor Users and Passwords
+
+A management `admin` and a `monitor` user will be created at the broker initial deployment, with [global access level](https://docs.solace.com/Admin/SEMP/SEMP-API-Archit.htm#Role-Bas) "admin" and "read-only", respectively. The passwords are auto-generated if not provided and stored in Operator-generated secrets.
+
+It is also possible to provide pre-existing secrets containing the respective passwords as in the following example:
+```yaml
+spec:
+  adminCredentialsSecret: my-admin-credetials-secret
+  monitoringCredentialsSecret: my-monitoring-credetials-secret
+```
+
+The secrets must contain following data files:
+
+
+
+
+#### Secrets
 
 Using secrets to store passwords, TLS server keys and certificates in the broker deployment namespace follows Kubernetes recommendations.
 
