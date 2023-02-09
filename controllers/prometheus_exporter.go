@@ -176,7 +176,6 @@ func (r *PubSubPlusEventBrokerReconciler) newServiceForPrometheusExporter(export
 			Labels:    getMonitoringDeploymentSelector(m.Name),
 		},
 		Spec: corev1.ServiceSpec{
-			Type: exporter.MonitoringMetricsEndpoint.ServiceType,
 			Ports: []corev1.ServicePort{
 				{
 					Name:       getExporterHttpProtocolType(&m.Spec.Monitoring),
@@ -187,6 +186,11 @@ func (r *PubSubPlusEventBrokerReconciler) newServiceForPrometheusExporter(export
 			},
 			Selector: getMonitoringDeploymentSelector(m.Name),
 		},
+	}
+	if exporter.MonitoringMetricsEndpoint != nil && exporter.MonitoringMetricsEndpoint.ServiceType != "" {
+		dep.Spec.Type = exporter.MonitoringMetricsEndpoint.ServiceType
+	} else {
+		dep.Spec.Type = corev1.ServiceTypeClusterIP
 	}
 	// Set PubSubPlusEventBroker instance as the owner and controller
 	ctrl.SetControllerReference(m, dep, r.Scheme)

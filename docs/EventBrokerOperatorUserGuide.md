@@ -85,6 +85,8 @@ Contents:
     - [Undeploy Broker](#undeploy-broker)
     - [Re-Install Broker](#re-install-broker)
     - [Troubleshooting](#troubleshooting)
+  - [Upgrade Operator](#upgrade-operator)
+    - [Upgrade CRD and Operator](#upgrade-crd-and-operator)
   - [Migration from Helm-based deployment](#migration-from-helm-based-deployment)
 
 
@@ -881,6 +883,8 @@ The ServiceMonitor's selector may be adjusted to match all broker deployments in
 
 ### Deployment pre-requisites
 
+
+
 #### Platform and tools
 
 ##### Install the `kubectl` command-line tool
@@ -952,6 +956,10 @@ Check pod logs
 9.2	Status, Logs, Events, Conditions
 9.3	Broker stuck in bad state
 9.4	Using of Metrics
+## Upgrade Operator
+
+### Upgrade CRD and Operator
+
 ##	Migration from Helm-based deployment
 10.1	Possible IP address change
 10.a    PVC, admin password
