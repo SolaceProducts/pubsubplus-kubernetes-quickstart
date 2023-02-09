@@ -319,7 +319,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 
 	monitoringSecret := &corev1.Secret{}
 	// Check Monitoring Exporter Secret
-	if len(strings.TrimSpace(pubsubpluseventbroker.Spec.Monitoring.MonitoringCredentialsSecret)) == 0 {
+	if len(strings.TrimSpace(pubsubpluseventbroker.Spec.MonitoringCredentialsSecret)) == 0 {
 		monitoringSecretName := getObjectName("MonitoringCredentialsSecret", pubsubpluseventbroker.Name)
 		err = r.Get(ctx, types.NamespacedName{Name: monitoringSecretName, Namespace: pubsubpluseventbroker.Namespace}, monitoringSecret)
 		if err != nil && errors.IsNotFound(err) {
@@ -341,9 +341,9 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 			log.V(1).Info("Detected existing Monitoring Exporter Secret", " Secret.Name", monitoringSecret.Name)
 		}
 	} else {
-		err = r.Get(ctx, types.NamespacedName{Name: pubsubpluseventbroker.Spec.Monitoring.MonitoringCredentialsSecret, Namespace: pubsubpluseventbroker.Namespace}, monitoringSecret)
+		err = r.Get(ctx, types.NamespacedName{Name: pubsubpluseventbroker.Spec.MonitoringCredentialsSecret, Namespace: pubsubpluseventbroker.Namespace}, monitoringSecret)
 		if err != nil {
-			r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to find specified Monitoring Exporter Secret: '"+pubsubpluseventbroker.Spec.Monitoring.MonitoringCredentialsSecret+"'")
+			r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to find specified Monitoring Exporter Secret: '"+pubsubpluseventbroker.Spec.MonitoringCredentialsSecret+"'")
 			return ctrl.Result{}, err
 		} else {
 			log.V(1).Info("Detected specified Monitoring Exporter Secret", " Secret.Name", monitoringSecret.Name)
