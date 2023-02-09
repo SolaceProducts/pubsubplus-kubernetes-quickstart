@@ -30,13 +30,13 @@ import (
 )
 
 // secretForEventBroker returns an pubsubpluseventbroker Secret object
-func (r *PubSubPlusEventBrokerReconciler) secretForEventBroker(secretName string, m *eventbrokerv1alpha1.PubSubPlusEventBroker) *corev1.Secret {
+func (r *PubSubPlusEventBrokerReconciler) secretForEventBroker(adminSecretName string, m *eventbrokerv1alpha1.PubSubPlusEventBroker) *corev1.Secret {
 
 	randomPassword := generateSimplePassword(10)
 
 	dep := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      secretName,
+			Name:      adminSecretName,
 			Namespace: m.Namespace,
 			Labels:    getObjectLabels(m.Name),
 		},
@@ -53,13 +53,13 @@ func (r *PubSubPlusEventBrokerReconciler) secretForEventBroker(secretName string
 }
 
 // createPreSharedAuthKeySecret returns an PubSubPlusEventBroker PreSharedAuthKeySecret object
-func (r *PubSubPlusEventBrokerReconciler) createPreSharedAuthKeySecret(secretName string, m *eventbrokerv1alpha1.PubSubPlusEventBroker) *corev1.Secret {
+func (r *PubSubPlusEventBrokerReconciler) createPreSharedAuthKeySecret(preSharedAuthKeySecretName string, m *eventbrokerv1alpha1.PubSubPlusEventBroker) *corev1.Secret {
 
 	randomPassword := generateSimplePassword(50)
 
 	dep := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      secretName,
+			Name:      preSharedAuthKeySecretName,
 			Namespace: m.Namespace,
 			Labels:    getObjectLabels(m.Name),
 		},
@@ -68,6 +68,27 @@ func (r *PubSubPlusEventBrokerReconciler) createPreSharedAuthKeySecret(secretNam
 		},
 		Type: corev1.SecretTypeOpaque,
 	}
+	ctrl.SetControllerReference(m, dep, r.Scheme)
+	return dep
+}
+
+// monitoringSecretForEventBroker returns a Secret object to be used by Exporter
+func (r *PubSubPlusEventBrokerReconciler) monitoringSecretForEventBroker(monitoringSecretName string, m *eventbrokerv1alpha1.PubSubPlusEventBroker) *corev1.Secret {
+
+	randomPassword := generateSimplePassword(10)
+
+	dep := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      monitoringSecretName,
+			Namespace: m.Namespace,
+			Labels:    getObjectLabels(m.Name),
+		},
+		Data: map[string][]byte{
+			monitorSecretKeyName: []byte(randomPassword),
+		},
+		Type: corev1.SecretTypeOpaque,
+	}
+	// Set PubSubPlusEventBroker instance as the owner and controller
 	ctrl.SetControllerReference(m, dep, r.Scheme)
 	return dep
 }

@@ -353,6 +353,12 @@ type Monitoring struct {
 	// Image defines container image parameters for the Prometheus Exporter.
 	MonitoringImage *MonitoringImage `json:"image,omitempty"`
 	//+optional
+	//+nullable
+	//+kubebuilder:validation:Type:=string
+	// Defines the password for PubSubPlusEventBroker to be used by the Exporter for monitoring.
+	// When provided, ensure the secret key name is `username_monitor_password`.
+	MonitoringCredentialsSecret string `json:"monitoringCredentialsSecret,omitempty"`
+	//+optional
 	//+kubebuilder:validation:Type:=object
 	// MetricsEndpoint defines parameters to configure monitoring for the Prometheus Exporter.
 	MonitoringMetricEndpoint *MonitoringMetricEndpoint `json:"metricsEndpoint,omitempty"`
