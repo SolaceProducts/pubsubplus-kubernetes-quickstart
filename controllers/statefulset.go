@@ -34,13 +34,13 @@ import (
 )
 
 // statefulsetForEventBroker returns a new pubsubpluseventbroker StatefulSet object
-func (r *PubSubPlusEventBrokerReconciler) createStatefulsetForEventBroker(stsName string, ctx context.Context, m *eventbrokerv1alpha1.PubSubPlusEventBroker, sa *corev1.ServiceAccount, secret *corev1.Secret, preSharedAuthKeySecret *corev1.Secret) *appsv1.StatefulSet {
+func (r *PubSubPlusEventBrokerReconciler) createStatefulsetForEventBroker(stsName string, ctx context.Context, m *eventbrokerv1alpha1.PubSubPlusEventBroker, sa *corev1.ServiceAccount, adminSecret *corev1.Secret, preSharedAuthKeySecret *corev1.Secret, monitoringSecret *corev1.Secret) *appsv1.StatefulSet {
 	nodeType := getBrokerNodeType(stsName)
 
 	// Determine broker sizing
 	var storageSize string
 	if nodeType == "monitor" {
-		if len(strings.TrimSpace(m.Spec.Storage.MonitorNodeStorageSize)) == 0 {
+		if len(strings.TrimSpace(m.Spec.Storage.MonitorNodeStorageSize)) == 0 || m.Spec.Storage.MonitorNodeStorageSize == "0" {
 			storageSize = "3Gi"
 		} else {
 			storageSize = m.Spec.Storage.MonitorNodeStorageSize
@@ -69,8 +69,7 @@ func (r *PubSubPlusEventBrokerReconciler) createStatefulsetForEventBroker(stsNam
 		},
 	}
 
-	//Set Custom Volume
-	if len(m.Spec.Storage.CustomVolumeMount) == 0 {
+	if len(m.Spec.Storage.CustomVolumeMount) == 0 && !usesEphemeralStorageForMonitoringNode(&m.Spec.Storage, nodeType) && !usesEphemeralStorageForMessageNode(&m.Spec.Storage, nodeType) {
 		dep.Spec.VolumeClaimTemplates = []corev1.PersistentVolumeClaim{
 			{
 				ObjectMeta: metav1.ObjectMeta{
@@ -93,17 +92,17 @@ func (r *PubSubPlusEventBrokerReconciler) createStatefulsetForEventBroker(stsNam
 		}
 	}
 
-	r.updateStatefulsetForEventBroker(dep, ctx, m, sa, secret, preSharedAuthKeySecret)
+	r.updateStatefulsetForEventBroker(dep, ctx, m, sa, adminSecret, preSharedAuthKeySecret, monitoringSecret)
 	// Set PubSubPlusEventBroker instance as the owner and controller
 	ctrl.SetControllerReference(m, dep, r.Scheme)
 	return dep
 }
 
 // statefulsetForEventBroker returns an updated pubsubpluseventbroker StatefulSet object
-func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(sts *appsv1.StatefulSet, ctx context.Context, m *eventbrokerv1alpha1.PubSubPlusEventBroker, sa *corev1.ServiceAccount, secret *corev1.Secret, preSharedAuthKeySecret *corev1.Secret) {
+func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(sts *appsv1.StatefulSet, ctx context.Context, m *eventbrokerv1alpha1.PubSubPlusEventBroker, sa *corev1.ServiceAccount, adminSecret *corev1.Secret, preSharedAuthKeySecret *corev1.Secret, monitoringSecret *corev1.Secret) {
 	DefaultServiceConfig, _ := scripts.ReadFile("configs/default-service.json")
 	brokerServicesName := getObjectName("BrokerService", m.Name)
-	secretName := secret.Name
+	adminSecretName := adminSecret.Name
 	configmapName := getObjectName("ConfigMap", m.Name)
 	haDeployment := m.Spec.Redundancy
 	stsName := sts.ObjectMeta.Name
@@ -327,7 +326,12 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(sts *a
 						{
 							Name:      "secrets",
 							ReadOnly:  true,
-							MountPath: "/mnt/disks/secrets",
+							MountPath: "/mnt/disks/secrets/admin",
+						},
+						{
+							Name:      "monitoring-secrets",
+							ReadOnly:  true,
+							MountPath: "/mnt/disks/secrets/monitoring",
 						},
 						{
 							Name:      "dshm",
@@ -377,7 +381,15 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(sts *a
 					Name: "secrets",
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
-							SecretName:  secretName,
+							SecretName:  adminSecretName,
+							DefaultMode: &[]int32{256}[0], // 256
+						},
+					},
+				}, {
+					Name: "monitoring-secrets",
+					VolumeSource: corev1.VolumeSource{
+						Secret: &corev1.SecretVolumeSource{
+							SecretName:  monitoringSecret.Name,
 							DefaultMode: &[]int32{256}[0], // 256
 						},
 					},
@@ -400,6 +412,7 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(sts *a
 		},
 	}
 
+	//Set custom volume
 	if len(m.Spec.Storage.CustomVolumeMount) > 0 {
 		allVolumes := sts.Spec.Template.Spec.Volumes
 		for _, customVolume := range m.Spec.Storage.CustomVolumeMount {
@@ -481,7 +494,7 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(sts *a
 		allContainerVolumeMounts := sts.Spec.Template.Spec.Containers[0].VolumeMounts
 		allContainerVolumeMounts = append(allContainerVolumeMounts, corev1.VolumeMount{
 			Name:      "presharedauthkey-secret",
-			MountPath: "/mnt/disks/presharedauthkey-secret",
+			MountPath: "/mnt/disks/secrets/presharedauthkey",
 			ReadOnly:  true,
 		})
 		sts.Spec.Template.Spec.Volumes = allVolumes
@@ -528,7 +541,7 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(sts *a
 	}
 
 	allEnvFrom := []corev1.EnvFromSource{}
-	//Set Extra secret environment variables
+	//Set Extra adminSecret environment variables
 	if len(strings.TrimSpace(m.Spec.ExtraEnvVarsSecret)) > 0 {
 		allEnvFrom = append(allEnvFrom, corev1.EnvFromSource{
 			SecretRef: &corev1.SecretEnvSource{
@@ -568,6 +581,31 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(sts *a
 		sts.Spec.Template.Spec.Volumes = allVolumes
 		sts.Spec.Template.Spec.Containers[0].VolumeMounts = allContainerVolumeMounts
 	}
+
+	//determine storage type is ephemeral
+	var useEphemeralStorageForMonitoringNode = usesEphemeralStorageForMonitoringNode(&m.Spec.Storage, nodeType)
+	var useEphemeralStorageForMessageNode = usesEphemeralStorageForMessageNode(&m.Spec.Storage, nodeType)
+
+	if useEphemeralStorageForMessageNode || useEphemeralStorageForMonitoringNode {
+		allVolumes := sts.Spec.Template.Spec.Volumes
+		if useEphemeralStorageForMonitoringNode && nodeType == "monitor" {
+			allVolumes = append(allVolumes, corev1.Volume{
+				Name: "data",
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{},
+				},
+			})
+		} else if useEphemeralStorageForMessageNode && nodeType != "monitor" {
+			allVolumes = append(allVolumes, corev1.Volume{
+				Name: "data",
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{},
+				},
+			})
+		}
+		sts.Spec.Template.Spec.Volumes = allVolumes
+	}
+
 }
 
 func getBrokerImageDetails(bm *eventbrokerv1alpha1.BrokerImage) string {
@@ -590,7 +628,7 @@ func getTimezone(tz string) string {
 }
 
 func getBrokerMessageNodeStorageSize(st *eventbrokerv1alpha1.Storage) string {
-	if st == nil || len(strings.TrimSpace(st.MessagingNodeStorageSize)) == 0 {
+	if st == nil || len(strings.TrimSpace(st.MessagingNodeStorageSize)) == 0 || st.MessagingNodeStorageSize == "0" {
 		return "30Gi"
 	}
 	return st.MessagingNodeStorageSize
@@ -620,4 +658,28 @@ func getNodeSelectorDetails(na []eventbrokerv1alpha1.NodeAssignment, nodeType st
 		}
 	}
 	return nodeSelector
+}
+
+func usesEphemeralStorageForMonitoringNode(st *eventbrokerv1alpha1.Storage, nodeType string) bool {
+	var useEphemeralStorageForMonitoringNode = false
+	if st == nil && nodeType == "monitor" {
+		useEphemeralStorageForMonitoringNode = false
+	} else if len(strings.TrimSpace(st.MonitorNodeStorageSize)) == 0 && nodeType == "monitor" {
+		useEphemeralStorageForMonitoringNode = false
+	} else if st.MonitorNodeStorageSize == "0" && nodeType == "monitor" {
+		useEphemeralStorageForMonitoringNode = true
+	}
+	return useEphemeralStorageForMonitoringNode
+}
+
+func usesEphemeralStorageForMessageNode(st *eventbrokerv1alpha1.Storage, nodeType string) bool {
+	var useEphemeralStorageForMessageNode = false
+	if st == nil && nodeType != "monitor" {
+		useEphemeralStorageForMessageNode = false
+	} else if len(strings.TrimSpace(st.MessagingNodeStorageSize)) == 0 && nodeType != "monitor" {
+		useEphemeralStorageForMessageNode = false
+	} else if st.MessagingNodeStorageSize == "0" && nodeType != "monitor" {
+		useEphemeralStorageForMessageNode = true
+	}
+	return useEphemeralStorageForMessageNode
 }

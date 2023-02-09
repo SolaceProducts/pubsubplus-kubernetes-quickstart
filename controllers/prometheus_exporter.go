@@ -29,7 +29,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-func (r *PubSubPlusEventBrokerReconciler) newDeploymentForPrometheusExporter(name string, secret *corev1.Secret, m *eventbrokerv1alpha1.PubSubPlusEventBroker) *appsv1.Deployment {
+func (r *PubSubPlusEventBrokerReconciler) newDeploymentForPrometheusExporter(name string, monitoringSecret *corev1.Secret, m *eventbrokerv1alpha1.PubSubPlusEventBroker) *appsv1.Deployment {
 	dep := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
@@ -48,8 +48,8 @@ func (r *PubSubPlusEventBrokerReconciler) newDeploymentForPrometheusExporter(nam
 					Containers: []corev1.Container{
 						{
 							Name:            name,
-							Image:           m.Spec.Monitoring.MonitoringImage.Repository + ":" + m.Spec.Monitoring.MonitoringImage.Tag,
-							ImagePullPolicy: m.Spec.Monitoring.MonitoringImage.ImagePullPolicy,
+							Image:           getExporterImageDetails(m.Spec.Monitoring.MonitoringImage),
+							ImagePullPolicy: getExporterImagePullPolicy(m.Spec.Monitoring.MonitoringImage),
 							Ports: []corev1.ContainerPort{{
 								Name:          getExporterHttpProtocolType(&m.Spec.Monitoring),
 								ContainerPort: getExporterContainerPort(&m.Spec.Monitoring),
@@ -69,12 +69,19 @@ func (r *PubSubPlusEventBrokerReconciler) newDeploymentForPrometheusExporter(nam
 									Value: getExporterTLSConfiguration(&m.Spec.Monitoring),
 								},
 								{
-									Name:  "SOLACE_USER",
-									Value: "admin",
+									Name:  "SOLACE_USERNAME",
+									Value: "monitor",
 								},
 								{
-									Name:  "SOLACE_PASSWORD",
-									Value: string(secret.Data[secretKeyName]),
+									Name: "SOLACE_PASSWORD",
+									ValueFrom: &corev1.EnvVarSource{
+										SecretKeyRef: &corev1.SecretKeySelector{
+											LocalObjectReference: corev1.LocalObjectReference{
+												Name: monitoringSecret.Name,
+											},
+											Key: monitorSecretKeyName,
+										},
+									},
 								},
 								{
 									Name:  "SOLACE_SCRAPE_TIMEOUT",
@@ -105,7 +112,7 @@ func (r *PubSubPlusEventBrokerReconciler) newDeploymentForPrometheusExporter(nam
 							},
 						},
 					},
-					ImagePullSecrets: m.Spec.Monitoring.MonitoringImage.ImagePullSecrets,
+					ImagePullSecrets: getExporterImagePullSecrets(m.Spec.Monitoring.MonitoringImage),
 				},
 			},
 		},
@@ -245,4 +252,33 @@ func getExporterTLSConfiguration(m *eventbrokerv1alpha1.Monitoring) string {
 		return "false"
 	}
 	return strconv.FormatBool(m.MonitoringMetricsEndpoint.ListenTLS)
+}
+
+func getExporterImageDetails(bm *eventbrokerv1alpha1.MonitoringImage) string {
+	imageRepo := "ghcr.io/solacedev/solace_prometheus_exporter"
+	imageTag := "latest"
+
+	if bm != nil && len(strings.TrimSpace(bm.Repository)) > 0 {
+		imageRepo = bm.Repository
+	}
+	if bm != nil && len(strings.TrimSpace(bm.Tag)) > 0 {
+		imageTag = bm.Tag
+	}
+	return imageRepo + ":" + imageTag
+}
+
+func getExporterImagePullPolicy(bm *eventbrokerv1alpha1.MonitoringImage) corev1.PullPolicy {
+	imagePullPolicy := corev1.PullIfNotPresent
+	if bm != nil && len(bm.ImagePullPolicy) > 0 {
+		imagePullPolicy = bm.ImagePullPolicy
+	}
+	return imagePullPolicy
+}
+
+func getExporterImagePullSecrets(bm *eventbrokerv1alpha1.MonitoringImage) []corev1.LocalObjectReference {
+	var imagePullSecret []corev1.LocalObjectReference
+	if bm != nil && len(bm.ImagePullSecrets) > 0 {
+		imagePullSecret = bm.ImagePullSecrets
+	}
+	return imagePullSecret
 }

@@ -1,6 +1,8 @@
 #!/bin/bash
-export username_admin_passwordfilepath="/mnt/disks/secrets/username_admin_password"
+export username_admin_passwordfilepath="/mnt/disks/secrets/admin/username_admin_password"
 export username_admin_globalaccesslevel=admin
+export username_monitor_passwordfilepath="/mnt/disks/secrets/monitoring/username_monitor_password"
+export username_monitor_globalaccesslevel=read-only
 export service_ssh_port='2222'
 export service_webtransport_port='8008'
 export service_webtransport_tlsport='1443'
@@ -22,7 +24,7 @@ if [ "${BROKER_REDUNDANCY}" = "true" ]; then
   export routername=$(echo $(hostname) | sed 's/-//g')
   export redundancy_enable=yes
   export configsync_enable=yes
-  export redundancy_authentication_presharedkey_key=$(cat /mnt/disks/presharedauthkey-secret/preshared_auth_key | base64)
+  export redundancy_authentication_presharedkey_key=$(cat /mnt/disks/secrets/presharedauthkey/preshared_auth_key | base64)
   export service_redundancy_firstlistenport='8300'
   export redundancy_group_node_${service_name}p0_nodetype=message_routing
   export redundancy_group_node_${service_name}p0_connectvia=${service}-p-0.${service}-discovery.${namespace}.svc:${service_redundancy_firstlistenport}

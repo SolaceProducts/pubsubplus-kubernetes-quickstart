@@ -45,6 +45,12 @@ type EventBrokerSpec struct {
 	//+optional
 	//+nullable
 	//+kubebuilder:validation:Type:=string
+	// Defines the password for PubSubPlusEventBroker to be used by the Exporter for monitoring.
+	// When provided, ensure the secret key name is `username_monitor_password`.
+	MonitoringCredentialsSecret string `json:"monitoringCredentialsSecret,omitempty"`
+	//+optional
+	//+nullable
+	//+kubebuilder:validation:Type:=string
 	// PreSharedAuthKeySecret defines the PreSharedAuthKey Secret for PubSubPlusEventBroker. Random one will be generated if not provided.
 	// When provided, ensure the secret key name is `preshared_auth_key`.
 	PreSharedAuthKeySecret string `json:"preSharedAuthKeySecret,omitempty"`
