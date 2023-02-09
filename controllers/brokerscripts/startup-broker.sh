@@ -5,7 +5,7 @@ is_monitor=$([ ${host_array[-2]} = "m" ] && echo 1 || echo 0)
 is_backup=$([ ${host_array[-2]} = "b" ] && echo 1 || echo 0)
 echo "$(date) INFO: ${APP}-PubSub+ broker node starting. HA flags: HA_configured=${BROKER_REDUNDANCY}, Backup=${is_backup}, Monitor=${is_monitor}"
 echo "$(date) INFO: ${APP}-Waiting for management API to become available"
-password=$(cat /mnt/disks/secrets/username_admin_password)
+password=$(cat /mnt/disks/secrets/admin/username_admin_password)
 INITIAL_STARTUP_FILE=/var/lib/solace/var/k8s_initial_startup_marker
 loop_guard=120
 pause=10

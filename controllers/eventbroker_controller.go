@@ -285,13 +285,13 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 	}
 
 	// Check Admin Credentials Secret
-	brokerAdminCredentialsSecret := &corev1.Secret{}
+	adminSecret := &corev1.Secret{}
 	if len(strings.TrimSpace(pubsubpluseventbroker.Spec.AdminCredentialsSecret)) == 0 {
-		secretName := getObjectName("AdminCredentialsSecret", pubsubpluseventbroker.Name)
-		err = r.Get(ctx, types.NamespacedName{Name: secretName, Namespace: pubsubpluseventbroker.Namespace}, brokerAdminCredentialsSecret)
+		adminSecretName := getObjectName("AdminCredentialsSecret", pubsubpluseventbroker.Name)
+		err = r.Get(ctx, types.NamespacedName{Name: adminSecretName, Namespace: pubsubpluseventbroker.Namespace}, adminSecret)
 		if err != nil && errors.IsNotFound(err) {
 			// Define a new Admin Credentials Secret
-			secret := r.secretForEventBroker(secretName, pubsubpluseventbroker)
+			secret := r.secretForEventBroker(adminSecretName, pubsubpluseventbroker)
 			log.Info("Creating a new Admin Credentials Secret", "Secret.Namespace", secret.Namespace, "Secret.Name", secret.Name)
 			err = r.Create(ctx, secret)
 			if err != nil {
@@ -299,21 +299,54 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 				return ctrl.Result{}, err
 			}
 			// Admin Credentials Secret created successfully - return and requeue
-			r.emitResourceSuccessEvent(pubsubpluseventbroker, "Admin Credentials Secret", secretName)
+			r.emitResourceSuccessEvent(pubsubpluseventbroker, "Admin Credentials Secret", adminSecretName)
 			return ctrl.Result{Requeue: true}, nil
 		} else if err != nil {
 			r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to get Admin Credentials Secret")
 			return ctrl.Result{}, err
 		} else {
-			log.V(1).Info("Detected existing Admin Credentials Secret", " Secret.Name", brokerAdminCredentialsSecret.Name)
+			log.V(1).Info("Detected existing Admin Credentials Secret", " Secret.Name", adminSecret.Name)
 		}
 	} else {
-		err = r.Get(ctx, types.NamespacedName{Name: pubsubpluseventbroker.Spec.AdminCredentialsSecret, Namespace: pubsubpluseventbroker.Namespace}, brokerAdminCredentialsSecret)
+		err = r.Get(ctx, types.NamespacedName{Name: pubsubpluseventbroker.Spec.AdminCredentialsSecret, Namespace: pubsubpluseventbroker.Namespace}, adminSecret)
 		if err != nil {
 			r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to find specified Admin Credentials Secret: '"+pubsubpluseventbroker.Spec.AdminCredentialsSecret+"'")
 			return ctrl.Result{}, err
 		} else {
-			log.V(1).Info("Detected specified Admin Credentials Secret", " Secret.Name", brokerAdminCredentialsSecret.Name)
+			log.V(1).Info("Detected specified Admin Credentials Secret", " Secret.Name", adminSecret.Name)
+		}
+	}
+
+	monitoringSecret := &corev1.Secret{}
+	// Check Monitoring Exporter Secret
+	if len(strings.TrimSpace(pubsubpluseventbroker.Spec.MonitoringCredentialsSecret)) == 0 {
+		monitoringSecretName := getObjectName("MonitoringCredentialsSecret", pubsubpluseventbroker.Name)
+		err = r.Get(ctx, types.NamespacedName{Name: monitoringSecretName, Namespace: pubsubpluseventbroker.Namespace}, monitoringSecret)
+		if err != nil && errors.IsNotFound(err) {
+			// Define a new Monitoring Exporter Secret
+			monitoringSecret = r.monitoringSecretForEventBroker(monitoringSecretName, pubsubpluseventbroker)
+			log.Info("Creating a new Monitoring Exporter Secret", "Secret.Namespace", monitoringSecret.Namespace, "Secret.Name", monitoringSecret.Name)
+			err = r.Create(ctx, monitoringSecret)
+			if err != nil {
+				r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to create new Monitoring Exporter Secret", "Secret.Namespace", monitoringSecret.Namespace, "Secret.Name", monitoringSecret.Name)
+				return ctrl.Result{}, err
+			}
+			// Monitoring Exporter Secret created successfully - return and requeue
+			r.emitResourceSuccessEvent(pubsubpluseventbroker, "Monitoring Exporter Secret", monitoringSecretName)
+			return ctrl.Result{Requeue: true}, nil
+		} else if err != nil {
+			r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to get Monitoring Exporter Secret")
+			return ctrl.Result{}, err
+		} else {
+			log.V(1).Info("Detected existing Monitoring Exporter Secret", " Secret.Name", monitoringSecret.Name)
+		}
+	} else {
+		err = r.Get(ctx, types.NamespacedName{Name: pubsubpluseventbroker.Spec.MonitoringCredentialsSecret, Namespace: pubsubpluseventbroker.Namespace}, monitoringSecret)
+		if err != nil {
+			r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to find specified Monitoring Exporter Secret: '"+pubsubpluseventbroker.Spec.MonitoringCredentialsSecret+"'")
+			return ctrl.Result{}, err
+		} else {
+			log.V(1).Info("Detected specified Monitoring Exporter Secret", " Secret.Name", monitoringSecret.Name)
 		}
 	}
 
@@ -411,7 +444,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 	err = r.Get(ctx, types.NamespacedName{Name: stsPName, Namespace: pubsubpluseventbroker.Namespace}, stsP)
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new statefulset
-		stsP := r.createStatefulsetForEventBroker(stsPName, ctx, pubsubpluseventbroker, sa, brokerAdminCredentialsSecret, preSharedAuthKeySecret)
+		stsP := r.createStatefulsetForEventBroker(stsPName, ctx, pubsubpluseventbroker, sa, adminSecret, preSharedAuthKeySecret, monitoringSecret)
 		log.Info("Creating a new Primary StatefulSet", "StatefulSet.Namespace", stsP.Namespace, "StatefulSet.Name", stsP.Name)
 		err = r.Create(ctx, stsP)
 		if err != nil {
@@ -434,7 +467,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 		err = r.Get(ctx, types.NamespacedName{Name: stsBName, Namespace: pubsubpluseventbroker.Namespace}, stsB)
 		if err != nil && errors.IsNotFound(err) {
 			// Define a new statefulset
-			stsB := r.createStatefulsetForEventBroker(stsBName, ctx, pubsubpluseventbroker, sa, brokerAdminCredentialsSecret, preSharedAuthKeySecret)
+			stsB := r.createStatefulsetForEventBroker(stsBName, ctx, pubsubpluseventbroker, sa, adminSecret, preSharedAuthKeySecret, monitoringSecret)
 			log.Info("Creating a new Backup StatefulSet", "StatefulSet.Namespace", stsB.Namespace, "StatefulSet.Name", stsB.Name)
 			err = r.Create(ctx, stsB)
 			if err != nil {
@@ -455,7 +488,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 		err = r.Get(ctx, types.NamespacedName{Name: stsMName, Namespace: pubsubpluseventbroker.Namespace}, stsM)
 		if err != nil && errors.IsNotFound(err) {
 			// Define a new statefulset
-			stsM := r.createStatefulsetForEventBroker(stsMName, ctx, pubsubpluseventbroker, sa, brokerAdminCredentialsSecret, preSharedAuthKeySecret)
+			stsM := r.createStatefulsetForEventBroker(stsMName, ctx, pubsubpluseventbroker, sa, adminSecret, preSharedAuthKeySecret, monitoringSecret)
 			log.Info("Creating a new Monitor StatefulSet", "StatefulSet.Namespace", stsM.Namespace, "StatefulSet.Name", stsM.Name)
 			err = r.Create(ctx, stsM)
 			if err != nil {
@@ -476,7 +509,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 		// Monitor
 		if brokerStsOutdated(stsM, brokerSpecHash, tlsSecretHash) {
 			log.Info("Updating existing Monitor StatefulSet", "StatefulSet.Namespace", stsM.Namespace, "StatefulSet.Name", stsM.Name)
-			r.updateStatefulsetForEventBroker(stsM, ctx, pubsubpluseventbroker, sa, brokerAdminCredentialsSecret, preSharedAuthKeySecret)
+			r.updateStatefulsetForEventBroker(stsM, ctx, pubsubpluseventbroker, sa, adminSecret, preSharedAuthKeySecret, monitoringSecret)
 			err = r.Update(ctx, stsM)
 			if err != nil {
 				r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to update Monitor StatefulSet", "StatefulSet.Namespace", stsM.Namespace, "StatefulSet.Name", stsM.Name)
@@ -489,7 +522,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 		// Backup
 		if brokerStsOutdated(stsB, brokerSpecHash, tlsSecretHash) {
 			log.Info("Updating existing Backup StatefulSet", "StatefulSet.Namespace", stsB.Namespace, "StatefulSet.Name", stsB.Name)
-			r.updateStatefulsetForEventBroker(stsB, ctx, pubsubpluseventbroker, sa, brokerAdminCredentialsSecret, preSharedAuthKeySecret)
+			r.updateStatefulsetForEventBroker(stsB, ctx, pubsubpluseventbroker, sa, adminSecret, preSharedAuthKeySecret, monitoringSecret)
 			err = r.Update(ctx, stsB)
 			if err != nil {
 				r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to update Backup StatefulSet", "StatefulSet.Namespace", stsB.Namespace, "StatefulSet.Name", stsB.Name)
@@ -503,7 +536,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 	// Primary (includes non-HA case)
 	if brokerStsOutdated(stsP, brokerSpecHash, tlsSecretHash) {
 		log.Info("Updating existing Primary StatefulSet", "StatefulSet.Namespace", stsP.Namespace, "StatefulSet.Name", stsP.Name)
-		r.updateStatefulsetForEventBroker(stsP, ctx, pubsubpluseventbroker, sa, brokerAdminCredentialsSecret, preSharedAuthKeySecret)
+		r.updateStatefulsetForEventBroker(stsP, ctx, pubsubpluseventbroker, sa, adminSecret, preSharedAuthKeySecret, monitoringSecret)
 		err = r.Update(ctx, stsP)
 		if err != nil {
 			r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to update Primary StatefulSet", "StatefulSet.Namespace", stsP.Namespace, "StatefulSet.Name", stsP.Name)
@@ -634,7 +667,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 		err = r.Get(ctx, types.NamespacedName{Name: prometheusExporterDeploymentName, Namespace: pubsubpluseventbroker.Namespace}, prometheusExporterDeployment)
 		if err != nil && errors.IsNotFound(err) {
 			//exporter not available create new one
-			prometheusExporterDeployment = r.newDeploymentForPrometheusExporter(prometheusExporterDeploymentName, brokerAdminCredentialsSecret, pubsubpluseventbroker)
+			prometheusExporterDeployment = r.newDeploymentForPrometheusExporter(prometheusExporterDeploymentName, monitoringSecret, pubsubpluseventbroker)
 			log.Info("Creating new Prometheus Exporter Deployment", "Deployment.Namespace", prometheusExporterDeployment.Namespace, "Deployment.Name", prometheusExporterDeploymentName)
 			err = r.Create(ctx, prometheusExporterDeployment)
 			if err != nil {
@@ -702,7 +735,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 		HADeployment:           strconv.FormatBool(haDeployment),
 		TLSSupport:             strconv.FormatBool(pubsubpluseventbroker.Spec.BrokerTLS.Enabled),
 		TLSSecret:              pubsubpluseventbroker.Spec.BrokerTLS.ServerTLsConfigSecret,
-		AdminCredentialsSecret: brokerAdminCredentialsSecret.Name,
+		AdminCredentialsSecret: adminSecret.Name,
 		ServiceName:            svc.Name,
 		ServiceType:            string(svc.Spec.Type),
 		StatefulSets:           statefulSets,

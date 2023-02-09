@@ -228,6 +228,12 @@ spec:
                     format: int32
                     type: number
                 type: object
+              monitoringCredentialsSecret:
+                description: Defines the password for PubSubPlusEventBroker to be
+                  used by the Exporter for monitoring. When provided, ensure the secret
+                  key name is `username_monitor_password`.
+                nullable: true
+                type: string
               nodeAssignment:
                 description: NodeAssignment defines labels to constrain PubSubPlusEventBroker
                   nodes to run on particular node(s), or to prefer to run on particular

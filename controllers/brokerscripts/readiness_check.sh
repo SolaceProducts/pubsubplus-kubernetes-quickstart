@@ -49,7 +49,7 @@ if [ "${BROKER_REDUNDANCY}" = "true" ]; then
   IFS='-' read -ra host_array <<< $(hostname)
   is_monitor=$([ ${host_array[-2]} = "m" ] && echo 1 || echo 0)
   is_backup=$([ ${host_array[-2]} = "b" ] && echo 1 || echo 0)
-  password=$(cat /mnt/disks/secrets/username_admin_password)
+  password=$(cat /mnt/disks/secrets/admin/username_admin_password)
   # For update (includes SolOS upgrade) purposes, additional checks are required for readiness state when the pod has been started
   # This is an update if the LASTVERSION_FILE with K8s controller-revision-hash exists and contents differ from current value
   LASTVERSION_FILE=/var/lib/solace/var/lastConfigRevisionBeforeReboot
