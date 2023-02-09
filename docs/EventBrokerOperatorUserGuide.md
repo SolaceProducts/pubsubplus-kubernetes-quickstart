@@ -8,7 +8,7 @@ The following additional set of documentation is also available:
 * For the `PubSubPlusEventBroker` custom resource (deployment configuration) parameter options, refer to the [PubSub+ Event Broker Operator Parameters Reference]().
 * For version-specific information, refer to the [Operator Release Notes]()
 
-This guide is focused on deploying the event broker using the Operator, which is the preferred way to deploy. Note that a legacy way of [Helm-based deployment]() is also supported.
+This guide is focused on deploying the event broker using the Operator, which is the preferred way to deploy. Note that the legacy way of [Helm-based deployment](https://github.com/SolaceProducts/pubsubplus-kubernetes-quickstart) is also supported but out of scope for this document.
 
 Contents:
 
@@ -60,7 +60,12 @@ Contents:
       - [Secrets](#secrets)
       - [Broker Security Context](#broker-security-context)
       - [Using Network Policies](#using-network-policies)
-  - [Exposing health and performance metrics](#exposing-health-and-performance-metrics)
+  - [Exposing Metrics to Prometheus](#exposing-metrics-to-prometheus)
+    - [Enabling and configuring the Broker Metrics Endpoint](#enabling-and-configuring-the-broker-metrics-endpoint)
+    - [Connecting with Prometheus](#connecting-with-prometheus)
+      - [Reference Prometheus Stack Deployment](#reference-prometheus-stack-deployment)
+      - [Creating a ServiceMonitor object](#creating-a-servicemonitor-object)
+    - [Example Grafana Visualization of Broker Metrics](#example-grafana-visualization-of-broker-metrics)
   - [Deployment Guide](#deployment-guide)
     - [Deployment pre-requisites](#deployment-pre-requisites)
       - [Platform and tools](#platform-and-tools)
@@ -91,7 +96,7 @@ The [PubSub+ Software Event Broker](https://solace.com/products/event-broker/) o
 
 The PubSub+ Event Broker Operator supports:
 - Installation of a PubSub+ Software Event Broker in non-HA or HA mode
-- Adjusting the deployment to updated parameters
+- Adjusting the deployment to updated parameters (with limitations)
 - Upgrade to a new broker version
 - Repair the deployment
 - Enable Prometheus monitoring
@@ -149,7 +154,7 @@ Support can be enabled for exposing broker metrics to [Prometheus Monitoring](ht
 
 * When monitoring is enabled the Operator will add to the broker deployment an Exporter Pod, which acts as a bridge between Prometheus and the broker deployment to deliver metrics.
 * On one side, the Exporter Pod obtains metrics from the broker through SEMP requests. To access the broker, it uses the username and password from the MonitoringCredentials secret, and uses TLS access to the broker if Broker TLS has been configured.
-* The metrics are exposed to Prometheus through the Prometheus Exporter Service via the metrics port. Metrics port will be accessible using TLS if Metrics TLS has been enabled.
+* The metrics are exposed to Prometheus through the Prometheus Metrics Service via the metrics port. Metrics port will be accessible using TLS if Metrics TLS has been enabled.
 * As Kubernetes recommended practice, it is assumed that the Prometheus stack has been deployed using the [Prometheus operator](https://github.com/prometheus-operator/prometheus-operator#overview) in a dedicated Prometheus Monitoring namespace. In this setup a `ServiceMonitor` custom resource, placed in the Event Broker namespace, defines how Prometheus can access the broker metrics: which service to select and which endpoint to use.
 * Prometheus comes installed with strict security by default and its ClusterRole RBAC settings must be edited to enable watch ServiceMonitor in the Event Broker namespace.
 
@@ -212,7 +217,8 @@ Follow the general steps below to load an image into a private container registr
 ```sh
 podman login <private-registry> ...
 ```
-* First, load the image to the local registry:
+* First, load the broker image to the local registry:
+>**Important** There are broker container image variants for `Amd64`and `Arm64` architectures. Ensure to use the correct image.
 ```sh
 # Options a) or b) depending on your image source:
 ## Option a): If you have a local tar.gz image file
@@ -723,7 +729,7 @@ spec:
 
 #### Admin and Monitor Users and Passwords
 
-A management `admin` and a `monitor` user will be created at the broker initial deployment, with [global access level](https://docs.solace.com/Admin/SEMP/SEMP-API-Archit.htm#Role-Bas) "admin" and "read-only", respectively. The passwords are auto-generated if not provided and stored in Operator-generated secrets.
+A management `admin` and a `monitor` user will be created at the broker initial deployment, with [global access level](https://docs.solace.com/Admin/SEMP/SEMP-API-Archit.htm#Role-Bas) "admin" and "read-only", respectively. The passwords will be auto-generated if not provided and will be stored in Operator-generated secrets.
 
 It is also possible to provide pre-existing secrets containing the respective passwords as in the following example:
 ```yaml
@@ -732,14 +738,13 @@ spec:
   monitoringCredentialsSecret: my-monitoring-credetials-secret
 ```
 
-The secrets must contain following data files:
+The secrets must contain following data files: `username_admin_password` and `username_monitor_password` with password contents, respectively.
 
-
-
+>**Important**: these secrets are used at initial broker deployment to setup passwords. Changing the secret contents later will not result in password updates in the broker. However changing the secret contents at a later point will be service affecting as scripts in the broker container itself are using the passwords stored to access the broker's own management service. To fix a password discrepancy, log into each broker pod and using [CLI password change](https://docs.solace.com/Admin/Configuring-Internal-CLI-User-Accounts.htm#Changing-CLI-User-Passwords) ensure to set the password for the user account to the same as in the secret.
 
 #### Secrets
 
-Using secrets to store passwords, TLS server keys and certificates in the broker deployment namespace follows Kubernetes recommendations.
+Using secrets for storing passwords, TLS server keys and certificates in the broker deployment namespace follows Kubernetes recommendations.
 
 In a Production environment additional steps are required to ensure there is only authorized access to these secrets. Is recommended to follow industry Kubernetes security best practices including setting tight RBAC permissions for the namespace and harden security of the API server's underlying data store (etcd).
 
@@ -769,7 +774,107 @@ Above are generally the defaults if not provided. It shall be noted that the Ope
 
 In a controlled environment it may be necessary to configure a [NetworkPolicy](https://kubernetes.io/docs/concepts/services-networking/network-policies/ ) to enable [required communication](#serving-pod-selection) between the broker nodes as well as between the broker container and the API server to set the Pod label.
 
-##	Exposing health and performance metrics
+##	Exposing Metrics to Prometheus
+
+Refer to the [Prometheus Monitoring Support section](#prometheus-monitoring-support) for an overview of how metrics are exposed.
+
+This section describes how to enable and configure the metrics exporter on the broker deployment, configure Prometheus to use that and finally an example setup of Grafana to visualize broker metrics.
+
+### Enabling and configuring the Broker Metrics Endpoint
+
+To enable monitoring with all defaults, simply add `spec.monitoring.enabled: true` to the broker spec. This will setup a metrics service endpont which offers a REST API, returning broker metrics to GET requests.
+
+This more advanced example shows a configuration with additional spec of pulling the exporter image from a private repo using pull secret, the service type as Kubernetes internal  and also TLS enabled.
+```yaml
+spec:
+  monitoring:
+    enabled: true
+    image:
+      repository: ghcr.io/solacedev/solace_prometheus_exporter
+      tag: sol-76199
+      pullSecrets:
+      - name: regcred
+    metricsEndpoint:
+      listenTLS: true
+      serviceType: ClusterIP   # This is the default, exposes service within Kubernetes only      
+      endpointTlsConfigSecret: monitoring-tls
+```
+
+### Connecting with Prometheus
+
+With the metrics endpoint of the broker deployment enabled and up, it is matter of configuring Prometheus to add this endpoint to its list of scraped targets. The way to configure Prometheus is highly dependent on how it has been deployed including whether it is inside or outside the Kubernetes cluster.
+
+For reference, this guide will show how to setup a Prometheus deployment, created and managed by the Prometheus Operator. Consult your documentation and adjust the procedure if your Prometheus environment differs.
+
+#### Reference Prometheus Stack Deployment
+
+This section describes the setup of a reference Prometheus stack that includes Prometheus and Grafana (and also other Prometheus components not used here). We will use the [kube-prometheus project](https://github.com/prometheus-operator/kube-prometheus) which not only includes the Prometheus Operator but also Grafana. There are some adjustments/workarounds needed as described next.
+
+Steps:
+1. Git clone the `kube-prometheus` project. These steps were tested with the tagged version, later versions may well work too.
+```
+git clone https://github.com/prometheus-operator/kube-prometheus.git --tag v0.12.0
+```
+2. Follow `kube-prometheus` Quickstart steps: https://github.com/prometheus-operator/kube-prometheus#quickstart . This will deploy the required operators and create a Prometheus stack in the `monitoring` namespace.
+3. Patch the `prometheus-k8s` ClusterRole to enable access to the event broker metrics service. Run `kubectl edit ClusterRole prometheus-k8s` and append following to the `rules` section, then save:
+```
+- apiGroups:
+  - ""
+  resources:
+  - services
+  - pods
+  - endpoints
+  verbs:
+  - get
+  - list
+  - watch
+```
+4. The datasource for Grafana needs to be adjusted to use the `prometheus-operated` service from the `monitoring` namespace. This is configured in the `grafana-datasources` secret in the same namespace. Run `kubectl edit secret grafana-datasources -n monitoring`, then replace the `data.datasources.yaml` section as follows, then save:
+```
+data:
+  datasources.yaml: ewogICAgImFwaVZlcnNpb24iOiAxLAogICAgImRhdGFzb3VyY2VzIjogWwogICAgICAgIHsKICAgICAgICAgICAgImFjY2VzcyI6ICJwcm94eSIsCiAgICAgICAgICAgICJlZGl0YWJsZSI6IGZhbHNlLAogICAgICAgICAgICAibmFtZSI6ICJwcm9tZXRoZXVzIiwKICAgICAgICAgICAgIm9yZ0lkIjogMSwKICAgICAgICAgICAgInR5cGUiOiAicHJvbWV0aGV1cyIsCiAgICAgICAgICAgICJ1cmwiOiAiaHR0cDovL3Byb21ldGhldXMtb3BlcmF0ZWQubW9uaXRvcmluZy5zdmM6OTA5MCIsCiAgICAgICAgICAgICJ2ZXJzaW9uIjogMQogICAgICAgIH0KICAgIF0KfQ==
+```
+>Note: since this is data stored in a Kubernetes secret it is necessary to provide Base64-encoded data. Use an [online Base64 decode tool](https://www.base64decode.org/) to reveal the unencoded content of above data.
+5. Restart the pods in the `monitoring` namespace to pick up the changes:
+```bash
+kubectl delete pods --all -n monitoring
+# wait for all pods come back up all ready
+kubectl get pods --watch -n monitoring
+```
+
+Now both Prometheus and Grafana are running. Their Web Management UIs are exposed through the services `prometheus-k8s` at port 9090 and `grafana` at port 3000 in the `monitoring` namespace. Since these services are of type ClusterIP one of the options is to use Kubectl port-forwarding to access:
+```
+kubectl port-forward svc/prometheus-k8s 9090 -n monitoring &
+kubectl port-forward svc/grafana 3000 -n monitoring &
+```
+Point your browser to [localhost:9090](http://localhost:9090) for Prometheus and to [localhost:3000](http://localhost:3000) for Grafana.
+
+#### Creating a ServiceMonitor object
+
+With above adjustments the Prometheus Operator is now watching all namespaces for `ServiceMonitor` custom resource objects. A `ServiceMonitor` defines which metrics services shall be added to the Prometheus targets. It is namespace scoped so it must be added to the namespace where the event broker has been deployed.
+
+Example:
+```yaml
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+spec:
+  endpoints:
+    - interval: 10s
+      path: "/solace-std"
+      port: tcp-metrics
+  jobLabel: solace-std
+  selector:
+    matchLabels:
+      app.kubernetes.io/name=pubsubpluseventbroker
+      app.kubernetes.io/component=metricsexporter
+      app.kubernetes.io/instance=<eventbroker-deployment-name>
+```
+This will add the deployment's metrics service (by matching labels) to the Prometheus targets. The metrics endpoint will be accessed at the metrics port named `tcp-metrics` and the PubSub+ Exporter path `/solace-std` will be added to the scrape request REST API calls.
+
+The ServiceMonitor's selector may be adjusted to match all broker deployments in the namespace by removing `instance` from the matched labels. Also, multiple endpoints may be listed to obtain the combination of metrics from those Exporter paths.
+
+### Example Grafana Visualization of Broker Metrics
+
 
 
 ## Deployment Guide

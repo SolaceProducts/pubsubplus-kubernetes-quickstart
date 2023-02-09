@@ -112,13 +112,13 @@ func (r *PubSubPlusEventBrokerReconciler) newDeploymentForPrometheusExporter(nam
 	}
 
 	//Set TLS configuration
-	if m.Spec.Monitoring.MonitoringMetricEndpoint != nil && len(strings.TrimSpace(m.Spec.Monitoring.MonitoringMetricEndpoint.EndpointTLSConfigSecret)) > 0 {
+	if m.Spec.Monitoring.MonitoringMetricsEndpoint != nil && len(strings.TrimSpace(m.Spec.Monitoring.MonitoringMetricsEndpoint.EndpointTLSConfigSecret)) > 0 {
 		allVolumes := dep.Spec.Template.Spec.Volumes
 		allVolumes = append(allVolumes, corev1.Volume{
 			Name: "server-certs",
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName:  m.Spec.Monitoring.MonitoringMetricEndpoint.EndpointTLSConfigSecret,
+					SecretName:  m.Spec.Monitoring.MonitoringMetricsEndpoint.EndpointTLSConfigSecret,
 					DefaultMode: &[]int32{0400}[0],
 				},
 			},
@@ -133,11 +133,11 @@ func (r *PubSubPlusEventBrokerReconciler) newDeploymentForPrometheusExporter(nam
 
 		allEnv = append(allEnv, corev1.EnvVar{
 			Name:  "SOLACE_SERVER_CERT",
-			Value: "/mnt/disks/solace/" + m.Spec.Monitoring.MonitoringMetricEndpoint.EndpointTlsConfigServerCertName,
+			Value: "/mnt/disks/solace/" + m.Spec.Monitoring.MonitoringMetricsEndpoint.EndpointTlsConfigServerCertName,
 		})
 		allEnv = append(allEnv, corev1.EnvVar{
 			Name:  "SOLACE_PRIVATE_KEY",
-			Value: "/mnt/disks/solace/" + m.Spec.Monitoring.MonitoringMetricEndpoint.EndpointTlsConfigPrivateKeyName,
+			Value: "/mnt/disks/solace/" + m.Spec.Monitoring.MonitoringMetricsEndpoint.EndpointTlsConfigPrivateKeyName,
 		})
 
 		dep.Spec.Template.Spec.Containers[0].Env = allEnv
@@ -169,7 +169,7 @@ func (r *PubSubPlusEventBrokerReconciler) newServiceForPrometheusExporter(export
 			Labels:    getMonitoringDeploymentSelector(m.Name),
 		},
 		Spec: corev1.ServiceSpec{
-			Type: exporter.ServiceType,
+			Type: exporter.MonitoringMetricsEndpoint.ServiceType,
 			Ports: []corev1.ServicePort{
 				{
 					Name:       getExporterHttpProtocolType(&m.Spec.Monitoring),
@@ -211,40 +211,38 @@ func getPubSubPlusEventBrokerProtocol(m *eventbrokerv1alpha1.EventBrokerSpec) st
 }
 
 func getExporterContainerPort(m *eventbrokerv1alpha1.Monitoring) int32 {
-	if m.MonitoringMetricEndpoint == nil || m.MonitoringMetricEndpoint.ContainerPort == 0 {
+	if m.MonitoringMetricsEndpoint == nil || m.MonitoringMetricsEndpoint.ContainerPort == 0 {
 		return 9628
 	}
-	return m.MonitoringMetricEndpoint.ContainerPort
+	return m.MonitoringMetricsEndpoint.ContainerPort
 }
 
 func getExporterServicePort(m *eventbrokerv1alpha1.Monitoring) int32 {
-	if m.MonitoringMetricEndpoint == nil || m.MonitoringMetricEndpoint.ServicePort == 0 {
+	if m.MonitoringMetricsEndpoint == nil || m.MonitoringMetricsEndpoint.ServicePort == 0 {
 		return 9628
 	}
-	return m.MonitoringMetricEndpoint.ServicePort
+	return m.MonitoringMetricsEndpoint.ServicePort
 }
 
 func getExporterHttpProtocolType(m *eventbrokerv1alpha1.Monitoring) string {
-	if m.MonitoringMetricEndpoint != nil && len(strings.TrimSpace(m.MonitoringMetricEndpoint.Name)) > 0 {
-		return m.MonitoringMetricEndpoint.Name
-	} else if m.MonitoringMetricEndpoint == nil || !m.MonitoringMetricEndpoint.ListenTLS {
-		return "tcp-metrics"
-	} else if m.MonitoringMetricEndpoint.ListenTLS {
+	if m.MonitoringMetricsEndpoint != nil && len(strings.TrimSpace(m.MonitoringMetricsEndpoint.Name)) > 0 {
+		return m.MonitoringMetricsEndpoint.Name
+	} else if m.MonitoringMetricsEndpoint != nil && m.MonitoringMetricsEndpoint.ListenTLS {
 		return "tls-metrics"
 	}
-	return "metrics"
+	return "tcp-metrics"
 }
 
 func getExporterServiceProtocol(m *eventbrokerv1alpha1.Monitoring) corev1.Protocol {
-	if m.MonitoringMetricEndpoint == nil || m.MonitoringMetricEndpoint.Protocol == "" {
+	if m.MonitoringMetricsEndpoint == nil || m.MonitoringMetricsEndpoint.Protocol == "" {
 		return corev1.ProtocolTCP
 	}
-	return m.MonitoringMetricEndpoint.Protocol
+	return m.MonitoringMetricsEndpoint.Protocol
 }
 
 func getExporterTLSConfiguration(m *eventbrokerv1alpha1.Monitoring) string {
-	if m.MonitoringMetricEndpoint == nil || !m.MonitoringMetricEndpoint.ListenTLS {
+	if m.MonitoringMetricsEndpoint == nil || !m.MonitoringMetricsEndpoint.ListenTLS {
 		return "false"
 	}
-	return strconv.FormatBool(m.MonitoringMetricEndpoint.ListenTLS)
+	return strconv.FormatBool(m.MonitoringMetricsEndpoint.ListenTLS)
 }

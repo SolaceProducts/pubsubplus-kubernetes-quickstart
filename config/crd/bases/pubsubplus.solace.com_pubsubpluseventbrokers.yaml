@@ -171,7 +171,7 @@ spec:
                     properties:
                       containerPort:
                         default: 9628
-                        description: ContainerPort is number of port to expose on
+                        description: ContainerPort is the port number to expose on
                           the Prometheus Exporter pod.
                         format: int32
                         type: number
@@ -191,7 +191,8 @@ spec:
                         type: string
                       listenTLS:
                         default: false
-                        description: Defines if Prometheus Exporter uses TLS configuration
+                        description: Defines if Metrics Service Endpoint uses TLS
+                          configuration
                         type: boolean
                       name:
                         description: Name is a unique name for the port that can be
@@ -207,17 +208,18 @@ spec:
                         type: string
                       servicePort:
                         default: 9628
-                        description: ServicePort is number of port to expose on the
+                        description: ServicePort is the port number to expose on the
                           service
                         format: int32
                         type: number
+                      serviceType:
+                        default: ClusterIP
+                        description: Defines the service type for the Metrics Service
+                          Endpoint
+                        type: string
                     required:
                     - name
                     type: object
-                  serviceType:
-                    default: ClusterIP
-                    description: Defines the service type for Prometheus Exporter
-                    type: string
                   sslVerify:
                     default: false
                     description: Defines if Prometheus Exporter verifies SSL
@@ -1319,7 +1321,7 @@ spec:
                         for the Broker
                       properties:
                         containerPort:
-                          description: Number of port to expose on the pod.
+                          description: Port number to expose on the pod.
                           format: int32
                           type: number
                         name:
@@ -1335,7 +1337,7 @@ spec:
                           - SCTP
                           type: string
                         servicePort:
-                          description: Number of port to expose on the service
+                          description: Port number to expose on the service
                           format: int32
                           type: number
                       required:
