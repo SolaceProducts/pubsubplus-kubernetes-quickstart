@@ -74,21 +74,21 @@ Follow the steps from [OperatorHub](https://operatorhub.io/operator/pubsubplus-e
 # BEGIN: For internal use only, DELETE when publishing
 # These are the same steps as installing from real OperatorHub after publish
 # Pre-requisite: Docker login into the private registry that hosts the Operator image
-# Run: docker login ghcr.io/solacedev
+# Run: docker login ghcr.io/solacedev, test locally to ensure it works: docker pull ghcr.io/solacedev/pubsubplus-eventbroker-operator:test
 
 # Install OLM and verify it
 curl -sL https://github.com/operator-framework/operator-lifecycle-manager/releases/download/v0.23.1/install.sh | bash -s v0.23.1
-kubectl get po -n olm
+kubectl get pods -n olm
 
 # Create CatalogSource. First need to create pullsecret, then apply manifest.
 kubectl create secret generic regcred --from-file=.dockerconfigjson=${HOME}/.docker/config.json --type=kubernetes.io/dockerconfigjson -n olm
-kubectl apply -f https://raw.githubusercontent.com/SolaceDev/pubsubplus-kubernetes-operator/v1beta1/deploy/solace-catalog-source.yaml
+kubectl apply -f https://raw.githubusercontent.com/SolaceDev/pubsubplus-kubernetes-operator/v1.0.0/deploy/solace-catalog-source.yaml
 # Wait about a minute. Test if PackageManifest has been created
 kubectl get packagemanifest -n olm | grep pubsubplus
 
 # Now create SubScription on "operators" namespace. Also need to create pullsecret here, then apply.
 kubectl create secret generic regcred --from-file=.dockerconfigjson=${HOME}/.docker/config.json --type=kubernetes.io/dockerconfigjson -n operators
-kubectl apply -f https://raw.githubusercontent.com/SolaceDev/pubsubplus-kubernetes-operator/v1beta1/deploy/solace-pubsubpluseventbroker-sub.yaml
+kubectl apply -f https://raw.githubusercontent.com/SolaceDev/pubsubplus-kubernetes-operator/v1.0.0/deploy/solace-pubsubpluseventbroker-sub.yaml
 # Wait a few minutes then check status of the InstallPlan
 kubectl get ip -n operators
 # Check if operator pod is starting in operators namespace
@@ -114,7 +114,7 @@ kubectl create secret generic regcred \
   -n pubsubplus-operator-system
 # END: internal use
 # Download manifest for possible edit
-wget https://raw.githubusercontent.com/SolaceDev/pubsubplus-kubernetes-operator/v1beta1/deploy/deploy.yaml
+wget https://raw.githubusercontent.com/SolaceDev/pubsubplus-kubernetes-operator/v1.0.0/deploy/deploy.yaml
 # Manifest creates a namespace and all K8s resources for the Operator deployment
 kubectl apply -f deploy.yaml
 # Wait for deployment to complete
