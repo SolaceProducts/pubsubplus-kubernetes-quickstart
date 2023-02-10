@@ -18,6 +18,7 @@ package v1alpha1
 
 import (
 	"encoding/json"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -140,10 +141,10 @@ type BrokerPort struct {
 	// Protocol for port. Must be UDP, TCP, or SCTP.
 	Protocol corev1.Protocol `json:"protocol"`
 	//+kubebuilder:validation:Type:=number
-	// Number of port to expose on the pod.
+	// Port number to expose on the pod.
 	ContainerPort int32 `json:"containerPort"`
 	//+kubebuilder:validation:Type:=number
-	// Number of port to expose on the service
+	// Port number to expose on the service
 	ServicePort int32 `json:"servicePort"`
 }
 
@@ -285,8 +286,8 @@ type BrokerImage struct {
 	ImagePullPolicy corev1.PullPolicy `json:"pullPolicy"`
 	//+optional
 	//+kubebuilder:validation:Type:=array
-	// ImagePullSecrets is an optional list of references to secrets in the same namespace to use for pulling any of the images used by this PodSpec.
-	ImagePullSecrets []corev1.LocalObjectReference `json:"pullSecretName,omitempty"`
+	// pullSecrets is an optional list of references to secrets in the same namespace to use for pulling any of the images used by this PodSpec.
+	ImagePullSecrets []corev1.LocalObjectReference `json:"pullSecrets,omitempty"`
 }
 
 // NodeAssignment defines labels to constrain PubSubPlusEventBroker nodes to specific nodes
@@ -341,10 +342,10 @@ type MonitoringImage struct {
 	//+kubebuilder:default:=IfNotPresent
 	// Specifies ImagePullPolicy of the container image for the Prometheus Exporter.
 	ImagePullPolicy corev1.PullPolicy `json:"pullPolicy,omitempty"`
-	// ImagePullSecrets is an optional list of references to secrets in the same namespace to use for pulling any of the images used by this PodSpec.
+	// pullSecrets is an optional list of references to secrets in the same namespace to use for pulling any of the images used by this PodSpec.
 	// +optional
 	//+kubebuilder:validation:Type:=array
-	ImagePullSecrets []corev1.LocalObjectReference `json:"pullSecretName,omitempty"`
+	ImagePullSecrets []corev1.LocalObjectReference `json:"pullSecrets,omitempty"`
 }
 
 // Monitoring defines parameters to use Prometheus Exporter
@@ -361,7 +362,7 @@ type Monitoring struct {
 	//+optional
 	//+kubebuilder:validation:Type:=object
 	// MetricsEndpoint defines parameters to configure monitoring for the Prometheus Exporter.
-	MonitoringMetricEndpoint *MonitoringMetricEndpoint `json:"metricsEndpoint,omitempty"`
+	MonitoringMetricsEndpoint *MonitoringMetricsEndpoint `json:"metricsEndpoint,omitempty"`
 	//+optional
 	//+kubebuilder:validation:Type:=number
 	//+kubebuilder:default:=5
@@ -377,11 +378,6 @@ type Monitoring struct {
 	//+kubebuilder:default:=false
 	// Defines if Prometheus Exporter should include rates
 	IncludeRates bool `json:"includeRates,omitempty"`
-	//+optional
-	//+kubebuilder:validation:Type:=string
-	//+kubebuilder:default:=ClusterIP
-	// Defines the service type for Prometheus Exporter
-	ServiceType corev1.ServiceType `json:"serviceType,omitempty"`
 }
 
 // INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
@@ -396,7 +392,7 @@ type EventBrokerStatus struct {
 	// Broker section provides the broker status
 	Broker BrokerSubStatus `json:"broker,omitempty"`
 	// Monitoring sectionprovides monitoring support status
-	Monitoring MonitoringSubStatus `json:"monitoring,omitempty"`
+	Monitoring MonitoringSubStatus `json:"prometheusMonitoring,omitempty"`
 }
 
 type BrokerSubStatus struct {
@@ -416,8 +412,8 @@ type MonitoringSubStatus struct {
 	ExporterImage string `json:"exporterImage,omitempty"`
 }
 
-// MonitoringMetricEndpoint defines parameters to configure Prometheus Exporter Endpoint
-type MonitoringMetricEndpoint struct {
+// MonitoringMetricsEndpoint defines parameters to configure Metrics Service Endpoint
+type MonitoringMetricsEndpoint struct {
 	//+kubebuilder:validation:MaxLength:15
 	//+kubebuilder:validation:Type:=string
 	// Name is a unique name for the port that can be referred to by services.
@@ -425,17 +421,17 @@ type MonitoringMetricEndpoint struct {
 	//+optional
 	//+kubebuilder:validation:Type:=number
 	//+kubebuilder:default:=9628
-	// ContainerPort is number of port to expose on the Prometheus Exporter pod.
+	// ContainerPort is the port number to expose on the Prometheus Exporter pod.
 	ContainerPort int32 `json:"containerPort"`
 	//+optional
 	//+kubebuilder:validation:Type:=number
 	//+kubebuilder:default:=9628
-	// ServicePort is number of port to expose on the service
+	// ServicePort is the port number to expose on the service
 	ServicePort int32 `json:"servicePort"`
 	//+optional
 	//+kubebuilder:validation:Type:=boolean
 	//+kubebuilder:default:=false
-	// Defines if Prometheus Exporter uses TLS configuration
+	// Defines if Metrics Service Endpoint uses TLS configuration
 	ListenTLS bool `json:"listenTLS"`
 	//+optional
 	//+kubebuilder:validation:Enum=TCP;UDP;SCTP
@@ -455,6 +451,11 @@ type MonitoringMetricEndpoint struct {
 	//+kubebuilder:default:=tls.key
 	// EndpointTlsConfigPrivateKeyName is the file name of the Private Key used to set up TLS configuration
 	EndpointTlsConfigPrivateKeyName string `json:"endpointTlsConfigPrivateKeyName,omitempty"`
+	//+optional
+	//+kubebuilder:validation:Type:=string
+	//+kubebuilder:default:=ClusterIP
+	// Defines the service type for the Metrics Service Endpoint
+	ServiceType corev1.ServiceType `json:"serviceType,omitempty"`
 }
 
 //+kubebuilder:object:root=true

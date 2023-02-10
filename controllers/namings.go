@@ -61,7 +61,7 @@ func getObjectName(objectType string, deploymentName string) string {
 		"StatefulSet":                  "-pubsubplus-%s",
 		"PodDisruptionBudget":          "-pubsubplus-poddisruptionbudget",
 		"PrometheusExporterDeployment": "-pubsubplus-prometheus-exporter",
-		"PrometheusExporterService":    "-pubsubplus-prometheus-exporter-service",
+		"PrometheusExporterService":    "-pubsubplus-prometheus-metrics",
 	}
 	return deploymentName + nameSuffix[objectType]
 }

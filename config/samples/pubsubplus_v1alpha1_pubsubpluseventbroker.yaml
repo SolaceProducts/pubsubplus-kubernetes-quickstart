@@ -139,5 +139,5 @@ spec:
       repository: ghcr.io/solacedev/solace_prometheus_exporter
       tag: sol-76199
       pullPolicy: Always
-      pullSecretName:
+      pullSecrets:
       - name: regcred
