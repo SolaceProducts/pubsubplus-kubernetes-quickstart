@@ -51,6 +51,8 @@ jobs:
           kubectl create ns pubsubplus-operator-system --save-config
           kubectl create secret generic regcred --from-file=.dockerconfigjson=${HOME}/.docker/config.json --type=kubernetes.io/dockerconfigjson -n pubsubplus-operator-system
           make deploy | grep created
+          # ensure to always test with the latest container
+          kubectl patch deployment pubsubplus-eventbroker-operator -n pubsubplus-operator-system -p '{"spec": {"template": {"spec":{"containers":[{"name": "manager", "imagePullPolicy":"Always"}]}}}}'
           kubectl rollout status deployment pubsubplus-eventbroker-operator -n pubsubplus-operator-system --timeout=240s
           kubectl get crd | grep eventbrokers
 
