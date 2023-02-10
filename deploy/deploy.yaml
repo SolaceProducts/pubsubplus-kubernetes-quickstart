@@ -1184,7 +1184,7 @@ spec:
         env:
         - name: WATCH_NAMESPACE
           value: ""
-        image: ghcr.io/solacedev/pubsubplus-eventbroker-operator:v0.0.1
+        image: ghcr.io/solacedev/pubsubplus-eventbroker-operator:qa
         livenessProbe:
           httpGet:
             path: /healthz

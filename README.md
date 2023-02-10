@@ -92,7 +92,7 @@ kubectl apply -f https://raw.githubusercontent.com/SolaceDev/pubsubplus-kubernet
 # Wait a few minutes then check status of the InstallPlan
 kubectl get ip -n operators
 # Check if operator pod is starting in operators namespace
-kubectl get po -n operators -w
+kubectl get pods -n operators --watch
 
 # END: internal use
 ```
@@ -113,11 +113,12 @@ kubectl create secret generic regcred \
   --type=kubernetes.io/dockerconfigjson \
   -n pubsubplus-operator-system
 # END: internal use
+# Download manifest for possible edit
+wget https://raw.githubusercontent.com/SolaceDev/pubsubplus-kubernetes-operator/v1alpha1/deploy/deploy.yaml
 # Manifest creates a namespace and all K8s resources for the Operator deployment
-kubectl apply -f https://raw.githubusercontent.com/SolaceDev/pubsubplus-kubernetes-operator/v1alpha1/deploy/deploy.yaml
+kubectl apply -f deploy.yaml
 # Wait for deployment to complete
-kubectl rollout status deployment pubsubplus-eventbroker-operator \
-  -n pubsubplus-operator-system
+kubectl get pods -n pubsubplus-operator-system --watch
 ```
 
 By default this method has installed the Operator in the `pubsubplus-operator-system` namespace.
@@ -149,8 +150,10 @@ spec:
   developer: true" > developer.yaml
 # Then apply it
 kubectl apply -f developer.yaml
-# Wait for broker deployment to complete; adjust timeout if image pull is slow
-kubectl wait --for=condition=ServiceReady eventbroker dev-example --timeout=120s
+# Wait for broker deployment pods to complete
+kubectl get pods --show-labels --watch
+# Check service-ready
+kubectl wait --for=condition=ServiceReady eventbroker dev-example
 ```
 
 #### b) Example non-HA Deployment
@@ -168,8 +171,10 @@ spec:
 " > nonha.yaml
 # Then apply it
 kubectl apply -f nonha.yaml
-# Wait for broker deployment to complete; adjust timeout if image pull is slow
-kubectl wait --for=condition=ServiceReady eventbroker non-ha-example --timeout=120s
+# Wait for broker deployment pods to complete
+kubectl get pods --show-labels --watch
+# Check service-ready
+kubectl wait --for=condition=ServiceReady eventbroker non-ha-example
 ```
 
 #### c) Example HA Deployment
@@ -187,9 +192,10 @@ spec:
 " > ha.yaml
 # Then apply it
 kubectl apply -f ha.yaml
-# Wait for broker deployment to complete - service-ready and then HA-ready
-# adjust timeout if image pull is slow
-kubectl wait --for=condition=ServiceReady eventbroker ha-example --timeout=300s
+# Wait for broker deployment pods to complete
+kubectl get pods --show-labels --watch
+# Check service-ready and then HA-ready
+kubectl wait --for=condition=ServiceReady eventbroker ha-example
 kubectl wait --for=condition=HAReady eventbroker ha-example
 ```
 

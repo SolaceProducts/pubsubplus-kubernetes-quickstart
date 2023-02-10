@@ -67,25 +67,34 @@ Contents:
       - [Creating a ServiceMonitor object](#creating-a-servicemonitor-object)
     - [Example Grafana Visualization of Broker Metrics](#example-grafana-visualization-of-broker-metrics)
   - [Deployment Guide](#deployment-guide)
-    - [Deployment pre-requisites](#deployment-pre-requisites)
-      - [Platform and tools](#platform-and-tools)
-        - [Install the `kubectl` command-line tool](#install-the-kubectl-command-line-tool)
-        - [Perform any necessary Kubernetes platform-specific setup](#perform-any-necessary-kubernetes-platform-specific-setup)
-    - [Install Operator](#install-operator)
-      - [OLM](#olm)
-        - [Standard OperatorHub install](#standard-operatorhub-install)
-        - [Manual install with options, from GitHub repo Deploy](#manual-install-with-options-from-github-repo-deploy)
-      - [kubectl](#kubectl)
-    - [Deploy Broker](#deploy-broker)
-      - [Samples](#samples)
+    - [Quick Start](#quick-start)
       - [Validating the deployment](#validating-the-deployment)
+    - [Gaining admin access to the event broker](#gaining-admin-access-to-the-event-broker)
+      - [Admin Password](#admin-password)
+      - [WebUI, SolAdmin and SEMP access](#webui-soladmin-and-semp-access)
+      - [Solace CLI access](#solace-cli-access)
+      - [SSH access to individual event brokers](#ssh-access-to-individual-event-brokers)
+    - [Testing data access to the event broker](#testing-data-access-to-the-event-broker)
+  - [Troubleshooting](#troubleshooting)
+    - [General Kubernetes troubleshooting hints](#general-kubernetes-troubleshooting-hints)
+    - [Checking the reason for failed resources](#checking-the-reason-for-failed-resources)
+    - [Viewing logs](#viewing-logs)
+    - [Viewing events](#viewing-events)
+    - [PubSub+ Software Event Broker troubleshooting](#pubsub-software-event-broker-troubleshooting)
+      - [Pods stuck in not enough resources](#pods-stuck-in-not-enough-resources)
+      - [Pods stuck in no storage](#pods-stuck-in-no-storage)
+      - [Pods stuck in CrashLoopBackoff, Failed or Not Ready](#pods-stuck-in-crashloopbackoff-failed-or-not-ready)
+      - [No Pods listed](#no-pods-listed)
+      - [Security constraints](#security-constraints)
       - [How to connect, etc.](#how-to-connect-etc)
     - [Operate broker](#operate-broker)
     - [Update / upgrade broker](#update--upgrade-broker)
     - [Undeploy Broker](#undeploy-broker)
     - [Re-Install Broker](#re-install-broker)
-    - [Troubleshooting](#troubleshooting)
+    - [Troubleshooting](#troubleshooting-1)
   - [Upgrade Operator](#upgrade-operator)
+    - [From OLM](#from-olm)
+    - [From command line](#from-command-line)
     - [Upgrade CRD and Operator](#upgrade-crd-and-operator)
   - [Migration from Helm-based deployment](#migration-from-helm-based-deployment)
 
@@ -881,52 +890,227 @@ The ServiceMonitor's selector may be adjusted to match all broker deployments in
 
 ## Deployment Guide
 
-### Deployment pre-requisites
+### Quick Start
 
+Refer to the [Quick Start guide](/README.md) in the root of this repo. It also provides information about deployment pre-requisites and tools.
 
-
-#### Platform and tools
-
-##### Install the `kubectl` command-line tool
-
-Refer to [these instructions](//kubernetes.io/docs/tasks/tools/install-kubectl/) to install `kubectl` if your environment does not already provide this tool or equivalent (like `oc` in OpenShift).
-
-##### Perform any necessary Kubernetes platform-specific setup
-
-This refers to getting your platform ready either by creating a new one or getting access to an existing one. Supported platforms include but are not restricted to:
-* Amazon EKS
-* Azure AKS
-* Google GCP
-* OpenShift
-* MiniKube
-* VMWare PKS
-
-Check your platform running the `kubectl get nodes` command from your command-line client.
-
-Also ensure Kubernetes CPU, Memory and Disk resources available to how the intended [scale of deployment](#broker-scaling).
-
-###	Install Operator
-####	OLM
-
-OLM has evolved as the standard way to discover, acquire and manage Kubernetes operators. This is the also preferred way to install the PubSub+ Event Broker Operator.
-
-Follow this [link to the Operator on OperatorHub]().
-
-##### Standard OperatorHub install
-##### Manual install with options, from GitHub repo Deploy
-
-####	kubectl
-
-* Install script from GitHub repo Deploy
-
-
-
-###	Deploy Broker
-
-
-
-####	Samples
 ####	Validating the deployment
+
+You can validate your deployment on the command line. In this example an HA configuration is deployed with name "ha-example", created using the [Quick Start](#quick-start).
+
+```sh
+prompt:~$ kubectl get statefulsets,services,pods,pvc,pv
+NAME                                       READY   AGE
+statefulset.apps/ha-example-pubsubplus-b   1/1     12h
+statefulset.apps/ha-example-pubsubplus-m   1/1     12h
+statefulset.apps/ha-example-pubsubplus-p   1/1     12h
+
+NAME                                      TYPE           CLUSTER-IP      EXTERNAL-IP   PORT(S)                                                                                                                                                                                                                                                              AGE
+service/ha-example-pubsubplus             LoadBalancer   10.122.164.99   34.70.9.248   2222:30316/TCP,8080:31978/TCP,1943:31371/TCP,55555:32225/TCP,55003:31166/TCP,55443:31534/TCP,55556:31346/TCP,8008:30124/TCP,1443:32174/TCP,9000:30961/TCP,9443:31137/TCP,5672:32203/TCP,5671:31456/TCP,1883:30625/TCP,8883:30673/TCP,8000:32628/TCP,8443:31691/TCP   12h
+service/ha-example-pubsubplus-discovery   ClusterIP      None            <none>        8080/TCP,8741/TCP,8300/TCP,8301/TCP,8302/TCP
+                                                                                                                                                                12h
+service/kubernetes                        ClusterIP      10.122.160.1    <none>        443/TCP
+                                                                                                                                                                19h
+
+NAME                            READY   STATUS    RESTARTS   AGE
+pod/ha-example-pubsubplus-b-0   1/1     Running   0          12h
+pod/ha-example-pubsubplus-m-0   1/1     Running   0          12h
+pod/ha-example-pubsubplus-p-0   1/1     Running   0          12h
+
+NAME                                                   STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   AGE
+persistentvolumeclaim/data-ha-example-pubsubplus-b-0   Bound    pvc-7b3e70b4-1b1d-4569-a027-355617d5c4ff   30Gi       RWO            standard-rwo   12h
+persistentvolumeclaim/data-ha-example-pubsubplus-m-0   Bound    pvc-cd2fd753-697b-4cd5-95db-1bd56918635e   3Gi        RWO            standard-rwo   12h
+persistentvolumeclaim/data-ha-example-pubsubplus-p-0   Bound    pvc-a1ebd69e-39be-4043-9b38-a5a22f30b4f9   30Gi       RWO            standard-rwo   12h
+
+NAME                                                        CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM                                    STORAGECLASS   REASON   AGE
+persistentvolume/pvc-7b3e70b4-1b1d-4569-a027-355617d5c4ff   30Gi       RWO            Delete           Bound    default/data-ha-example-pubsubplus-b-0   standard-rwo            12h
+persistentvolume/pvc-a1ebd69e-39be-4043-9b38-a5a22f30b4f9   30Gi       RWO            Delete           Bound    default/data-ha-example-pubsubplus-p-0   standard-rwo            12h
+persistentvolume/pvc-cd2fd753-697b-4cd5-95db-1bd56918635e   3Gi        RWO            Delete           Bound    default/data-ha-example-pubsubplus-m-0   standard-rwo            12h
+
+prompt:~$ kubectl describe service ha-example-pubsubplus
+Name:                     ha-example-pubsubplus
+Namespace:                default
+Labels:                   app.kubernetes.io/instance=ha-example
+                          app.kubernetes.io/managed-by=solace-pubsubplus-operator
+                          app.kubernetes.io/name=pubsubpluseventbroker
+Annotations:              cloud.google.com/neg: {"ingress":true}
+                          lastAppliedConfig/brokerService: 3a87fe83d04ddd7f
+Selector:                 active=true,app.kubernetes.io/instance=ha-example,app.kubernetes.io/name=pubsubpluseventbroker
+Type:                     LoadBalancer
+IP Family Policy:         SingleStack
+IP Families:              IPv4
+IP:                       10.122.164.99
+IPs:                      10.122.164.99
+LoadBalancer Ingress:     34.70.9.248
+Port:                     tcp-ssh  2222/TCP
+TargetPort:               2222/TCP
+NodePort:                 tcp-ssh  30316/TCP
+Endpoints:                10.124.2.19:2222
+Port:                     tcp-semp  8080/TCP
+TargetPort:               8080/TCP
+NodePort:                 tcp-semp  31978/TCP
+Endpoints:                10.124.2.19:8080
+Port:                     tls-semp  1943/TCP
+:
+:
+```
+
+Generally, all services including management and messaging are accessible through a Load Balancer. In the above example `34.70.9.248` is the Load Balancer's external Public IP to use.
+
+> Note: When using MiniKube, there is no integrated Load Balancer. For a workaround, execute `minikube service XXX-XXX-solace` to expose the services. Services will be accessible directly using mapped ports instead of direct port access, for which the mapping can be obtained from `kubectl describe service XXX-XX-solace`.
+
+### Gaining admin access to the event broker
+
+There are [multiple management tools](//docs.solace.com/Management-Tools.htm ) available. The WebUI is the recommended simplest way to administer the event broker for common tasks.
+
+#### Admin Password
+
+A random admin password will be generated if it has not been provided at deployment using the `solace.usernameAdminPassword` parameter, refer to the the information from `helm status` how to retrieve it.
+
+**Important:** Every time `helm install` or `helm upgrade` is called a new admin password will be generated, which may break an existing deployment. Therefore ensure to always provide the password from the initial deployment as `solace.usernameAdminPassword=<PASSWORD>` parameter to subsequent `install` and `upgrade` commands.
+
+#### WebUI, SolAdmin and SEMP access
+
+Use the Load Balancer's external Public IP at port 8080 to access these services.
+
+#### Solace CLI access
+
+If you are using a single event broker and are used to working with a CLI event broker console access, you can SSH into the event broker as the `admin` user using the Load Balancer's external Public IP:
+
+```sh
+
+$ssh -p 2222 admin@35.202.131.158
+Solace PubSub+ Standard
+Password:
+
+Solace PubSub+ Standard Version 9.4.0.105
+
+The Solace PubSub+ Standard is proprietary software of
+Solace Corporation. By accessing the Solace PubSub+ Standard
+you are agreeing to the license terms and conditions located at
+//www.solace.com/license-software
+
+Copyright 2004-2019 Solace Corporation. All rights reserved.
+
+To purchase product support, please contact Solace at:
+//dev.solace.com/contact-us/
+
+Operating Mode: Message Routing Node
+
+XXX-XXX-pubsubplus-0>
+```
+
+If you are using an HA deployment, it is better to access the CLI through the Kubernets pod and not directly via SSH.
+
+* Loopback to SSH directly on the pod
+
+```sh
+kubectl exec -it XXX-XXX-pubsubplus-0  -- bash -c "ssh -p 2222 admin@localhost"
+```
+
+* Loopback to SSH on your host with a port-forward map
+
+```sh
+kubectl port-forward XXX-XXX-pubsubplus-0 62222:2222 &
+ssh -p 62222 admin@localhost
+```
+
+This can also be mapped to individual event brokers in the deployment via port-forward:
+
+```
+kubectl port-forward XXX-XXX-pubsubplus-0 8081:8080 &
+kubectl port-forward XXX-XXX-pubsubplus-1 8082:8080 &
+kubectl port-forward XXX-XXX-pubsubplus-2 8083:8080 &
+```
+
+#### SSH access to individual event brokers
+
+For direct access, use:
+
+```sh
+kubectl exec -it XXX-XXX-pubsubplus-<pod-ordinal> -- bash
+```
+
+### Testing data access to the event broker
+
+To test data traffic though the newly created event broker instance, visit the Solace Developer Portal [APIs & Protocols](//www.solace.dev/ ). Under each option there is a Publish/Subscribe tutorial that will help you get started and provide the specific default port to use.
+
+Use the external Public IP to access the deployment. If a port required for a protocol is not opened, refer to the [Modification example](#modification-example) how to open it up.
+
+## Troubleshooting
+
+### General Kubernetes troubleshooting hints
+https://kubernetes.io/docs/tasks/debug-application-cluster/debug-application/
+
+### Checking the reason for failed resources
+
+Run `kubectl get statefulsets,services,pods,pvc,pv` to get an understanding of the state, then drill down to get more information on a failed resource to reveal  possible Kubernetes resourcing issues, e.g.:
+```sh
+kubectl describe pvc <pvc-name>
+```
+
+### Viewing logs
+
+Detailed logs from the currently running container in a pod:
+```sh
+kubectl logs XXX-XXX-pubsubplus-0 -f  # use -f to follow live
+```
+
+It is also possible to get the logs from a previously terminated or failed container:
+```sh
+kubectl logs XXX-XXX-pubsubplus-0 -p
+```
+
+Filtering on bringup logs (helps with initial troubleshooting):
+```sh
+kubectl logs XXX-XXX-pubsubplus-0 | grep [.]sh
+```
+
+### Viewing events
+
+Kubernetes collects [all events for a cluster in one pool](//kubernetes.io/docs/tasks/debug-application-cluster/events-stackdriver ). This includes events related to the PubSub+ deployment.
+
+It is recommended to watch events when creating or upgrading a Solace deployment. Events clear after about an hour. You can query all available events:
+
+```sh
+kubectl get events -w # use -w to watch live
+```
+
+### PubSub+ Software Event Broker troubleshooting
+
+#### Pods stuck in not enough resources
+
+If pods stay in pending state and `kubectl describe pods` reveals there are not enough memory or CPU resources, check the [resource requirements of the targeted scaling tier](#cpu-and-memory-requirements) of your deployment and ensure adequate node resources are available.
+
+#### Pods stuck in no storage
+
+Pods may also stay in pending state because [storage requirements](#storage) cannot be met. Check `kubectl get pv,pvc`. PVCs and PVs should be in bound state and if not then use `kubectl describe pvc` for any issues.
+
+Unless otherwise specified, a default storage class must be available for default PubSub+ deployment configuration.
+```bash
+kubectl get storageclasses
+```
+
+#### Pods stuck in CrashLoopBackoff, Failed or Not Ready
+
+Pods stuck in CrashLoopBackoff, or Failed, or Running but not Ready "active" state, usually indicate an issue with available Kubernetes node resources or with the container OS or the event broker process start.
+
+* Try to understand the reason following earlier hints in this section.
+* Try to recreate the issue by deleting and then reinstalling the deployment - ensure to remove related PVCs if applicable as they would mount volumes with existing, possibly outdated or incompatible database - and watch the [logs](#viewing-logs) and [events](#viewing-events) from the beginning. Look for ERROR messages preceded by information that may reveal the issue.
+
+#### No Pods listed
+
+If no pods are listed related to your deployment check the StatefulSet for any clues:
+```
+kubectl describe statefulset my-release-pubsubplus
+```
+
+#### Security constraints
+
+Your Kubernetes environment's security constraints may also impact successful deployment. Review the [Security considerations](#security-considerations) section.
+
+Operator
+Broker
 Pod status
 ####	How to connect, etc.
 how to obtain the service addresses and ports specific to your deployment
@@ -957,6 +1141,9 @@ Check pod logs
 9.3	Broker stuck in bad state
 9.4	Using of Metrics
 ## Upgrade Operator
+
+### From OLM
+### From command line
 
 ### Upgrade CRD and Operator
 
