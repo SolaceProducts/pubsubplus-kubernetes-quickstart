@@ -1,5 +1,6 @@
 apiVersion: pubsubplus.solace.com/v1beta1
 kind: PubSubPlusEventBroker
 metadata:
-  name: test1
+  name: ha-example
 spec:
+  redundancy: true

@@ -8,233 +8,37 @@ metadata:
           "apiVersion": "pubsubplus.solace.com/v1beta1",
           "kind": "PubSubPlusEventBroker",
           "metadata": {
-            "name": "test1"
+            "name": "ha-example"
           },
           "spec": {
-            "developer": true,
-            "extraEnvVars": [
-              {
-                "name": "env_variable_name",
-                "value": "env_variable_value"
-              }
-            ],
-            "extraEnvVarsCM": "my-cluster-extra-env-configmap",
-            "extraEnvVarsSecret": "my-cluster-extra-env-secret",
-            "image": {
-              "pullPolicy": "IfNotPresent",
-              "repository": "solace/solace-pubsub-standard",
-              "tag": "latest"
-            },
-            "monitoring": {
-              "enabled": true,
-              "image": {
-                "pullPolicy": "Always",
-                "pullSecrets": [
-                  {
-                    "name": "regcred"
-                  }
-                ],
-                "repository": "ghcr.io/solacedev/solace_prometheus_exporter",
-                "tag": "sol-76199"
-              }
-            },
-            "nodeAssignment": [
-              {
-                "name": "Primary",
-                "spec": {
-                  "affinity": {
-                    "podAffinity": {
-                      "requiredDuringSchedulingIgnoredDuringExecution": [
-                        {
-                          "labelSelector": {
-                            "matchExpressions": [
-                              {
-                                "key": "instance",
-                                "operator": "In",
-                                "values": [
-                                  "test1"
-                                ]
-                              }
-                            ]
-                          },
-                          "topologyKey": "kubernetes.io/hostname"
-                        }
-                      ]
-                    }
-                  },
-                  "nodeSelector": {}
-                }
-              },
-              {
-                "name": "Backup",
-                "spec": {
-                  "affinity": {},
-                  "nodeSelector": {}
-                }
-              },
-              {
-                "name": "Monitor",
-                "spec": {
-                  "affinity": {},
-                  "nodeSelector": {}
-                }
-              }
-            ],
-            "podDisruptionBudgetForHA": false,
-            "redundancy": true,
-            "securityContext": {
-              "enabled": true,
-              "fsGroup": 1000002,
-              "runAsUser": 1000001
-            },
-            "service": {
-              "annotations": {},
-              "ports": [
-                {
-                  "containerPort": 2222,
-                  "name": "tcp-ssh",
-                  "protocol": "TCP",
-                  "servicePort": 2222
-                },
-                {
-                  "containerPort": 8080,
-                  "name": "tcp-semp",
-                  "protocol": "TCP",
-                  "servicePort": 8080
-                },
-                {
-                  "containerPort": 1943,
-                  "name": "tls-semp",
-                  "protocol": "TCP",
-                  "servicePort": 1943
-                },
-                {
-                  "containerPort": 55555,
-                  "name": "tcp-smf",
-                  "protocol": "TCP",
-                  "servicePort": 55555
-                },
-                {
-                  "containerPort": 55003,
-                  "name": "tcp-smfcomp",
-                  "protocol": "TCP",
-                  "servicePort": 55003
-                },
-                {
-                  "containerPort": 55443,
-                  "name": "tls-smf",
-                  "protocol": "TCP",
-                  "servicePort": 55443
-                },
-                {
-                  "containerPort": 55556,
-                  "name": "tcp-smfroute",
-                  "protocol": "TCP",
-                  "servicePort": 55556
-                },
-                {
-                  "containerPort": 8008,
-                  "name": "tcp-web",
-                  "protocol": "TCP",
-                  "servicePort": 8008
-                },
-                {
-                  "containerPort": 1443,
-                  "name": "tls-web",
-                  "protocol": "TCP",
-                  "servicePort": 1443
-                },
-                {
-                  "containerPort": 9000,
-                  "name": "tcp-rest",
-                  "protocol": "TCP",
-                  "servicePort": 9000
-                },
-                {
-                  "containerPort": 9443,
-                  "name": "tls-rest",
-                  "protocol": "TCP",
-                  "servicePort": 9443
-                },
-                {
-                  "containerPort": 5672,
-                  "name": "tcp-amqp",
-                  "protocol": "TCP",
-                  "servicePort": 5672
-                },
-                {
-                  "containerPort": 5671,
-                  "name": "tls-amqp",
-                  "protocol": "TCP",
-                  "servicePort": 5671
-                },
-                {
-                  "containerPort": 1883,
-                  "name": "tcp-mqtt",
-                  "protocol": "TCP",
-                  "servicePort": 1883
-                },
-                {
-                  "containerPort": 8883,
-                  "name": "tls-mqtt",
-                  "protocol": "TCP",
-                  "servicePort": 8883
-                },
-                {
-                  "containerPort": 8000,
-                  "name": "tcp-mqttweb",
-                  "protocol": "TCP",
-                  "servicePort": 8000
-                },
-                {
-                  "containerPort": 8443,
-                  "name": "tls-mqttweb",
-                  "protocol": "TCP",
-                  "servicePort": 8443
-                }
-              ],
-              "type": "LoadBalancer"
-            },
-            "serviceAccount": {
-              "name": "default"
-            },
-            "storage": {
-              "customVolumeMount": [
-                {
-                  "name": "Primary",
-                  "persistentVolumeClaim": {
-                    "claimName": "my-primary-pvc-name"
-                  }
-                },
-                {
-                  "name": "Backup",
-                  "persistentVolumeClaim": {
-                    "claimName": "my-backup-pvc-name"
-                  }
-                },
-                {
-                  "name": "Monitor",
-                  "persistentVolumeClaim": {
-                    "claimName": "my-monitor-pvc-name"
-                  }
-                }
-              ],
-              "messagingNodeStorageSize": "30Gi",
-              "monitorNodeStorageSize": "2Gi",
-              "slow": false,
-              "useStorageClass": "standard"
-            },
-            "timezone": "UTC",
-            "tls": {
-              "enabled": false
-            }
+            "redundancy": true
+          }
+        },
+        {
+          "apiVersion": "pubsubplus.solace.com/v1beta1",
+          "kind": "PubSubPlusEventBroker",
+          "metadata": {
+            "name": "minimum-for-developers-example"
+          },
+          "spec": {
+            "developer": true
+          }
+        },
+        {
+          "apiVersion": "pubsubplus.solace.com/v1beta1",
+          "kind": "PubSubPlusEventBroker",
+          "metadata": {
+            "name": "non-ha-standalone-example"
+          },
+          "spec": {
+            "redundancy": false
           }
         }
       ]
     capabilities: Basic Install
     operators.operatorframework.io/builder: operator-sdk-v1.25.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
-  name: pubsubplus-eventbroker-operator.v0.0.1
+  name: pubsubplus-eventbroker-operator.v1.0.0-rc.1
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -451,7 +255,8 @@ spec:
                   valueFrom:
                     fieldRef:
                       fieldPath: metadata.annotations['olm.targetNamespaces']
-                image: ghcr.io/solacedev/pubsubplus-eventbroker-operator:v0.0.1
+                image: ghcr.io/solacedev/pubsubplus-eventbroker-operator:v1.0.0-rc.1
+                imagePullPolicy: Always
                 livenessProbe:
                   httpGet:
                     path: /healthz
@@ -554,4 +359,4 @@ spec:
   provider:
     name: Solace
     url: www.solace.com
-  version: 0.0.1
+  version: 1.0.0-rc.1
