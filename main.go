@@ -37,7 +37,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	pubsubplusv1alpha1 "github.com/SolaceProducts/pubsubplus-operator/api/v1alpha1"
+	pubsubplusv1beta1 "github.com/SolaceProducts/pubsubplus-operator/api/v1beta1"
 	"github.com/SolaceProducts/pubsubplus-operator/controllers"
 	//+kubebuilder:scaffold:imports
 )
@@ -50,7 +50,7 @@ var (
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
-	utilruntime.Must(pubsubplusv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(pubsubplusv1beta1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 

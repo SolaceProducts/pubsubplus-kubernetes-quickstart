@@ -21,7 +21,7 @@ import (
 	"strconv"
 	"strings"
 
-	eventbrokerv1alpha1 "github.com/SolaceProducts/pubsubplus-operator/api/v1alpha1"
+	eventbrokerv1beta1 "github.com/SolaceProducts/pubsubplus-operator/api/v1beta1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -29,7 +29,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-func (r *PubSubPlusEventBrokerReconciler) newDeploymentForPrometheusExporter(name string, monitoringSecret *corev1.Secret, m *eventbrokerv1alpha1.PubSubPlusEventBroker) *appsv1.Deployment {
+func (r *PubSubPlusEventBrokerReconciler) newDeploymentForPrometheusExporter(name string, monitoringSecret *corev1.Secret, m *eventbrokerv1beta1.PubSubPlusEventBroker) *appsv1.Deployment {
 	dep := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
@@ -168,7 +168,7 @@ func (r *PubSubPlusEventBrokerReconciler) newDeploymentForPrometheusExporter(nam
 	return dep
 }
 
-func (r *PubSubPlusEventBrokerReconciler) newServiceForPrometheusExporter(exporter *eventbrokerv1alpha1.Monitoring, svcName string, m *eventbrokerv1alpha1.PubSubPlusEventBroker) *corev1.Service {
+func (r *PubSubPlusEventBrokerReconciler) newServiceForPrometheusExporter(exporter *eventbrokerv1beta1.Monitoring, svcName string, m *eventbrokerv1beta1.PubSubPlusEventBroker) *corev1.Service {
 	dep := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      svcName,
@@ -196,7 +196,7 @@ func (r *PubSubPlusEventBrokerReconciler) newServiceForPrometheusExporter(export
 	ctrl.SetControllerReference(m, dep, r.Scheme)
 	return dep
 }
-func getPubSubPlusEventBrokerPort(m *eventbrokerv1alpha1.Service, b *eventbrokerv1alpha1.BrokerTLS) int32 {
+func getPubSubPlusEventBrokerPort(m *eventbrokerv1beta1.Service, b *eventbrokerv1beta1.BrokerTLS) int32 {
 	if len(m.Ports) == 0 {
 		return 8080
 	}
@@ -214,28 +214,28 @@ func getPubSubPlusEventBrokerPort(m *eventbrokerv1alpha1.Service, b *eventbroker
 	return 0
 }
 
-func getPubSubPlusEventBrokerProtocol(m *eventbrokerv1alpha1.EventBrokerSpec) string {
+func getPubSubPlusEventBrokerProtocol(m *eventbrokerv1beta1.EventBrokerSpec) string {
 	if m.BrokerTLS.Enabled {
 		return "https"
 	}
 	return "http"
 }
 
-func getExporterContainerPort(m *eventbrokerv1alpha1.Monitoring) int32 {
+func getExporterContainerPort(m *eventbrokerv1beta1.Monitoring) int32 {
 	if m.MonitoringMetricsEndpoint == nil || m.MonitoringMetricsEndpoint.ContainerPort == 0 {
 		return 9628
 	}
 	return m.MonitoringMetricsEndpoint.ContainerPort
 }
 
-func getExporterServicePort(m *eventbrokerv1alpha1.Monitoring) int32 {
+func getExporterServicePort(m *eventbrokerv1beta1.Monitoring) int32 {
 	if m.MonitoringMetricsEndpoint == nil || m.MonitoringMetricsEndpoint.ServicePort == 0 {
 		return 9628
 	}
 	return m.MonitoringMetricsEndpoint.ServicePort
 }
 
-func getExporterHttpProtocolType(m *eventbrokerv1alpha1.Monitoring) string {
+func getExporterHttpProtocolType(m *eventbrokerv1beta1.Monitoring) string {
 	if m.MonitoringMetricsEndpoint != nil && len(strings.TrimSpace(m.MonitoringMetricsEndpoint.Name)) > 0 {
 		return m.MonitoringMetricsEndpoint.Name
 	} else if m.MonitoringMetricsEndpoint != nil && m.MonitoringMetricsEndpoint.ListenTLS {
@@ -244,21 +244,21 @@ func getExporterHttpProtocolType(m *eventbrokerv1alpha1.Monitoring) string {
 	return "tcp-metrics"
 }
 
-func getExporterServiceProtocol(m *eventbrokerv1alpha1.Monitoring) corev1.Protocol {
+func getExporterServiceProtocol(m *eventbrokerv1beta1.Monitoring) corev1.Protocol {
 	if m.MonitoringMetricsEndpoint == nil || m.MonitoringMetricsEndpoint.Protocol == "" {
 		return corev1.ProtocolTCP
 	}
 	return m.MonitoringMetricsEndpoint.Protocol
 }
 
-func getExporterTLSConfiguration(m *eventbrokerv1alpha1.Monitoring) string {
+func getExporterTLSConfiguration(m *eventbrokerv1beta1.Monitoring) string {
 	if m.MonitoringMetricsEndpoint == nil || !m.MonitoringMetricsEndpoint.ListenTLS {
 		return "false"
 	}
 	return strconv.FormatBool(m.MonitoringMetricsEndpoint.ListenTLS)
 }
 
-func getExporterImageDetails(bm *eventbrokerv1alpha1.MonitoringImage) string {
+func getExporterImageDetails(bm *eventbrokerv1beta1.MonitoringImage) string {
 	imageRepo := "ghcr.io/solacedev/solace_prometheus_exporter"
 	imageTag := "latest"
 
@@ -271,7 +271,7 @@ func getExporterImageDetails(bm *eventbrokerv1alpha1.MonitoringImage) string {
 	return imageRepo + ":" + imageTag
 }
 
-func getExporterImagePullPolicy(bm *eventbrokerv1alpha1.MonitoringImage) corev1.PullPolicy {
+func getExporterImagePullPolicy(bm *eventbrokerv1beta1.MonitoringImage) corev1.PullPolicy {
 	imagePullPolicy := corev1.PullIfNotPresent
 	if bm != nil && len(bm.ImagePullPolicy) > 0 {
 		imagePullPolicy = bm.ImagePullPolicy
@@ -279,7 +279,7 @@ func getExporterImagePullPolicy(bm *eventbrokerv1alpha1.MonitoringImage) corev1.
 	return imagePullPolicy
 }
 
-func getExporterImagePullSecrets(bm *eventbrokerv1alpha1.MonitoringImage) []corev1.LocalObjectReference {
+func getExporterImagePullSecrets(bm *eventbrokerv1beta1.MonitoringImage) []corev1.LocalObjectReference {
 	var imagePullSecret []corev1.LocalObjectReference
 	if bm != nil && len(bm.ImagePullSecrets) > 0 {
 		imagePullSecret = bm.ImagePullSecrets

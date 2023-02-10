@@ -22,11 +22,11 @@ import (
 
 	ctrl "sigs.k8s.io/controller-runtime"
 
-	eventbrokerv1alpha1 "github.com/SolaceProducts/pubsubplus-operator/api/v1alpha1"
+	eventbrokerv1beta1 "github.com/SolaceProducts/pubsubplus-operator/api/v1beta1"
 )
 
 // roleForEventBroker returns an pubsubpluseventbroker Role object
-func (r *PubSubPlusEventBrokerReconciler) roleForEventBroker(roleName string, m *eventbrokerv1alpha1.PubSubPlusEventBroker) *rbacv1.Role {
+func (r *PubSubPlusEventBrokerReconciler) roleForEventBroker(roleName string, m *eventbrokerv1beta1.PubSubPlusEventBroker) *rbacv1.Role {
 	dep := &rbacv1.Role{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      roleName,

@@ -22,13 +22,14 @@ import (
 	"embed"
 	"encoding/gob"
 	"fmt"
-	eventbrokerv1alpha1 "github.com/SolaceProducts/pubsubplus-operator/api/v1alpha1"
 	"hash/crc64"
+	"strconv"
+
+	eventbrokerv1beta1 "github.com/SolaceProducts/pubsubplus-operator/api/v1beta1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strconv"
 )
 
 var (
@@ -37,7 +38,7 @@ var (
 )
 
 // Returns the broker pod in the specified role
-func (r *PubSubPlusEventBrokerReconciler) getBrokerPod(ctx context.Context, m *eventbrokerv1alpha1.PubSubPlusEventBroker, brokerRole BrokerRole) (*corev1.Pod, error) {
+func (r *PubSubPlusEventBrokerReconciler) getBrokerPod(ctx context.Context, m *eventbrokerv1beta1.PubSubPlusEventBroker, brokerRole BrokerRole) (*corev1.Pod, error) {
 	// List the pods for this pubsubpluseventbroker
 	podList := &corev1.PodList{}
 	listOpts := []client.ListOption{
@@ -54,7 +55,7 @@ func (r *PubSubPlusEventBrokerReconciler) getBrokerPod(ctx context.Context, m *e
 }
 
 // Returns the TLS secret resourceVersion if it exists. If TLS is not configured or TLS secret not found it returns empty string
-func (r *PubSubPlusEventBrokerReconciler) tlsSecretHash(ctx context.Context, m *eventbrokerv1alpha1.PubSubPlusEventBroker) string {
+func (r *PubSubPlusEventBrokerReconciler) tlsSecretHash(ctx context.Context, m *eventbrokerv1beta1.PubSubPlusEventBroker) string {
 	var tlsSecretVersion string = ""
 	if m.Spec.BrokerTLS.ServerTLsConfigSecret != "" {
 		secretName := m.Spec.BrokerTLS.ServerTLsConfigSecret
@@ -67,21 +68,21 @@ func (r *PubSubPlusEventBrokerReconciler) tlsSecretHash(ctx context.Context, m *
 	return tlsSecretVersion
 }
 
-func brokerSpecHash(s eventbrokerv1alpha1.EventBrokerSpec) string {
+func brokerSpecHash(s eventbrokerv1beta1.EventBrokerSpec) string {
 	brokerSpecSubset := s.DeepCopy()
 	// Mask anything that is not relevant to the StatefulSet / broker Pods
-	brokerSpecSubset.Monitoring = eventbrokerv1alpha1.Monitoring{}
+	brokerSpecSubset.Monitoring = eventbrokerv1beta1.Monitoring{}
 	brokerSpecSubset.Service.Annotations = nil
-	brokerSpecSubset.Service.ServiceType = corev1.ServiceTypeLoadBalancer        // cannot use nil, setting it a constant value
-	brokerSpecSubset.Redundancy = false                                          // change of redundancy is not supported for now
-	brokerSpecSubset.ServiceAccount = eventbrokerv1alpha1.BrokerServiceAccount{} // change of SA is not supported
+	brokerSpecSubset.Service.ServiceType = corev1.ServiceTypeLoadBalancer       // cannot use nil, setting it a constant value
+	brokerSpecSubset.Redundancy = false                                         // change of redundancy is not supported for now
+	brokerSpecSubset.ServiceAccount = eventbrokerv1beta1.BrokerServiceAccount{} // change of SA is not supported
 	brokerSpecSubset.AdminCredentialsSecret = ""
 	brokerSpecSubset.PreSharedAuthKeySecret = ""
 	brokerSpecSubset.PodDisruptionBudgetForHA = false // does not affect the statefulset/pod
 	return hash(brokerSpecSubset.String())
 }
 
-func brokerServiceHash(s eventbrokerv1alpha1.EventBrokerSpec) string {
+func brokerServiceHash(s eventbrokerv1beta1.EventBrokerSpec) string {
 	brokerServiceSubset := s.Service.DeepCopy()
 	return hash(brokerServiceSubset.String())
 }

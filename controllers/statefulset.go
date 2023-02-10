@@ -30,11 +30,11 @@ import (
 
 	ctrl "sigs.k8s.io/controller-runtime"
 
-	eventbrokerv1alpha1 "github.com/SolaceProducts/pubsubplus-operator/api/v1alpha1"
+	eventbrokerv1beta1 "github.com/SolaceProducts/pubsubplus-operator/api/v1beta1"
 )
 
 // statefulsetForEventBroker returns a new pubsubpluseventbroker StatefulSet object
-func (r *PubSubPlusEventBrokerReconciler) createStatefulsetForEventBroker(stsName string, ctx context.Context, m *eventbrokerv1alpha1.PubSubPlusEventBroker, sa *corev1.ServiceAccount, adminSecret *corev1.Secret, preSharedAuthKeySecret *corev1.Secret, monitoringSecret *corev1.Secret) *appsv1.StatefulSet {
+func (r *PubSubPlusEventBrokerReconciler) createStatefulsetForEventBroker(stsName string, ctx context.Context, m *eventbrokerv1beta1.PubSubPlusEventBroker, sa *corev1.ServiceAccount, adminSecret *corev1.Secret, preSharedAuthKeySecret *corev1.Secret, monitoringSecret *corev1.Secret) *appsv1.StatefulSet {
 	nodeType := getBrokerNodeType(stsName)
 
 	// Determine broker sizing
@@ -99,7 +99,7 @@ func (r *PubSubPlusEventBrokerReconciler) createStatefulsetForEventBroker(stsNam
 }
 
 // statefulsetForEventBroker returns an updated pubsubpluseventbroker StatefulSet object
-func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(sts *appsv1.StatefulSet, ctx context.Context, m *eventbrokerv1alpha1.PubSubPlusEventBroker, sa *corev1.ServiceAccount, adminSecret *corev1.Secret, preSharedAuthKeySecret *corev1.Secret, monitoringSecret *corev1.Secret) {
+func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(sts *appsv1.StatefulSet, ctx context.Context, m *eventbrokerv1beta1.PubSubPlusEventBroker, sa *corev1.ServiceAccount, adminSecret *corev1.Secret, preSharedAuthKeySecret *corev1.Secret, monitoringSecret *corev1.Secret) {
 	DefaultServiceConfig, _ := scripts.ReadFile("configs/default-service.json")
 	brokerServicesName := getObjectName("BrokerService", m.Name)
 	adminSecretName := adminSecret.Name
@@ -513,7 +513,7 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(sts *a
 		}
 		sts.Spec.Template.Spec.Containers[0].Ports = ports
 	} else {
-		portConfig := eventbrokerv1alpha1.Service{}
+		portConfig := eventbrokerv1beta1.Service{}
 		err := json.Unmarshal([]byte(DefaultServiceConfig), &portConfig)
 		if err == nil {
 			ports := make([]corev1.ContainerPort, len(portConfig.Ports))
@@ -608,7 +608,7 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(sts *a
 
 }
 
-func getBrokerImageDetails(bm *eventbrokerv1alpha1.BrokerImage) string {
+func getBrokerImageDetails(bm *eventbrokerv1beta1.BrokerImage) string {
 	imageRepo := bm.Repository
 	imageTag := bm.Tag
 	if len(strings.TrimSpace(bm.Repository)) == 0 {
@@ -627,14 +627,14 @@ func getTimezone(tz string) string {
 	return tz
 }
 
-func getBrokerMessageNodeStorageSize(st *eventbrokerv1alpha1.Storage) string {
+func getBrokerMessageNodeStorageSize(st *eventbrokerv1beta1.Storage) string {
 	if st == nil || len(strings.TrimSpace(st.MessagingNodeStorageSize)) == 0 || st.MessagingNodeStorageSize == "0" {
 		return "30Gi"
 	}
 	return st.MessagingNodeStorageSize
 }
 
-func getNodeAffinityDetails(na []eventbrokerv1alpha1.NodeAssignment, nodeType string) *corev1.Affinity {
+func getNodeAffinityDetails(na []eventbrokerv1beta1.NodeAssignment, nodeType string) *corev1.Affinity {
 	affinity := &corev1.Affinity{}
 	for _, nodeAssignment := range na {
 		if strings.Contains(
@@ -647,7 +647,7 @@ func getNodeAffinityDetails(na []eventbrokerv1alpha1.NodeAssignment, nodeType st
 	return affinity
 }
 
-func getNodeSelectorDetails(na []eventbrokerv1alpha1.NodeAssignment, nodeType string) map[string]string {
+func getNodeSelectorDetails(na []eventbrokerv1beta1.NodeAssignment, nodeType string) map[string]string {
 	nodeSelector := map[string]string{}
 	for _, nodeAssignment := range na {
 		if strings.Contains(
@@ -660,7 +660,7 @@ func getNodeSelectorDetails(na []eventbrokerv1alpha1.NodeAssignment, nodeType st
 	return nodeSelector
 }
 
-func usesEphemeralStorageForMonitoringNode(st *eventbrokerv1alpha1.Storage, nodeType string) bool {
+func usesEphemeralStorageForMonitoringNode(st *eventbrokerv1beta1.Storage, nodeType string) bool {
 	var useEphemeralStorageForMonitoringNode = false
 	if st == nil && nodeType == "monitor" {
 		useEphemeralStorageForMonitoringNode = false
@@ -672,7 +672,7 @@ func usesEphemeralStorageForMonitoringNode(st *eventbrokerv1alpha1.Storage, node
 	return useEphemeralStorageForMonitoringNode
 }
 
-func usesEphemeralStorageForMessageNode(st *eventbrokerv1alpha1.Storage, nodeType string) bool {
+func usesEphemeralStorageForMessageNode(st *eventbrokerv1beta1.Storage, nodeType string) bool {
 	var useEphemeralStorageForMessageNode = false
 	if st == nil && nodeType != "monitor" {
 		useEphemeralStorageForMessageNode = false

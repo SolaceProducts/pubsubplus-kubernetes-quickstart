@@ -21,10 +21,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 
-	eventbrokerv1alpha1 "github.com/SolaceProducts/pubsubplus-operator/api/v1alpha1"
+	eventbrokerv1beta1 "github.com/SolaceProducts/pubsubplus-operator/api/v1beta1"
 )
 
-func (r *PubSubPlusEventBrokerReconciler) discoveryserviceForEventBroker(dsvcName string, m *eventbrokerv1alpha1.PubSubPlusEventBroker) *corev1.Service {
+func (r *PubSubPlusEventBrokerReconciler) discoveryserviceForEventBroker(dsvcName string, m *eventbrokerv1beta1.PubSubPlusEventBroker) *corev1.Service {
 	dep := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      dsvcName,

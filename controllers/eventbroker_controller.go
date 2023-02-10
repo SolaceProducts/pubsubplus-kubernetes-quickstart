@@ -41,7 +41,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	ctrllog "sigs.k8s.io/controller-runtime/pkg/log"
 
-	eventbrokerv1alpha1 "github.com/SolaceProducts/pubsubplus-operator/api/v1alpha1"
+	eventbrokerv1beta1 "github.com/SolaceProducts/pubsubplus-operator/api/v1beta1"
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/fields"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -95,7 +95,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 	var stsP, stsB, stsM *appsv1.StatefulSet
 
 	// Fetch the PubSubPlusEventBroker instance
-	pubsubpluseventbroker := &eventbrokerv1alpha1.PubSubPlusEventBroker{}
+	pubsubpluseventbroker := &eventbrokerv1beta1.PubSubPlusEventBroker{}
 	err := r.Get(ctx, req.NamespacedName, pubsubpluseventbroker)
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -435,7 +435,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 	}
 
 	// prep variables to be used next
-	automatedPodUpdateStrategy := (pubsubpluseventbroker.Spec.UpdateStrategy != eventbrokerv1alpha1.ManualPodRestartUpdateStrategy)
+	automatedPodUpdateStrategy := (pubsubpluseventbroker.Spec.UpdateStrategy != eventbrokerv1beta1.ManualPodRestartUpdateStrategy)
 	brokerSpecHash := brokerSpecHash(pubsubpluseventbroker.Spec)
 	tlsSecretHash := r.tlsSecretHash(ctx, pubsubpluseventbroker)
 	// Check if Primary StatefulSet already exists, if not create a new one
@@ -731,7 +731,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 			brokerImage = s.Image
 		}
 	}
-	pubsubpluseventbroker.Status.Broker = eventbrokerv1alpha1.BrokerSubStatus{
+	pubsubpluseventbroker.Status.Broker = eventbrokerv1beta1.BrokerSubStatus{
 		HADeployment:           strconv.FormatBool(haDeployment),
 		TLSSupport:             strconv.FormatBool(pubsubpluseventbroker.Spec.BrokerTLS.Enabled),
 		TLSSecret:              pubsubpluseventbroker.Spec.BrokerTLS.ServerTLsConfigSecret,
@@ -741,7 +741,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 		StatefulSets:           statefulSets,
 		BrokerImage:            brokerImage,
 	}
-	pubsubpluseventbroker.Status.Monitoring = eventbrokerv1alpha1.MonitoringSubStatus{
+	pubsubpluseventbroker.Status.Monitoring = eventbrokerv1beta1.MonitoringSubStatus{
 		Enabled: strconv.FormatBool(prometheusExporterEnabled),
 	}
 	if prometheusExporterEnabled {
@@ -774,17 +774,17 @@ func getPodNames(pods []corev1.Pod) []string {
 }
 
 // emitResourceSuccessEvent
-func (r *PubSubPlusEventBrokerReconciler) emitResourceSuccessEvent(pubsubpluseventbroker *eventbrokerv1alpha1.PubSubPlusEventBroker, resourceType string, resourceName string) {
+func (r *PubSubPlusEventBrokerReconciler) emitResourceSuccessEvent(pubsubpluseventbroker *eventbrokerv1beta1.PubSubPlusEventBroker, resourceType string, resourceName string) {
 	r.Recorder.Event(pubsubpluseventbroker, corev1.EventTypeNormal, "Created", fmt.Sprintf("Created %s %s", resourceType, resourceName))
 }
 
 // emitResourceRestartEvent
-func (r *PubSubPlusEventBrokerReconciler) emitResourceRestartEvent(pubsubpluseventbroker *eventbrokerv1alpha1.PubSubPlusEventBroker, resourceType string, resourceName string) {
+func (r *PubSubPlusEventBrokerReconciler) emitResourceRestartEvent(pubsubpluseventbroker *eventbrokerv1beta1.PubSubPlusEventBroker, resourceType string, resourceName string) {
 	r.Recorder.Event(pubsubpluseventbroker, corev1.EventTypeNormal, "Restarted", fmt.Sprintf("Restarted outdated %s %s", resourceType, resourceName))
 }
 
 // recordErrorState is the central point to log, emit event and set warning status condition if an error has been detected
-func (r *PubSubPlusEventBrokerReconciler) recordErrorState(ctx context.Context, log logr.Logger, pubsubpluseventbroker *eventbrokerv1alpha1.PubSubPlusEventBroker, err error, reason ConditionReason, msg string, keysAndValues ...interface{}) {
+func (r *PubSubPlusEventBrokerReconciler) recordErrorState(ctx context.Context, log logr.Logger, pubsubpluseventbroker *eventbrokerv1beta1.PubSubPlusEventBroker, err error, reason ConditionReason, msg string, keysAndValues ...interface{}) {
 	log.Error(err, msg, keysAndValues...)
 	r.Recorder.Event(pubsubpluseventbroker, corev1.EventTypeWarning, string(reason), msg)
 	r.SetCondition(ctx, log, pubsubpluseventbroker, NoWarningsCondition, metav1.ConditionFalse, reason, msg)
@@ -794,9 +794,9 @@ func (r *PubSubPlusEventBrokerReconciler) recordErrorState(ctx context.Context, 
 func (r *PubSubPlusEventBrokerReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	// Need to watch non-managed resources
 	// To understand following code refer to https://kubebuilder.io/reference/watching-resources/externally-managed.html#allow-for-linking-of-resources-in-the-spec
-	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &eventbrokerv1alpha1.PubSubPlusEventBroker{}, dependencyTlsSecretField, func(rawObj client.Object) []string {
+	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &eventbrokerv1beta1.PubSubPlusEventBroker{}, dependencyTlsSecretField, func(rawObj client.Object) []string {
 		// Extract the secret name from the EventBroker Spec, if one is provided
-		eventBroker := rawObj.(*eventbrokerv1alpha1.PubSubPlusEventBroker)
+		eventBroker := rawObj.(*eventbrokerv1beta1.PubSubPlusEventBroker)
 		if eventBroker.Spec.BrokerTLS.ServerTLsConfigSecret == "" {
 			return nil
 		}
@@ -806,7 +806,7 @@ func (r *PubSubPlusEventBrokerReconciler) SetupWithManager(mgr ctrl.Manager) err
 	}
 	// This describes rules to manage both owned and external reources
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&eventbrokerv1alpha1.PubSubPlusEventBroker{}).
+		For(&eventbrokerv1beta1.PubSubPlusEventBroker{}).
 		Owns(&appsv1.StatefulSet{}).
 		Owns(&appsv1.Deployment{}).
 		Owns(&corev1.ServiceAccount{}).
@@ -825,7 +825,7 @@ func (r *PubSubPlusEventBrokerReconciler) SetupWithManager(mgr ctrl.Manager) err
 }
 
 func (r *PubSubPlusEventBrokerReconciler) reconcileRequestsForEventBrokersDependingOnTlsSecret(secret client.Object) []reconcile.Request {
-	ebDeployments := &eventbrokerv1alpha1.PubSubPlusEventBrokerList{}
+	ebDeployments := &eventbrokerv1beta1.PubSubPlusEventBrokerList{}
 	listOps := &client.ListOptions{
 		FieldSelector: fields.OneTermEqualSelector(dependencyTlsSecretField, secret.GetName()),
 		Namespace:     secret.GetNamespace(),

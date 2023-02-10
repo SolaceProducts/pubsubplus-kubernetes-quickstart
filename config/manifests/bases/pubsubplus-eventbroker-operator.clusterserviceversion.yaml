@@ -1,4 +1,4 @@
-apiVersion: operators.coreos.com/v1alpha1
+apiVersion: operators.coreos.com/v1beta1
 kind: ClusterServiceVersion
 metadata:
   annotations:
@@ -15,7 +15,7 @@ spec:
       displayName: PubSubPlusEventBroker
       kind: PubSubPlusEventBroker
       name: pubsubpluseventbrokers.pubsubplus.solace.com
-      version: v1alpha1
+      version: v1beta1
   description: PubSubPlus Event Broker Operator description, TODO
   displayName: PubSubPlus Event Broker Operator
   icon:

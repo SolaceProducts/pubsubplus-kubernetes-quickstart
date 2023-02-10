@@ -17,14 +17,14 @@ limitations under the License.
 package controllers
 
 import (
-	eventbrokerv1alpha1 "github.com/SolaceProducts/pubsubplus-operator/api/v1alpha1"
+	eventbrokerv1beta1 "github.com/SolaceProducts/pubsubplus-operator/api/v1beta1"
 	policyv1 "k8s.io/api/policy/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-func (r *PubSubPlusEventBrokerReconciler) newPodDisruptionBudgetForHADeployment(name string, m *eventbrokerv1alpha1.PubSubPlusEventBroker) *policyv1.PodDisruptionBudget {
+func (r *PubSubPlusEventBrokerReconciler) newPodDisruptionBudgetForHADeployment(name string, m *eventbrokerv1beta1.PubSubPlusEventBroker) *policyv1.PodDisruptionBudget {
 	pdb := &policyv1.PodDisruptionBudget{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,

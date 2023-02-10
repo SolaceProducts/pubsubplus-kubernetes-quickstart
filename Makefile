@@ -6,7 +6,7 @@
 VERSION ?= 0.0.1
 
 # API_VERSION defines the API version for the PubSubPlusEventBroker CRD
-API_VERSION ?= v1alpha1
+API_VERSION ?= v1beta1
 
 # Watch namespace for local run - if env not defined then default all namespaces for development purposes
 WATCH_NAMESPACE ?= ""

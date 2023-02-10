@@ -1,5 +1,5 @@
 ---
-apiVersion: pubsubplus.solace.com/v1alpha1
+apiVersion: pubsubplus.solace.com/v1beta1
 kind: PubSubPlusEventBroker
 metadata:
   name: test-ha

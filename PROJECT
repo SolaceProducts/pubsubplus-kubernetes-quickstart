@@ -14,6 +14,6 @@ resources:
   domain: solace.com
   group: pubsubplus
   kind: PubSubPlusEventBroker
-  path: github.com/SolaceProducts/pubsubplus-eventbroker-operator/api/v1alpha1
-  version: v1alpha1
+  path: github.com/SolaceProducts/pubsubplus-eventbroker-operator/api/v1beta1
+  version: v1beta1
 version: "3"

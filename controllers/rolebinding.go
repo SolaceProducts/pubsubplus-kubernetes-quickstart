@@ -23,11 +23,11 @@ import (
 
 	ctrl "sigs.k8s.io/controller-runtime"
 
-	eventbrokerv1alpha1 "github.com/SolaceProducts/pubsubplus-operator/api/v1alpha1"
+	eventbrokerv1beta1 "github.com/SolaceProducts/pubsubplus-operator/api/v1beta1"
 )
 
 // roleBindingForEventBroker returns an pubsubpluseventbroker RoleBinding object
-func (r *PubSubPlusEventBrokerReconciler) roleBindingForEventBroker(rbName string, m *eventbrokerv1alpha1.PubSubPlusEventBroker, sa *corev1.ServiceAccount) *rbacv1.RoleBinding {
+func (r *PubSubPlusEventBrokerReconciler) roleBindingForEventBroker(rbName string, m *eventbrokerv1beta1.PubSubPlusEventBroker, sa *corev1.ServiceAccount) *rbacv1.RoleBinding {
 	dep := &rbacv1.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rbName,

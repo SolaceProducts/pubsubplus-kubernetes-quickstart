@@ -1,11 +1,11 @@
-apiVersion: operators.coreos.com/v1alpha1
+apiVersion: operators.coreos.com/v1beta1
 kind: ClusterServiceVersion
 metadata:
   annotations:
     alm-examples: |-
       [
         {
-          "apiVersion": "pubsubplus.solace.com/v1alpha1",
+          "apiVersion": "pubsubplus.solace.com/v1beta1",
           "kind": "PubSubPlusEventBroker",
           "metadata": {
             "name": "test1"
@@ -245,7 +245,7 @@ spec:
       displayName: Pub Sub Plus Event Broker
       kind: PubSubPlusEventBroker
       name: pubsubpluseventbrokers.pubsubplus.solace.com
-      version: v1alpha1
+      version: v1beta1
   description: PubSubPlus Event Broker Operator description, TODO
   displayName: PubSubPlus Event Broker Operator
   icon:

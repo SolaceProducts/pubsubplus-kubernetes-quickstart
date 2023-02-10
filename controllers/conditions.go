@@ -19,7 +19,7 @@ package controllers
 import (
 	"context"
 
-	eventbrokerv1alpha1 "github.com/SolaceProducts/pubsubplus-operator/api/v1alpha1"
+	eventbrokerv1beta1 "github.com/SolaceProducts/pubsubplus-operator/api/v1beta1"
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -50,9 +50,9 @@ const (
 )
 
 // sets or updates a status condition using helper from meta
-func (r *PubSubPlusEventBrokerReconciler) SetCondition(ctx context.Context, log logr.Logger, eb *eventbrokerv1alpha1.PubSubPlusEventBroker, condition ConditionName, status metav1.ConditionStatus, reason ConditionReason, message string) error {
+func (r *PubSubPlusEventBrokerReconciler) SetCondition(ctx context.Context, log logr.Logger, eb *eventbrokerv1beta1.PubSubPlusEventBroker, condition ConditionName, status metav1.ConditionStatus, reason ConditionReason, message string) error {
 	// Work with the latest version of PubSubPlusEventBroker otherwise there may be conflict
-	latesteb := &eventbrokerv1alpha1.PubSubPlusEventBroker{}
+	latesteb := &eventbrokerv1beta1.PubSubPlusEventBroker{}
 	error := r.Get(ctx, types.NamespacedName{Name: eb.Name, Namespace: eb.Namespace}, latesteb)
 	if error == nil {
 		if latesteb.Status.Conditions == nil {

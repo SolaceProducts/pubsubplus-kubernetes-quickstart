@@ -26,11 +26,11 @@ import (
 
 	ctrl "sigs.k8s.io/controller-runtime"
 
-	eventbrokerv1alpha1 "github.com/SolaceProducts/pubsubplus-operator/api/v1alpha1"
+	eventbrokerv1beta1 "github.com/SolaceProducts/pubsubplus-operator/api/v1beta1"
 )
 
 // secretForEventBroker returns an pubsubpluseventbroker Secret object
-func (r *PubSubPlusEventBrokerReconciler) secretForEventBroker(adminSecretName string, m *eventbrokerv1alpha1.PubSubPlusEventBroker) *corev1.Secret {
+func (r *PubSubPlusEventBrokerReconciler) secretForEventBroker(adminSecretName string, m *eventbrokerv1beta1.PubSubPlusEventBroker) *corev1.Secret {
 
 	randomPassword := generateSimplePassword(10)
 
@@ -53,7 +53,7 @@ func (r *PubSubPlusEventBrokerReconciler) secretForEventBroker(adminSecretName s
 }
 
 // createPreSharedAuthKeySecret returns an PubSubPlusEventBroker PreSharedAuthKeySecret object
-func (r *PubSubPlusEventBrokerReconciler) createPreSharedAuthKeySecret(preSharedAuthKeySecretName string, m *eventbrokerv1alpha1.PubSubPlusEventBroker) *corev1.Secret {
+func (r *PubSubPlusEventBrokerReconciler) createPreSharedAuthKeySecret(preSharedAuthKeySecretName string, m *eventbrokerv1beta1.PubSubPlusEventBroker) *corev1.Secret {
 
 	randomPassword := generateSimplePassword(50)
 
@@ -73,7 +73,7 @@ func (r *PubSubPlusEventBrokerReconciler) createPreSharedAuthKeySecret(preShared
 }
 
 // monitoringSecretForEventBroker returns a Secret object to be used by Exporter
-func (r *PubSubPlusEventBrokerReconciler) monitoringSecretForEventBroker(monitoringSecretName string, m *eventbrokerv1alpha1.PubSubPlusEventBroker) *corev1.Secret {
+func (r *PubSubPlusEventBrokerReconciler) monitoringSecretForEventBroker(monitoringSecretName string, m *eventbrokerv1beta1.PubSubPlusEventBroker) *corev1.Secret {
 
 	randomPassword := generateSimplePassword(10)
 

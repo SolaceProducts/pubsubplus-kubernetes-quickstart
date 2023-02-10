@@ -22,10 +22,10 @@ import (
 
 	ctrl "sigs.k8s.io/controller-runtime"
 
-	eventbrokerv1alpha1 "github.com/SolaceProducts/pubsubplus-operator/api/v1alpha1"
+	eventbrokerv1beta1 "github.com/SolaceProducts/pubsubplus-operator/api/v1beta1"
 )
 
-func (r *PubSubPlusEventBrokerReconciler) configmapForEventBroker(cmName string, m *eventbrokerv1alpha1.PubSubPlusEventBroker) *corev1.ConfigMap {
+func (r *PubSubPlusEventBrokerReconciler) configmapForEventBroker(cmName string, m *eventbrokerv1beta1.PubSubPlusEventBroker) *corev1.ConfigMap {
 
 	InitSh, _ := scripts.ReadFile("brokerscripts/init.sh")
 	StartupBrokerSh, _ := scripts.ReadFile("brokerscripts/startup-broker.sh")

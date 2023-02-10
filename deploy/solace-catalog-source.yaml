@@ -1,11 +1,11 @@
-apiVersion: operators.coreos.com/v1alpha1
+apiVersion: operators.coreos.com/v1beta1
 kind: CatalogSource
 metadata:
   name: solace-catalog
   namespace: olm
 spec:
   sourceType: grpc
-  image: ghcr.io/solacedev/pubsubplus-eventbroker-operator-v1alpha1-catalog:latest
+  image: ghcr.io/solacedev/pubsubplus-eventbroker-operator-v1beta1-catalog:latest
   grpcPodConfig:
     securityContextConfig: restricted
   secrets:

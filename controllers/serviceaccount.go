@@ -22,11 +22,11 @@ import (
 
 	ctrl "sigs.k8s.io/controller-runtime"
 
-	eventbrokerv1alpha1 "github.com/SolaceProducts/pubsubplus-operator/api/v1alpha1"
+	eventbrokerv1beta1 "github.com/SolaceProducts/pubsubplus-operator/api/v1beta1"
 )
 
 // serviceAccountForEventBroker returns an pubsubpluseventbroker ServiceAccount object
-func (r *PubSubPlusEventBrokerReconciler) serviceAccountForEventBroker(saName string, m *eventbrokerv1alpha1.PubSubPlusEventBroker) *corev1.ServiceAccount {
+func (r *PubSubPlusEventBrokerReconciler) serviceAccountForEventBroker(saName string, m *eventbrokerv1beta1.PubSubPlusEventBroker) *corev1.ServiceAccount {
 	dep := &corev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      saName,

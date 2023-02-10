@@ -82,13 +82,13 @@ kubectl get po -n olm
 
 # Create CatalogSource. First need to create pullsecret, then apply manifest.
 kubectl create secret generic regcred --from-file=.dockerconfigjson=${HOME}/.docker/config.json --type=kubernetes.io/dockerconfigjson -n olm
-kubectl apply -f https://raw.githubusercontent.com/SolaceDev/pubsubplus-kubernetes-operator/v1alpha1/deploy/solace-catalog-source.yaml
+kubectl apply -f https://raw.githubusercontent.com/SolaceDev/pubsubplus-kubernetes-operator/v1beta1/deploy/solace-catalog-source.yaml
 # Wait about a minute. Test if PackageManifest has been created
 kubectl get packagemanifest -n olm | grep pubsubplus
 
 # Now create SubScription on "operators" namespace. Also need to create pullsecret here, then apply.
 kubectl create secret generic regcred --from-file=.dockerconfigjson=${HOME}/.docker/config.json --type=kubernetes.io/dockerconfigjson -n operators
-kubectl apply -f https://raw.githubusercontent.com/SolaceDev/pubsubplus-kubernetes-operator/v1alpha1/deploy/solace-pubsubpluseventbroker-sub.yaml
+kubectl apply -f https://raw.githubusercontent.com/SolaceDev/pubsubplus-kubernetes-operator/v1beta1/deploy/solace-pubsubpluseventbroker-sub.yaml
 # Wait a few minutes then check status of the InstallPlan
 kubectl get ip -n operators
 # Check if operator pod is starting in operators namespace
@@ -114,7 +114,7 @@ kubectl create secret generic regcred \
   -n pubsubplus-operator-system
 # END: internal use
 # Download manifest for possible edit
-wget https://raw.githubusercontent.com/SolaceDev/pubsubplus-kubernetes-operator/v1alpha1/deploy/deploy.yaml
+wget https://raw.githubusercontent.com/SolaceDev/pubsubplus-kubernetes-operator/v1beta1/deploy/deploy.yaml
 # Manifest creates a namespace and all K8s resources for the Operator deployment
 kubectl apply -f deploy.yaml
 # Wait for deployment to complete
@@ -142,7 +142,7 @@ This deployment requires a minimum of 1 CPU and 4 GB of memory available to the 
 ```bash
 # Create deployment manifest
 echo "
-apiVersion: pubsubplus.solace.com/v1alpha1
+apiVersion: pubsubplus.solace.com/v1beta1
 kind: PubSubPlusEventBroker
 metadata:
   name: dev-example
@@ -162,7 +162,7 @@ A minimum of 2 CPUs and 4 GB of memory must be available to the event broker pod
 ```bash
 # Create deployment manifest
 echo "
-apiVersion: pubsubplus.solace.com/v1alpha1
+apiVersion: pubsubplus.solace.com/v1beta1
 kind: PubSubPlusEventBroker
 metadata:
   name: non-ha-example
@@ -183,7 +183,7 @@ The minimum resource requirements are 2 CPU and 4 GB of memory available to each
 ```bash
 # Create deployment manifest
 echo "
-apiVersion: pubsubplus.solace.com/v1alpha1
+apiVersion: pubsubplus.solace.com/v1beta1
 kind: PubSubPlusEventBroker
 metadata:
   name: ha-example
