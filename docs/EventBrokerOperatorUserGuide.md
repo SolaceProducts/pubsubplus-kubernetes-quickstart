@@ -860,6 +860,8 @@ kubectl port-forward svc/grafana 3000 -n monitoring &
 ```
 Point your browser to [localhost:9090](http://localhost:9090) for Prometheus and to [localhost:3000](http://localhost:3000) for Grafana.
 
+Grafana requires an initial login using the credentials `admin/admin`.
+
 #### Creating a ServiceMonitor object
 
 With above adjustments the Prometheus Operator is now watching all namespaces for `ServiceMonitor` custom resource objects. A `ServiceMonitor` defines which metrics services shall be added to the Prometheus targets. It is namespace scoped so it must be added to the namespace where the event broker has been deployed.
@@ -868,25 +870,37 @@ Example:
 ```yaml
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
+metadata:
+  name: test-monitor
 spec:
   endpoints:
     - interval: 10s
-      path: "/solace-std"
+      path: /solace-std
+      port: tcp-metrics
+    - interval: 10s
+      path: /solace-det
+      port: tcp-metrics
+    - interval: 10s
+      path: /solace-broker-std
       port: tcp-metrics
   jobLabel: solace-std
   selector:
     matchLabels:
-      app.kubernetes.io/name=pubsubpluseventbroker
-      app.kubernetes.io/component=metricsexporter
-      app.kubernetes.io/instance=<eventbroker-deployment-name>
+      app.kubernetes.io/name: pubsubpluseventbroker
+      app.kubernetes.io/component: metricsexporter
+      app.kubernetes.io/instance: <eventbroker-deployment-name>
 ```
-This will add the deployment's metrics service (by matching labels) to the Prometheus targets. The metrics endpoint will be accessed at the metrics port named `tcp-metrics` and the PubSub+ Exporter path `/solace-std` will be added to the scrape request REST API calls.
+This will add the deployment's metrics service (by matching labels) to the Prometheus targets. Refresh the Prometheus Status "Targets" in the Web Management UI to see the newly added target.
+
+The metrics endpoint will be accessed at the metrics port named `tcp-metrics` and the PubSub+ Exporter path `/solace-std` will be added to the scrape request REST API calls.
 
 The ServiceMonitor's selector may be adjusted to match all broker deployments in the namespace by removing `instance` from the matched labels. Also, multiple endpoints may be listed to obtain the combination of metrics from those Exporter paths.
 
 ### Example Grafana Visualization of Broker Metrics
 
+In the Grafana Web Management UI, select "Dashboards"->"Import dashboard"->"Upload JSON File". Upload `deploy/grafana_example.json`. This shall open up a sample Grafana dashboard. The following image shows an example after running some messaging traffic through the broker deployment.
 
+![alt text](/docs/images/GrafanaDashboard.png "Grafana dashboard")
 
 ## Deployment Guide
 
