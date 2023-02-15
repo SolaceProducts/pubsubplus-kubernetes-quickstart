@@ -62,10 +62,11 @@ Contents:
       - [Using Network Policies](#using-network-policies)
   - [Exposing Metrics to Prometheus](#exposing-metrics-to-prometheus)
     - [Enabling and configuring the Broker Metrics Endpoint](#enabling-and-configuring-the-broker-metrics-endpoint)
+    - [Available Broker Metrics](#available-broker-metrics)
     - [Connecting with Prometheus](#connecting-with-prometheus)
       - [Reference Prometheus Stack Deployment](#reference-prometheus-stack-deployment)
       - [Creating a ServiceMonitor object](#creating-a-servicemonitor-object)
-    - [Example Grafana Visualization of Broker Metrics](#example-grafana-visualization-of-broker-metrics)
+    - [Grafana Visualization of Broker Metrics](#grafana-visualization-of-broker-metrics)
   - [Deployment Guide](#deployment-guide)
     - [Quick Start](#quick-start)
       - [Validating the deployment](#validating-the-deployment)
@@ -789,13 +790,13 @@ In a controlled environment it may be necessary to configure a [NetworkPolicy](h
 
 Refer to the [Prometheus Monitoring Support section](#prometheus-monitoring-support) for an overview of how metrics are exposed.
 
-This section describes how to enable and configure the metrics exporter on the broker deployment, configure Prometheus to use that and finally an example setup of Grafana to visualize broker metrics.
+This section describes how to enable and configure the metrics exporter on the broker deployment, configure Prometheus to use that, the available metrics from the event broker, and finally an example setup of Grafana to visualize broker metrics.
 
 ### Enabling and configuring the Broker Metrics Endpoint
 
-To enable monitoring with all defaults, simply add `spec.monitoring.enabled: true` to the broker spec. This will setup a metrics service endpont which offers a REST API, returning broker metrics to GET requests.
+To enable monitoring with all defaults, simply add `spec.monitoring.enabled: true` to the broker spec. This will setup a metrics service endpont through a Prometheus Metrics Service which offers a REST API that responds with broker metrics to GET requests.
 
-This more advanced example shows a configuration with additional spec of pulling the exporter image from a private repo using pull secret, the service type as Kubernetes internal  and also TLS enabled.
+The next more advanced example shows a configuration with additional spec of defining the exporter image pulled from a private repo using a pull secret, the service type as Kubernetes internal `ClusterIP` and also TLS enabled for the service with key and certificate contained in Secret `monitoring-tls`. The way to create the Secret is the same as for the [broker TLS configuration](#configuring-tls-for-broker-services).
 ```yaml
 spec:
   monitoring:
@@ -810,6 +811,115 @@ spec:
       serviceType: ClusterIP   # This is the default, exposes service within Kubernetes only      
       endpointTlsConfigSecret: monitoring-tls
 ```
+
+### Available Broker Metrics
+
+The broker metrics are exposed through the Prometheus Metrics Service REST API (GET only) at port 9628:
+```bash
+kubectl describe svc <eventbroker-deployment-name>-pubsubplus-prometheus-metrics
+```
+
+There are two sets of metrics exposed through two paths:
+* Standard: [http://`<service-ip>`:9628/solace-std]()
+* Details: [http://`<service-ip>`:9628/solace-det]()
+>Note: `<service-ip>` is the Kubernetes internal ClusterIP address of the Prometheus Metrics Service.  Use `kubectl port-forward svc/<eventbroker-deployment-name>-pubsubplus-prometheus-metrics 9628` to expose it through your `localhost` for testing.
+
+The following table lists the metrics exposed by the paths:
+
+| Definition | Name | Type |
+| --- | --- | --- |
+| **Path: `solace-std`** |
+| Max number of Local Bridges | solace_bridges_max_num_local_bridges | gauge
+| Max number of Remote Bridges | solace_bridges_max_num_remote_bridges | gauge
+| Max number of Bridges | solace_bridges_max_num_total_bridges | gauge
+| Max total number of Remote Bridge Subscription | solace_bridges_max_num_total_remote_bridge_subscriptions | gauge
+| Number of Local Bridges | solace_bridges_num_local_bridges | gauge
+| Number of Remote Bridges | solace_bridges_num_remote_bridges | gauge
+| Number of Bridges | solace_bridges_num_total_bridges | gauge
+| Total number of Remote Bridge Subscription | solace_bridges_num_total_remote_bridge_subscriptions | gauge
+| Config Sync Ownership (0-Master, 1-Slave, 2-Unknown) | solace_configsync_table_ownership | gauge
+| Config Sync State (0-Down, 1-Up, 2-Unknown, 3-In-Sync, 4-Reconciling, 5-Blocked, 6-Out-Of-Sync) | solace_configsync_table_syncstate | gauge
+| Config Sync Time in State | solace_configsync_table_timeinstateseconds | counter
+| Config Sync Resource (0-Router, 1-Vpn, 2-Unknown, 3-None, 4-All) | solace_configsync_table_type | gauge
+| Average compute latency. | solace_system_compute_latency_avg_seconds | gauge
+| Current compute latency. | solace_system_compute_latency_cur_seconds | gauge
+| Maximum compute latency. | solace_system_compute_latency_max_seconds | gauge
+| Minimum compute latency. | solace_system_compute_latency_min_seconds | gauge
+| Average disk latency. | solace_system_disk_latency_avg_seconds | gauge
+| Current disk latency. | solace_system_disk_latency_cur_seconds | gauge
+| Maximum disk latency. | solace_system_disk_latency_max_seconds | gauge
+| Minimum disk latency. | solace_system_disk_latency_min_seconds | gauge
+| Average mate link latency. | solace_system_mate_link_latency_avg_seconds | gauge
+| Current mate link latency. | solace_system_mate_link_latency_cur_seconds | gauge
+| Maximum mate link latency. | solace_system_mate_link_latency_max_seconds | gauge
+| Minimum mate link latency. | solace_system_mate_link_latency_min_seconds | gauge
+| Redundancy configuration (0-Disabled, 1-Enabled, 2-Shutdown) | solace_system_redundancy_config | gauge
+| Is local node the active messaging node? (0-not active, 1-active). | solace_system_redundancy_local_active | gauge
+| Redundancy role (0=Backup, 1=Primary, 2=Monitor, 3-Undefined). | solace_system_redundancy_role | gauge
+| Is redundancy up? (0=Down, 1=Up). | solace_system_redundancy_up | gauge
+| Total disk usage in percent. | solace_system_spool_disk_partition_usage_active_percent | gauge
+| Total disk usage of mate instance in percent. | solace_system_spool_disk_partition_usage_mate_percent | gauge
+| Utilization of spool files in percent. | solace_system_spool_files_utilization_percent | gauge
+| Spool configured max disk usage. | solace_system_spool_quota_bytes | gauge
+| Spool configured max number of messages. | solace_system_spool_quota_msgs | gauge
+| Spool total persisted usage. | solace_system_spool_usage_bytes | gauge
+| Spool total number of persisted messages. | solace_system_spool_usage_msgs | gauge
+| Solace Version as WWWXXXYYYZZZ  | solace_system_version_currentload | gauge
+| Broker uptime in seconds  | solace_system_version_uptime_totalsecs | gauge
+| Was the last scrape of Solace broker successful. | solace_up | gauge
+| Number of connections. | solace_vpn_connections | gauge
+| total number of amq connections | solace_vpn_connections_service_amqp | gauge
+| total number of smf connections | solace_vpn_connections_service_smf | gauge
+| VPN is enabled | solace_vpn_enabled | gauge
+| VPN is a management VPN | solace_vpn_is_management_vpn | gauge
+| Local status (0=Down, 1=Up) | solace_vpn_local_status | gauge
+| VPN is locally configured | solace_vpn_locally_configured | gauge
+| VPN is operational | solace_vpn_operational | gauge
+| Maximum number of connections. | solace_vpn_quota_connections | gauge
+| Replication Admin Status (0-shutdown, 1-enabled, 2-n/a) | solace_vpn_replication_admin_state | gauge
+| Replication Config Status (0-standby, 1-active, 2-n/a) | solace_vpn_replication_config_state | gauge
+| Replication Tx Replication Mode (0-async, 1-sync) | solace_vpn_replication_transaction_replication_mode | gauge
+| Spool configured max disk usage. | solace_vpn_spool_quota_bytes | gauge
+| Spool total persisted usage. | solace_vpn_spool_usage_bytes | gauge
+| Spool total number of persisted messages. | solace_vpn_spool_usage_msgs | gauge
+| Total unique local subscriptions count | solace_vpn_total_local_unique_subscriptions | gauge
+| Total unique remote subscriptions count | solace_vpn_total_remote_unique_subscriptions | gauge
+| Total unique subscriptions count | solace_vpn_total_unique_subscriptions | gauge
+| Total subscriptions count | solace_vpn_unique_subscriptions | gauge
+| **Path: `solace-det`** |
+| Is client a slow subscriber? (0=not slow, 1=slow) | solace_client_slow_subscriber | gauge
+| Number of clients bound to queue | solace_queue_binds | gauge
+| Number of discarded received messages | solace_client_rx_discarded_msgs_total | counter
+| Number of discarded received messages | solace_vpn_rx_discarded_msgs_total | counter
+| Number of discarded transmitted messages | solace_client_tx_discarded_msgs_total | counter
+| Number of discarded transmitted messages | solace_vpn_tx_discarded_msgs_total | counter
+| Number of received bytes | solace_client_rx_bytes_total | counter
+| Number of received bytes | solace_vpn_rx_bytes_total | counter
+| Number of received messages | solace_client_rx_msgs_total | counter
+| Number of received messages | solace_vpn_rx_msgs_total | counter
+| Number of transmitted bytes | solace_client_tx_bytes_total | counter
+| Number of transmitted bytes | solace_vpn_tx_bytes_total | counter
+| Number of transmitted messages | solace_client_tx_msgs_total | counter
+| Number of transmitted messages | solace_vpn_tx_msgs_total | counter
+| Queue spool configured max disk usage in bytes | solace_queue_spool_quota_bytes | gauge
+| Queue spool total of all spooled messages in bytes | solace_queue_byte_spooled | gauge
+| Queue spool total of all spooled messages | solace_queue_msg_spooled | gauge
+| Queue spool usage in bytes | solace_queue_spool_usage_bytes | gauge
+| Queue spooled number of messages | solace_queue_spool_usage_msgs | gauge
+| Queue total msg redeliveries | solace_queue_msg_redelivered | gauge
+| Queue total msg retransmitted on transport | solace_queue_msg_retransmited | gauge
+| Queue total number of messages delivered to dmq due to exceeded max redelivery | solace_queue_msg_max_redelivered_dmq | gauge
+| Queue total number of messages delivered to dmq due to ttl expiry | solace_queue_msg_ttl_dmq | gauge
+| Queue total number of messages discarded due to exceeded max redelivery | solace_queue_msg_max_redelivered_discarded | gauge
+| Queue total number of messages discarded due to spool shutdown | solace_queue_msg_shutdown_discarded | gauge
+| Queue total number of messages discarded due to ttl expiry | solace_queue_msg_ttl_discarded | gauge
+| Queue total number of messages exceeded the max message size | solace_queue_msg_max_msg_size_exceeded | gauge
+| Queue total number of messages exceeded the spool usage | solace_queue_msg_spool_usage_exceeded | gauge
+| Queue total number of messages failed delivery to dmq due to exceeded max redelivery | solace_queue_msg_max_redelivered_dmq_failed | gauge
+| Queue total number of messages that failed delivery to dmq due to ttl expiry | solace_queue_msg_ttl_dmq_failed | gauge
+| Queue total number that was deleted | solace_queue_msg_total_deleted | gauge
+| Was the last scrape of Solace broker successful | solace_up | gauge
+
 
 ### Connecting with Prometheus
 
@@ -858,9 +968,7 @@ Now both Prometheus and Grafana are running. Their Web Management UIs are expose
 kubectl port-forward svc/prometheus-k8s 9090 -n monitoring &
 kubectl port-forward svc/grafana 3000 -n monitoring &
 ```
-Point your browser to [localhost:9090](http://localhost:9090) for Prometheus and to [localhost:3000](http://localhost:3000) for Grafana.
-
-Grafana requires an initial login using the credentials `admin/admin`.
+Point your browser to [localhost:9090](http://localhost:9090) for Prometheus and to [localhost:3000](http://localhost:3000) for Grafana. An initial login may be required using the credentials `admin/admin`.
 
 #### Creating a ServiceMonitor object
 
@@ -880,27 +988,26 @@ spec:
     - interval: 10s
       path: /solace-det
       port: tcp-metrics
-    - interval: 10s
-      path: /solace-broker-std
-      port: tcp-metrics
-  jobLabel: solace-std
+  jobLabel: pubsubplus-metrics
   selector:
     matchLabels:
       app.kubernetes.io/name: pubsubpluseventbroker
       app.kubernetes.io/component: metricsexporter
       app.kubernetes.io/instance: <eventbroker-deployment-name>
 ```
-This will add the deployment's metrics service (by matching labels) to the Prometheus targets. Refresh the Prometheus Status "Targets" in the Web Management UI to see the newly added target.
-
-The metrics endpoint will be accessed at the metrics port named `tcp-metrics` and the PubSub+ Exporter path `/solace-std` will be added to the scrape request REST API calls.
+This will add the deployment's metrics service (by matching labels) to the Prometheus targets. Refresh the Prometheus Status "Targets" in the Prometheus Web Management UI to see the newly added target.
 
 The ServiceMonitor's selector may be adjusted to match all broker deployments in the namespace by removing `instance` from the matched labels. Also, multiple endpoints may be listed to obtain the combination of metrics from those Exporter paths.
 
-### Example Grafana Visualization of Broker Metrics
+Above `ServiceMonitor` example specifies to scrape three target endpoints to get the combination of all metrics available from the broker deploymeny. The metrics endpoints will be accessed at the port named `tcp-metrics` and at the PubSub+ Exporter path, e.g.: `/solace-std`, will be added to the scrape request REST API calls.
 
-In the Grafana Web Management UI, select "Dashboards"->"Import dashboard"->"Upload JSON File". Upload `deploy/grafana_example.json`. This shall open up a sample Grafana dashboard. The following image shows an example after running some messaging traffic through the broker deployment.
+### Grafana Visualization of Broker Metrics
 
-![alt text](/docs/images/GrafanaDashboard.png "Grafana dashboard")
+In the Grafana Web Management UI, select "Dashboards"->"Import dashboard"->"Upload JSON File". Upload `deploy/grafana_example.json`. This shall open up a sample Grafana dashboard. The following image shows this sample rendered after running some messaging traffic through the broker deployment.
+
+To create or customize your own dashboard refer to the [Grafana documentation](https://grafana.com/docs/grafana/latest/dashboards/build-dashboards/).
+
+![alt text](/docs/images/GrafanaDashboard.png "Grafana dashboard example")
 
 ## Deployment Guide
 
