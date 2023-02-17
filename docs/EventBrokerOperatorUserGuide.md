@@ -5,8 +5,8 @@ This document provides detailed information for deploying the [Solace PubSub+ So
 The following additional set of documentation is also available:
 
 * For a hands-on quick start, refer to the [Quick Start guide](/README.md).
-* For the `PubSubPlusEventBroker` custom resource (deployment configuration) parameter options, refer to the [PubSub+ Event Broker Operator Parameters Reference]().
-* For version-specific information, refer to the [Operator Release Notes]()
+* For the `PubSubPlusEventBroker` custom resource (deployment configuration) parameter options, refer to the [PubSub+ Event Broker Operator Parameters Reference](/docs/EventBrokerOperatorParametersReference.md).
+* For version-specific information, refer to the [Operator Release Notes](/releases)
 
 This guide is focused on deploying the event broker using the Operator, which is the preferred way to deploy. Note that the legacy way of [Helm-based deployment](https://github.com/SolaceProducts/pubsubplus-kubernetes-quickstart) is also supported but out of scope for this document.
 
@@ -76,21 +76,22 @@ Contents:
       - [Broker CLI access via the load balancer](#broker-cli-access-via-the-load-balancer)
       - [CLI access to individual event brokers](#cli-access-to-individual-event-brokers)
       - [SSH access to individual event brokers](#ssh-access-to-individual-event-brokers)
-    - [Testing data access to the event broker](#testing-data-access-to-the-event-broker)
-  - [Troubleshooting](#troubleshooting)
-    - [General Kubernetes troubleshooting hints](#general-kubernetes-troubleshooting-hints)
-    - [Checking the reason for failed resources](#checking-the-reason-for-failed-resources)
-    - [Viewing logs](#viewing-logs)
-    - [Viewing events](#viewing-events)
-    - [PubSub+ Software Event Broker troubleshooting](#pubsub-software-event-broker-troubleshooting)
-      - [Pods stuck in not enough resources](#pods-stuck-in-not-enough-resources)
-      - [Pods stuck in no storage](#pods-stuck-in-no-storage)
-      - [Pods stuck in CrashLoopBackoff, Failed or Not Ready](#pods-stuck-in-crashloopbackoff-failed-or-not-ready)
-      - [No Pods listed](#no-pods-listed)
+      - [Testing data access to the event broker](#testing-data-access-to-the-event-broker)
+    - [Troubleshooting](#troubleshooting)
+      - [General Kubernetes troubleshooting hints](#general-kubernetes-troubleshooting-hints)
+      - [Checking the reason for failed resources](#checking-the-reason-for-failed-resources)
+      - [Viewing logs](#viewing-logs)
+      - [Viewing events](#viewing-events)
+      - [Pods issues](#pods-issues)
+        - [Pods stuck in not enough resources](#pods-stuck-in-not-enough-resources)
+        - [Pods stuck in no storage](#pods-stuck-in-no-storage)
+        - [Pods stuck in CrashLoopBackoff, Failed or Not Ready](#pods-stuck-in-crashloopbackoff-failed-or-not-ready)
+        - [No Pods listed](#no-pods-listed)
       - [Security constraints](#security-constraints)
-      - [How to connect, etc.](#how-to-connect-etc)
-    - [Operate broker](#operate-broker)
-    - [Update / upgrade broker](#update--upgrade-broker)
+  - [Maintenance mode](#maintenance-mode)
+  - [Modifying a Broker Deployment including Upgrade](#modifying-a-broker-deployment-including-upgrade)
+    - [Rolling vs. Manual Update](#rolling-vs-manual-update)
+    - [Update Limitations](#update-limitations)
     - [Undeploy Broker](#undeploy-broker)
     - [Re-Install Broker](#re-install-broker)
     - [Troubleshooting](#troubleshooting-1)
@@ -1182,7 +1183,7 @@ For direct access, use:
 kubectl exec -it <broker-pod-name> -- bash
 ```
 
-### Testing data access to the event broker
+#### Testing data access to the event broker
 
 The newly created event broker instance comes with a [basic configuration](https://docs.solace.com/Software-Broker/SW-Broker-Configuration-Defaults.htm) of a `default` client username with no authentication on the `default` message VPN.
 
@@ -1192,19 +1193,21 @@ To test data traffic using other supported APIs, visit the Solace Developer Port
 
 Use the external Public IP to access the deployment at the port required for the protocol.
 
-## Troubleshooting
+### Troubleshooting
 
-### General Kubernetes troubleshooting hints
+#### General Kubernetes troubleshooting hints
 https://kubernetes.io/docs/tasks/debug-application-cluster/debug-application/
 
-### Checking the reason for failed resources
+#### Checking the reason for failed resources
 
 Run `kubectl get statefulsets,services,pods,pvc,pv` to get an understanding of the state, then drill down to get more information on a failed resource to reveal  possible Kubernetes resourcing issues, e.g.:
 ```sh
 kubectl describe pvc <pvc-name>
 ```
 
-### Viewing logs
+#### Viewing logs
+
+The Operator, Broker and Prometheus Exporter pods all provide logs that may be useful to understand issues.
 
 Detailed logs from the currently running container in a pod:
 ```sh
@@ -1221,9 +1224,9 @@ Filtering on bringup logs (helps with initial troubleshooting):
 kubectl logs <pod-name> | grep [.]sh
 ```
 
-### Viewing events
+#### Viewing events
 
-Kubernetes collects [all events for a cluster in one pool](//kubernetes.io/docs/tasks/debug-application-cluster/events-stackdriver ). This includes events related to the PubSub+ deployment.
+Kubernetes collects [all events for a cluster in one pool](https://kubernetes.io/docs/tasks/debug-application-cluster/events-stackdriver ). This includes events related to the PubSub+ deployment.
 
 It is recommended to watch events when creating or upgrading a Solace deployment. Events clear after about an hour. You can query all available events:
 
@@ -1231,13 +1234,13 @@ It is recommended to watch events when creating or upgrading a Solace deployment
 kubectl get events -w # use -w to watch live
 ```
 
-### PubSub+ Software Event Broker troubleshooting
+#### Pods issues
 
-#### Pods stuck in not enough resources
+##### Pods stuck in not enough resources
 
 If pods stay in pending state and `kubectl describe pods` reveals there are not enough memory or CPU resources, check the [resource requirements of the targeted scaling tier](#cpu-and-memory-requirements) of your deployment and ensure adequate node resources are available.
 
-#### Pods stuck in no storage
+##### Pods stuck in no storage
 
 Pods may also stay in pending state because [storage requirements](#storage) cannot be met. Check `kubectl get pv,pvc`. PVCs and PVs should be in bound state and if not then use `kubectl describe pvc` for any issues.
 
@@ -1246,41 +1249,83 @@ Unless otherwise specified, a default storage class must be available for defaul
 kubectl get storageclasses
 ```
 
-#### Pods stuck in CrashLoopBackoff, Failed or Not Ready
+##### Pods stuck in CrashLoopBackoff, Failed or Not Ready
 
 Pods stuck in CrashLoopBackoff, or Failed, or Running but not Ready "active" state, usually indicate an issue with available Kubernetes node resources or with the container OS or the event broker process start.
 
 * Try to understand the reason following earlier hints in this section.
 * Try to recreate the issue by deleting and then reinstalling the deployment - ensure to remove related PVCs if applicable as they would mount volumes with existing, possibly outdated or incompatible database - and watch the [logs](#viewing-logs) and [events](#viewing-events) from the beginning. Look for ERROR messages preceded by information that may reveal the issue.
 
-#### No Pods listed
+##### No Pods listed
 
-If no pods are listed related to your deployment check the StatefulSet for any clues:
+If no pods are listed related to your deployment check the StatefulSets for any clues:
 ```
-kubectl describe statefulset my-release-pubsubplus
+kubectl describe statefulset | grep <deployment-name>
 ```
 
 #### Security constraints
 
 Your Kubernetes environment's security constraints may also impact successful deployment. Review the [Security considerations](#security-considerations) section.
 
-Operator
-Broker
-Pod status
-####	How to connect, etc.
-how to obtain the service addresses and ports specific to your deployment
-List of services
-Expose services
-###	Operate broker
-###	Update / upgrade broker
-7.6.1	Enable or disable for an existing deployment is manual only
+## Maintenance mode
 
-8.4.1	Rolling vs. Manual update
-8.4.2	Mechanics of picking up changes
-8.4.3	AutoReconfiguration-enabled parameters
-8.4.4	Maintenance mode
+When the Operator is running it is constantly stewarding the broker deployment artifacts and intervene in case of any deviation.
+
+_Maintenance_ _mode_ enables that in special cases users can "turn off" the operator's control for a broker deployment. This can be done by adding a `solace.com/pauseReconcile=true` label to the broker spec:
+
+```
+# Set to maintenance mode by adding the pauseReconcile label
+kubectl label eb <broker-deployment-name> solace.com/pauseReconcile=true
+# Remove the label to activate Operator again
+kubectl label eb <broker-deployment-name> solace.com/pauseReconcile-
+```
+
+
+##	Modifying a Broker Deployment including Upgrade
+
+Modification to the broker deployment (or update) can be initiated by applying an updated broker spec with modified parameter values. Upgrade is a special modification where the broker's `spec.image.repository` and/or `spec.image.tag` has been modified.
+
+>Note: there are limitations, some parameters cannot be modified or updated values will be ignored. See these exceptions in the [Update Limitations](#update-limitations) section.
+
+Applying a modified manifest example:
+```
+# Initial deployment
+kubectl apply -f <initial-broker-spec>.yaml
+# Wait for the deployment to come up ...
+#
+# Update
+kubectl apply -f <modified-broker-spec>.yaml
+```
+
+It is also possible to directly edit the current deployment spec (manifest).
+
+Edit manifest example:
+```
+# Initial deployment
+kubectl apply -f <initial-broker-spec>.yaml
+# Wait for the deployment to come up ...
+#
+# Update
+kubectl edit eventbroker <broker-deployment-name>
+# Make changes to parameters then save
+```
+
+### Rolling vs. Manual Update
+
+By default an update will trigger restart of the broker pods. In a non-HA deployment the single broker pod will be restarted. In an HA deployment the three broker pods of the HA redundancy group will be restarted in a _rolling_ update: first the Monitor Broker pod, then the pod hosting the redundancy Standby Broker, and finally the pod hosting the currently Active Broker. Terminating the currently active broker for update in the final step will trigger an [automatic redundancy activity switch](https://docs.solace.com/Features/HA-Redundancy/SW-Broker-Redundancy-and-Fault-Tolerance.htm#Failure) where the already updated standby will take activity.
+
+Users wishing to manually control the pod restarts may activate _manual_ update by specifying `spec.updateStrategy: manualPodRestart` in the broker spec. In this case the user is responsible for initiating the termination of the individual pods at their discretion. Removing or setting the value back to `automatedRolling` will revert to the rolling update mode.
+
+### Update Limitations
+
+
+
+
+
 ###	Undeploy Broker
+
 ###	Re-Install Broker
+
 ###	Troubleshooting
 
 CRD in place
@@ -1294,7 +1339,7 @@ Check pod logs
 9.1	Common K8s issues
 9.2	Status, Logs, Events, Conditions
 9.3	Broker stuck in bad state
-9.4	Using of Metrics
+9.4	Using Metrics
 ## Upgrade Operator
 
 ### From OLM
