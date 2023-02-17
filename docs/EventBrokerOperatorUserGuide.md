@@ -69,11 +69,12 @@ Contents:
     - [Grafana Visualization of Broker Metrics](#grafana-visualization-of-broker-metrics)
   - [Deployment Guide](#deployment-guide)
     - [Quick Start](#quick-start)
-      - [Validating the deployment](#validating-the-deployment)
+    - [Validating the deployment](#validating-the-deployment)
     - [Gaining admin access to the event broker](#gaining-admin-access-to-the-event-broker)
-      - [Admin Password](#admin-password)
-      - [WebUI, SolAdmin and SEMP access](#webui-soladmin-and-semp-access)
-      - [Solace CLI access](#solace-cli-access)
+      - [Admin Credentials](#admin-credentials)
+      - [Management access port](#management-access-port)
+      - [Broker CLI access via the load balancer](#broker-cli-access-via-the-load-balancer)
+      - [CLI access to individual event brokers](#cli-access-to-individual-event-brokers)
       - [SSH access to individual event brokers](#ssh-access-to-individual-event-brokers)
     - [Testing data access to the event broker](#testing-data-access-to-the-event-broker)
   - [Troubleshooting](#troubleshooting)
@@ -790,7 +791,7 @@ In a controlled environment it may be necessary to configure a [NetworkPolicy](h
 
 Refer to the [Prometheus Monitoring Support section](#prometheus-monitoring-support) for an overview of how metrics are exposed.
 
-This section describes how to enable and configure the metrics exporter on the broker deployment, configure Prometheus to use that, the available metrics from the event broker, and finally an example setup of Grafana to visualize broker metrics.
+This section describes how to enable and configure the metrics exporter and the available metrics from the broker deployment, configure Prometheus to use that, and finally an example setup of Grafana to visualize broker metrics.
 
 ### Enabling and configuring the Broker Metrics Endpoint
 
@@ -1015,38 +1016,42 @@ To create or customize your own dashboard refer to the [Grafana documentation](h
 
 Refer to the [Quick Start guide](/README.md) in the root of this repo. It also provides information about deployment pre-requisites and tools.
 
-####	Validating the deployment
+###	Validating the deployment
 
-You can validate your deployment on the command line. In this example an HA configuration is deployed with name "ha-example", created using the [Quick Start](#quick-start).
+You can validate your deployment on the command line. In this example an HA configuration is deployed with name `ha-example`, created using the [Quick Start](#quick-start).
 
 ```sh
 prompt:~$ kubectl get statefulsets,services,pods,pvc,pv
 NAME                                       READY   AGE
-statefulset.apps/ha-example-pubsubplus-b   1/1     12h
-statefulset.apps/ha-example-pubsubplus-m   1/1     12h
-statefulset.apps/ha-example-pubsubplus-p   1/1     12h
+statefulset.apps/ha-example-pubsubplus-b   1/1     1h 
+statefulset.apps/ha-example-pubsubplus-m   1/1     1h 
+statefulset.apps/ha-example-pubsubplus-p   1/1     1h 
 
-NAME                                      TYPE           CLUSTER-IP      EXTERNAL-IP   PORT(S)                                                                                                                                                                                                                                                              AGE
-service/ha-example-pubsubplus             LoadBalancer   10.122.164.99   34.70.9.248   2222:30316/TCP,8080:31978/TCP,1943:31371/TCP,55555:32225/TCP,55003:31166/TCP,55443:31534/TCP,55556:31346/TCP,8008:30124/TCP,1443:32174/TCP,9000:30961/TCP,9443:31137/TCP,5672:32203/TCP,5671:31456/TCP,1883:30625/TCP,8883:30673/TCP,8000:32628/TCP,8443:31691/TCP   12h
-service/ha-example-pubsubplus-discovery   ClusterIP      None            <none>        8080/TCP,8741/TCP,8300/TCP,8301/TCP,8302/TCP
-                                                                                                                                                                12h
-service/kubernetes                        ClusterIP      10.122.160.1    <none>        443/TCP
-                                                                                                                                                                19h
+NAME                                               TYPE           CLUSTER-IP      EXTERNAL-IP      PORT(S)
+                                                                                                                                                                                AGE
+service/ha-example-pubsubplus                      LoadBalancer   10.124.2.72     35.238.219.112   2222:31209/TCP,8080:31536/TCP,1943:30396/TCP,51234:31106/TCP,55003:31764/TCP,55443:32625/TCP,55556:30149/TCP,8008:30054/TCP,1443:32480/TCP,9000:31032/TCP,9443:30728/TCP,5672:31944/TCP,5671:30878/TCP,1883:31123/TCP,8883:31873/TCP,8000:31970/TCP,8443:32172/TCP   25h
+service/ha-example-pubsubplus-discovery            ClusterIP      None            <none>           8080/TCP,8741/TCP,8300/TCP,8301/TCP,8302/TCP
+                                                                                                                                                                                1h 
+service/ha-example-pubsubplus-prometheus-metrics   ClusterIP      10.124.15.107   <none>           9628/TCP
+                                                                                                                                                                                1h 
+service/kubernetes                                 ClusterIP      10.124.0.1      <none>           443/TCP
+                                                                                                                                                                                1h 
 
-NAME                            READY   STATUS    RESTARTS   AGE
-pod/ha-example-pubsubplus-b-0   1/1     Running   0          12h
-pod/ha-example-pubsubplus-m-0   1/1     Running   0          12h
-pod/ha-example-pubsubplus-p-0   1/1     Running   0          12h
+NAME                                                             READY   STATUS    RESTARTS   AGE
+pod/ha-example-pubsubplus-b-0                                    1/1     Running   0          1h 
+pod/ha-example-pubsubplus-m-0                                    1/1     Running   0          1h 
+pod/ha-example-pubsubplus-p-0                                    1/1     Running   0          1h 
+pod/ha-example-pubsubplus-prometheus-exporter-5cdfcd64b4-dbl2j   1/1     Running   0          1h 
 
 NAME                                                   STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   AGE
-persistentvolumeclaim/data-ha-example-pubsubplus-b-0   Bound    pvc-7b3e70b4-1b1d-4569-a027-355617d5c4ff   30Gi       RWO            standard-rwo   12h
-persistentvolumeclaim/data-ha-example-pubsubplus-m-0   Bound    pvc-cd2fd753-697b-4cd5-95db-1bd56918635e   3Gi        RWO            standard-rwo   12h
-persistentvolumeclaim/data-ha-example-pubsubplus-p-0   Bound    pvc-a1ebd69e-39be-4043-9b38-a5a22f30b4f9   30Gi       RWO            standard-rwo   12h
+persistentvolumeclaim/data-ha-example-pubsubplus-b-0   Bound    pvc-6de2275b-9731-417b-9e54-341dec2ffa40   30Gi       RWO            standard-rwo   1h 
+persistentvolumeclaim/data-ha-example-pubsubplus-m-0   Bound    pvc-3c1f3799-fa82-45a2-883a-d5ed52637783   3Gi        RWO            standard-rwo   1h 
+persistentvolumeclaim/data-ha-example-pubsubplus-p-0   Bound    pvc-4d05e27e-007d-4a4f-a08a-93a2c41005c1   30Gi       RWO            standard-rwo   1h 
 
 NAME                                                        CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM                                    STORAGECLASS   REASON   AGE
-persistentvolume/pvc-7b3e70b4-1b1d-4569-a027-355617d5c4ff   30Gi       RWO            Delete           Bound    default/data-ha-example-pubsubplus-b-0   standard-rwo            12h
-persistentvolume/pvc-a1ebd69e-39be-4043-9b38-a5a22f30b4f9   30Gi       RWO            Delete           Bound    default/data-ha-example-pubsubplus-p-0   standard-rwo            12h
-persistentvolume/pvc-cd2fd753-697b-4cd5-95db-1bd56918635e   3Gi        RWO            Delete           Bound    default/data-ha-example-pubsubplus-m-0   standard-rwo            12h
+persistentvolume/pvc-3c1f3799-fa82-45a2-883a-d5ed52637783   3Gi        RWO            Delete           Bound    default/data-ha-example-pubsubplus-m-0   standard-rwo            1h 
+persistentvolume/pvc-4d05e27e-007d-4a4f-a08a-93a2c41005c1   30Gi       RWO            Delete           Bound    default/data-ha-example-pubsubplus-p-0   standard-rwo            1h 
+persistentvolume/pvc-6de2275b-9731-417b-9e54-341dec2ffa40   30Gi       RWO            Delete           Bound    default/data-ha-example-pubsubplus-b-0   standard-rwo            1h 
 
 prompt:~$ kubectl describe service ha-example-pubsubplus
 Name:                     ha-example-pubsubplus
@@ -1060,88 +1065,113 @@ Selector:                 active=true,app.kubernetes.io/instance=ha-example,app.
 Type:                     LoadBalancer
 IP Family Policy:         SingleStack
 IP Families:              IPv4
-IP:                       10.122.164.99
-IPs:                      10.122.164.99
-LoadBalancer Ingress:     34.70.9.248
+IP:                       10.124.2.72
+IPs:                      10.124.2.72
+LoadBalancer Ingress:     35.238.219.112
 Port:                     tcp-ssh  2222/TCP
 TargetPort:               2222/TCP
-NodePort:                 tcp-ssh  30316/TCP
-Endpoints:                10.124.2.19:2222
+NodePort:                 tcp-ssh  31209/TCP
+Endpoints:                10.120.1.6:2222
 Port:                     tcp-semp  8080/TCP
 TargetPort:               8080/TCP
-NodePort:                 tcp-semp  31978/TCP
-Endpoints:                10.124.2.19:8080
+NodePort:                 tcp-semp  31536/TCP
+Endpoints:                10.120.1.6:8080
 Port:                     tls-semp  1943/TCP
+TargetPort:               1943/TCP
+NodePort:                 tls-semp  30396/TCP
+Endpoints:                10.120.1.6:1943
 :
 :
 ```
 
-Generally, all services including management and messaging are accessible through a Load Balancer. In the above example `34.70.9.248` is the Load Balancer's external Public IP to use.
+There are three StatefulSets controlling each broker node in an HA redundancy group, with naming conventions `<deployment-name>-pubsubplus-p` for Primary, `...-b` for Backup and `...-m` for Monitor brokers. Similarly, the broker pods are named `<deployment-name>-pubsubplus-p-0`, `...-b-0` and `...-m-0`. In case of a non-HA deployment there is one StatefulSet with the naming convention of `...-p`.
+
+Generally, all services including management and messaging are accessible through a Load Balancer. In the above example `35.238.219.112` is the Load Balancer's external Public IP to use.
 
 > Note: When using MiniKube, there is no integrated Load Balancer. For a workaround, execute `minikube service XXX-XXX-solace` to expose the services. Services will be accessible directly using mapped ports instead of direct port access, for which the mapping can be obtained from `kubectl describe service XXX-XX-solace`.
 
 ### Gaining admin access to the event broker
 
-There are [multiple management tools](//docs.solace.com/Management-Tools.htm ) available. The WebUI is the recommended simplest way to administer the event broker for common tasks.
+The [PubSub+ Broker Manager](https://docs.solace.com/Admin/Broker-Manager/PubSub-Manager-Overview.htm) is the recommended simplest way to administer the event broker for common tasks.
 
-#### Admin Password
+#### Admin Credentials
 
-A random admin password will be generated if it has not been provided at deployment using the `solace.usernameAdminPassword` parameter, refer to the the information from `helm status` how to retrieve it.
+The default admin username is `admin`. A password may be provided encoded in a Kubernetes secret in the broker spec parameter `spec.adminCredentialsSecret`. If not provided then a random password will be generated at initial deployment and stored in a secret named `<eventbroker-deployment-name>-pubsubplus-admin-creds`.
 
-**Important:** Every time `helm install` or `helm upgrade` is called a new admin password will be generated, which may break an existing deployment. Therefore ensure to always provide the password from the initial deployment as `solace.usernameAdminPassword=<PASSWORD>` parameter to subsequent `install` and `upgrade` commands.
+For example you can create a secret `my-admin-secret` with `MyP@ssword` before deployment then pass its name to the broker spec:
+```
+echo 'MyP@ssword' | kubectl create secret generic my-admin-secret --from-file=username_admin_password=/dev/stdin
+```
 
-#### WebUI, SolAdmin and SEMP access
+To obtain the admin password from a secret use:
+```
+kubectl get secret my-admin-secret -o jsonpath='{.data.username_admin_password}' | base64 -d
+```
 
-Use the Load Balancer's external Public IP at port 8080 to access these services.
+#### Management access port
 
-#### Solace CLI access
+Use the Load Balancer's external Public IP at port 8080 to access management services including PubSub+ Broker Manager, SolAdmin and SEMP access.
 
-If you are using a single event broker and are used to working with a CLI event broker console access, you can SSH into the event broker as the `admin` user using the Load Balancer's external Public IP:
+#### Broker CLI access via the load balancer
 
-```sh
+One option to access the event broker's CLI console is to SSH into the broker as the `admin` user using the Load Balancer's external Public IP, at port 2222:
 
-$ssh -p 2222 admin@35.202.131.158
+```
+ssh -p 2222 admin@35.238.219.112
+The authenticity of host '[35.238.219.112]:2222 ([35.238.219.112]:2222)' can't be established.
+ECDSA key fingerprint is SHA256:iBVfUuHRh7r8stH4fv3CCzv7966UEK/ZfHTh2Yt79No.
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+Warning: Permanently added '[35.238.219.112]:2222' (ECDSA) to the list of known hosts.
 Solace PubSub+ Standard
 Password:
 
-Solace PubSub+ Standard Version 9.4.0.105
+Solace PubSub+ Standard Version 10.2.1.32
 
-The Solace PubSub+ Standard is proprietary software of
-Solace Corporation. By accessing the Solace PubSub+ Standard
-you are agreeing to the license terms and conditions located at
-//www.solace.com/license-software
+This Solace product is proprietary software of
+Solace Corporation. By accessing this Solace product
+you are agreeing to the license terms and conditions
+located at http://www.solace.com/license-software
 
-Copyright 2004-2019 Solace Corporation. All rights reserved.
+Copyright 2004-2022 Solace Corporation. All rights reserved.
 
 To purchase product support, please contact Solace at:
-//dev.solace.com/contact-us/
+https://solace.com/contact-us/
 
 Operating Mode: Message Routing Node
 
-XXX-XXX-pubsubplus-0>
+ha-example-pubsubplus-p-0>
 ```
 
-If you are using an HA deployment, it is better to access the CLI through the Kubernets pod and not directly via SSH.
+This will only enable access to the active Pod's CLI.
+
+#### CLI access to individual event brokers
+
+In an HA deployment CLI access may be needed to any of the brokers, not only the active one.
+
+* The simplest option from the Kubernetes command line console is
+```
+kubectl exec -it <broker-pod-name> -- cli
+```
 
 * Loopback to SSH directly on the pod
 
-```sh
-kubectl exec -it XXX-XXX-pubsubplus-0  -- bash -c "ssh -p 2222 admin@localhost"
+```
+kubectl exec -it <broker-pod-name> -- bash -c "ssh -p 2222 admin@localhost"
 ```
 
 * Loopback to SSH on your host with a port-forward map
 
-```sh
-kubectl port-forward XXX-XXX-pubsubplus-0 62222:2222 &
+```
+kubectl port-forward <broker-pod-name> 62222:2222 &
 ssh -p 62222 admin@localhost
 ```
 
-This can also be mapped to individual event brokers in the deployment via port-forward:
+This can also be mapped to multiple event brokers in the HA deployment via port-forward:
 
 ```
-kubectl port-forward XXX-XXX-pubsubplus-0 8081:8080 &
-kubectl port-forward XXX-XXX-pubsubplus-1 8082:8080 &
-kubectl port-forward XXX-XXX-pubsubplus-2 8083:8080 &
+kubectl port-forward <primary-broker-pod-name> 8081:8080 &
+kubectl port-forward <backup-broker-pod-name> 8082:8080 &
+kubectl port-forward <monitor-broker-pod-name> 8083:8080 &
 ```
 
 #### SSH access to individual event brokers
@@ -1149,14 +1179,18 @@ kubectl port-forward XXX-XXX-pubsubplus-2 8083:8080 &
 For direct access, use:
 
 ```sh
-kubectl exec -it XXX-XXX-pubsubplus-<pod-ordinal> -- bash
+kubectl exec -it <broker-pod-name> -- bash
 ```
 
 ### Testing data access to the event broker
 
-To test data traffic though the newly created event broker instance, visit the Solace Developer Portal [APIs & Protocols](//www.solace.dev/ ). Under each option there is a Publish/Subscribe tutorial that will help you get started and provide the specific default port to use.
+The newly created event broker instance comes with a [basic configuration](https://docs.solace.com/Software-Broker/SW-Broker-Configuration-Defaults.htm) of a `default` client username with no authentication on the `default` message VPN.
 
-Use the external Public IP to access the deployment. If a port required for a protocol is not opened, refer to the [Modification example](#modification-example) how to open it up.
+An easy first test is using the [PubSub+ Broker Manager's built-in Try-Me tool](https://docs.solace.com/Admin/Broker-Manager/PubSub-Manager-Overview.htm?Highlight=manager#Test-Messages). Try-Me is based on JavaScript making use of the WebSockets API for messaging at port 8008.
+
+To test data traffic using other supported APIs, visit the Solace Developer Portal [APIs & Protocols](https://www.solace.dev/ ). Under each option there is a Publish/Subscribe tutorial that will help you get started and provide the specific default port to use.
+
+Use the external Public IP to access the deployment at the port required for the protocol.
 
 ## Troubleshooting
 
@@ -1174,17 +1208,17 @@ kubectl describe pvc <pvc-name>
 
 Detailed logs from the currently running container in a pod:
 ```sh
-kubectl logs XXX-XXX-pubsubplus-0 -f  # use -f to follow live
+kubectl logs <pod-name> -f  # use -f to follow live
 ```
 
 It is also possible to get the logs from a previously terminated or failed container:
 ```sh
-kubectl logs XXX-XXX-pubsubplus-0 -p
+kubectl logs <pod-name> -p
 ```
 
 Filtering on bringup logs (helps with initial troubleshooting):
 ```sh
-kubectl logs XXX-XXX-pubsubplus-0 | grep [.]sh
+kubectl logs <pod-name> | grep [.]sh
 ```
 
 ### Viewing events
