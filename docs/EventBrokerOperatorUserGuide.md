@@ -67,7 +67,7 @@ Contents:
       - [Reference Prometheus Stack Deployment](#reference-prometheus-stack-deployment)
       - [Creating a ServiceMonitor object](#creating-a-servicemonitor-object)
     - [Grafana Visualization of Broker Metrics](#grafana-visualization-of-broker-metrics)
-  - [Deployment Guide](#deployment-guide)
+  - [Broker Deployment Guide](#broker-deployment-guide)
     - [Quick Start](#quick-start)
     - [Validating the deployment](#validating-the-deployment)
     - [Gaining admin access to the event broker](#gaining-admin-access-to-the-event-broker)
@@ -88,18 +88,23 @@ Contents:
         - [Pods stuck in CrashLoopBackoff, Failed or Not Ready](#pods-stuck-in-crashloopbackoff-failed-or-not-ready)
         - [No Pods listed](#no-pods-listed)
       - [Security constraints](#security-constraints)
-  - [Maintenance mode](#maintenance-mode)
-  - [Modifying a Broker Deployment including Upgrade](#modifying-a-broker-deployment-including-upgrade)
+    - [Maintenance mode](#maintenance-mode)
+    - [Modifying a Broker Deployment including Broker Upgrade](#modifying-a-broker-deployment-including-broker-upgrade)
     - [Rolling vs. Manual Update](#rolling-vs-manual-update)
     - [Update Limitations](#update-limitations)
     - [Undeploy Broker](#undeploy-broker)
     - [Re-Install Broker](#re-install-broker)
-    - [Troubleshooting](#troubleshooting-1)
-  - [Upgrade Operator](#upgrade-operator)
-    - [From OLM](#from-olm)
-    - [From command line](#from-command-line)
-    - [Upgrade CRD and Operator](#upgrade-crd-and-operator)
-  - [Migration from Helm-based deployment](#migration-from-helm-based-deployment)
+  - [Operator Deployment Guide](#operator-deployment-guide)
+    - [Install Operator](#install-operator)
+      - [From Operator Lifecycle Manager](#from-operator-lifecycle-manager)
+      - [From command line](#from-command-line)
+    - [Validating the Operator deployment](#validating-the-operator-deployment)
+    - [Troubleshooting the Operator deployment](#troubleshooting-the-operator-deployment)
+    - [Upgrade the Operator](#upgrade-the-operator)
+        - [Upgrading the Operator only](#upgrading-the-operator-only)
+      - [Upgrade CRD and Operator](#upgrade-crd-and-operator)
+  - [Migration from Helm-based deployments](#migration-from-helm-based-deployments)
+    - [Migration process](#migration-process)
 
 
 ## The Solace PubSub+ Software Event Broker
@@ -823,104 +828,104 @@ kubectl describe svc <eventbroker-deployment-name>-pubsubplus-prometheus-metrics
 
 There are two sets of metrics exposed through two paths:
 * Standard: [http://`<service-ip>`:9628/solace-std]()
-* Details: [http://`<service-ip>`:9628/solace-det]()
+* Additional Details: [http://`<service-ip>`:9628/solace-det]()
 >Note: `<service-ip>` is the Kubernetes internal ClusterIP address of the Prometheus Metrics Service.  Use `kubectl port-forward svc/<eventbroker-deployment-name>-pubsubplus-prometheus-metrics 9628` to expose it through your `localhost` for testing.
 
 The following table lists the metrics exposed by the paths:
 
-| Definition | Name | Type |
-| --- | --- | --- |
-| **Path: `solace-std`** |
-| Max number of Local Bridges | solace_bridges_max_num_local_bridges | gauge
-| Max number of Remote Bridges | solace_bridges_max_num_remote_bridges | gauge
-| Max number of Bridges | solace_bridges_max_num_total_bridges | gauge
-| Max total number of Remote Bridge Subscription | solace_bridges_max_num_total_remote_bridge_subscriptions | gauge
-| Number of Local Bridges | solace_bridges_num_local_bridges | gauge
-| Number of Remote Bridges | solace_bridges_num_remote_bridges | gauge
-| Number of Bridges | solace_bridges_num_total_bridges | gauge
-| Total number of Remote Bridge Subscription | solace_bridges_num_total_remote_bridge_subscriptions | gauge
-| Config Sync Ownership (0-Master, 1-Slave, 2-Unknown) | solace_configsync_table_ownership | gauge
-| Config Sync State (0-Down, 1-Up, 2-Unknown, 3-In-Sync, 4-Reconciling, 5-Blocked, 6-Out-Of-Sync) | solace_configsync_table_syncstate | gauge
-| Config Sync Time in State | solace_configsync_table_timeinstateseconds | counter
-| Config Sync Resource (0-Router, 1-Vpn, 2-Unknown, 3-None, 4-All) | solace_configsync_table_type | gauge
-| Average compute latency. | solace_system_compute_latency_avg_seconds | gauge
-| Current compute latency. | solace_system_compute_latency_cur_seconds | gauge
-| Maximum compute latency. | solace_system_compute_latency_max_seconds | gauge
-| Minimum compute latency. | solace_system_compute_latency_min_seconds | gauge
-| Average disk latency. | solace_system_disk_latency_avg_seconds | gauge
-| Current disk latency. | solace_system_disk_latency_cur_seconds | gauge
-| Maximum disk latency. | solace_system_disk_latency_max_seconds | gauge
-| Minimum disk latency. | solace_system_disk_latency_min_seconds | gauge
-| Average mate link latency. | solace_system_mate_link_latency_avg_seconds | gauge
-| Current mate link latency. | solace_system_mate_link_latency_cur_seconds | gauge
-| Maximum mate link latency. | solace_system_mate_link_latency_max_seconds | gauge
-| Minimum mate link latency. | solace_system_mate_link_latency_min_seconds | gauge
-| Redundancy configuration (0-Disabled, 1-Enabled, 2-Shutdown) | solace_system_redundancy_config | gauge
-| Is local node the active messaging node? (0-not active, 1-active). | solace_system_redundancy_local_active | gauge
-| Redundancy role (0=Backup, 1=Primary, 2=Monitor, 3-Undefined). | solace_system_redundancy_role | gauge
-| Is redundancy up? (0=Down, 1=Up). | solace_system_redundancy_up | gauge
-| Total disk usage in percent. | solace_system_spool_disk_partition_usage_active_percent | gauge
-| Total disk usage of mate instance in percent. | solace_system_spool_disk_partition_usage_mate_percent | gauge
-| Utilization of spool files in percent. | solace_system_spool_files_utilization_percent | gauge
-| Spool configured max disk usage. | solace_system_spool_quota_bytes | gauge
-| Spool configured max number of messages. | solace_system_spool_quota_msgs | gauge
-| Spool total persisted usage. | solace_system_spool_usage_bytes | gauge
-| Spool total number of persisted messages. | solace_system_spool_usage_msgs | gauge
-| Solace Version as WWWXXXYYYZZZ  | solace_system_version_currentload | gauge
-| Broker uptime in seconds  | solace_system_version_uptime_totalsecs | gauge
-| Was the last scrape of Solace broker successful. | solace_up | gauge
-| Number of connections. | solace_vpn_connections | gauge
-| total number of amq connections | solace_vpn_connections_service_amqp | gauge
-| total number of smf connections | solace_vpn_connections_service_smf | gauge
-| VPN is enabled | solace_vpn_enabled | gauge
-| VPN is a management VPN | solace_vpn_is_management_vpn | gauge
-| Local status (0=Down, 1=Up) | solace_vpn_local_status | gauge
-| VPN is locally configured | solace_vpn_locally_configured | gauge
-| VPN is operational | solace_vpn_operational | gauge
-| Maximum number of connections. | solace_vpn_quota_connections | gauge
-| Replication Admin Status (0-shutdown, 1-enabled, 2-n/a) | solace_vpn_replication_admin_state | gauge
-| Replication Config Status (0-standby, 1-active, 2-n/a) | solace_vpn_replication_config_state | gauge
-| Replication Tx Replication Mode (0-async, 1-sync) | solace_vpn_replication_transaction_replication_mode | gauge
-| Spool configured max disk usage. | solace_vpn_spool_quota_bytes | gauge
-| Spool total persisted usage. | solace_vpn_spool_usage_bytes | gauge
-| Spool total number of persisted messages. | solace_vpn_spool_usage_msgs | gauge
-| Total unique local subscriptions count | solace_vpn_total_local_unique_subscriptions | gauge
-| Total unique remote subscriptions count | solace_vpn_total_remote_unique_subscriptions | gauge
-| Total unique subscriptions count | solace_vpn_total_unique_subscriptions | gauge
-| Total subscriptions count | solace_vpn_unique_subscriptions | gauge
-| **Path: `solace-det`** |
-| Is client a slow subscriber? (0=not slow, 1=slow) | solace_client_slow_subscriber | gauge
-| Number of clients bound to queue | solace_queue_binds | gauge
-| Number of discarded received messages | solace_client_rx_discarded_msgs_total | counter
-| Number of discarded received messages | solace_vpn_rx_discarded_msgs_total | counter
-| Number of discarded transmitted messages | solace_client_tx_discarded_msgs_total | counter
-| Number of discarded transmitted messages | solace_vpn_tx_discarded_msgs_total | counter
-| Number of received bytes | solace_client_rx_bytes_total | counter
-| Number of received bytes | solace_vpn_rx_bytes_total | counter
-| Number of received messages | solace_client_rx_msgs_total | counter
-| Number of received messages | solace_vpn_rx_msgs_total | counter
-| Number of transmitted bytes | solace_client_tx_bytes_total | counter
-| Number of transmitted bytes | solace_vpn_tx_bytes_total | counter
-| Number of transmitted messages | solace_client_tx_msgs_total | counter
-| Number of transmitted messages | solace_vpn_tx_msgs_total | counter
-| Queue spool configured max disk usage in bytes | solace_queue_spool_quota_bytes | gauge
-| Queue spool total of all spooled messages in bytes | solace_queue_byte_spooled | gauge
-| Queue spool total of all spooled messages | solace_queue_msg_spooled | gauge
-| Queue spool usage in bytes | solace_queue_spool_usage_bytes | gauge
-| Queue spooled number of messages | solace_queue_spool_usage_msgs | gauge
-| Queue total msg redeliveries | solace_queue_msg_redelivered | gauge
-| Queue total msg retransmitted on transport | solace_queue_msg_retransmited | gauge
-| Queue total number of messages delivered to dmq due to exceeded max redelivery | solace_queue_msg_max_redelivered_dmq | gauge
-| Queue total number of messages delivered to dmq due to ttl expiry | solace_queue_msg_ttl_dmq | gauge
-| Queue total number of messages discarded due to exceeded max redelivery | solace_queue_msg_max_redelivered_discarded | gauge
-| Queue total number of messages discarded due to spool shutdown | solace_queue_msg_shutdown_discarded | gauge
-| Queue total number of messages discarded due to ttl expiry | solace_queue_msg_ttl_discarded | gauge
-| Queue total number of messages exceeded the max message size | solace_queue_msg_max_msg_size_exceeded | gauge
-| Queue total number of messages exceeded the spool usage | solace_queue_msg_spool_usage_exceeded | gauge
-| Queue total number of messages failed delivery to dmq due to exceeded max redelivery | solace_queue_msg_max_redelivered_dmq_failed | gauge
-| Queue total number of messages that failed delivery to dmq due to ttl expiry | solace_queue_msg_ttl_dmq_failed | gauge
-| Queue total number that was deleted | solace_queue_msg_total_deleted | gauge
-| Was the last scrape of Solace broker successful | solace_up | gauge
+| Path | Definition | Name | Type |
+| --- | --- | --- | --- |
+| **`solace-std`** |
+|| Max number of Local Bridges | solace_bridges_max_num_local_bridges | gauge
+|| Max number of Remote Bridges | solace_bridges_max_num_remote_bridges | gauge
+|| Max number of Bridges | solace_bridges_max_num_total_bridges | gauge
+|| Max total number of Remote Bridge Subscription | solace_bridges_max_num_total_remote_bridge_subscriptions | gauge
+|| Number of Local Bridges | solace_bridges_num_local_bridges | gauge
+|| Number of Remote Bridges | solace_bridges_num_remote_bridges | gauge
+|| Number of Bridges | solace_bridges_num_total_bridges | gauge
+|| Total number of Remote Bridge Subscription | solace_bridges_num_total_remote_bridge_subscriptions | gauge
+|| Config Sync Ownership (0-Master, 1-Slave, 2-Unknown) | solace_configsync_table_ownership | gauge
+|| Config Sync State (0-Down, 1-Up, 2-Unknown, 3-In-Sync, 4-Reconciling, 5-Blocked, 6-Out-Of-Sync) | solace_configsync_table_syncstate | gauge
+|| Config Sync Time in State | solace_configsync_table_timeinstateseconds | counter
+|| Config Sync Resource (0-Router, 1-Vpn, 2-Unknown, 3-None, 4-All) | solace_configsync_table_type | gauge
+|| Average compute latency. | solace_system_compute_latency_avg_seconds | gauge
+|| Current compute latency. | solace_system_compute_latency_cur_seconds | gauge
+|| Maximum compute latency. | solace_system_compute_latency_max_seconds | gauge
+|| Minimum compute latency. | solace_system_compute_latency_min_seconds | gauge
+|| Average disk latency. | solace_system_disk_latency_avg_seconds | gauge
+|| Current disk latency. | solace_system_disk_latency_cur_seconds | gauge
+|| Maximum disk latency. | solace_system_disk_latency_max_seconds | gauge
+|| Minimum disk latency. | solace_system_disk_latency_min_seconds | gauge
+|| Average mate link latency. | solace_system_mate_link_latency_avg_seconds | gauge
+|| Current mate link latency. | solace_system_mate_link_latency_cur_seconds | gauge
+|| Maximum mate link latency. | solace_system_mate_link_latency_max_seconds | gauge
+|| Minimum mate link latency. | solace_system_mate_link_latency_min_seconds | gauge
+|| Redundancy configuration (0-Disabled, 1-Enabled, 2-Shutdown) | solace_system_redundancy_config | gauge
+|| Is local node the active messaging node? (0-not active, 1-active). | solace_system_redundancy_local_active | gauge
+|| Redundancy role (0=Backup, 1=Primary, 2=Monitor, 3-Undefined). | solace_system_redundancy_role | gauge
+|| Is redundancy up? (0=Down, 1=Up). | solace_system_redundancy_up | gauge
+|| Total disk usage in percent. | solace_system_spool_disk_partition_usage_active_percent | gauge
+|| Total disk usage of mate instance in percent. | solace_system_spool_disk_partition_usage_mate_percent | gauge
+|| Utilization of spool files in percent. | solace_system_spool_files_utilization_percent | gauge
+|| Spool configured max disk usage. | solace_system_spool_quota_bytes | gauge
+|| Spool configured max number of messages. | solace_system_spool_quota_msgs | gauge
+|| Spool total persisted usage. | solace_system_spool_usage_bytes | gauge
+|| Spool total number of persisted messages. | solace_system_spool_usage_msgs | gauge
+|| Solace Version as WWWXXXYYYZZZ  | solace_system_version_currentload | gauge
+|| Broker uptime in seconds  | solace_system_version_uptime_totalsecs | gauge
+|| Was the last scrape of Solace broker successful. | solace_up | gauge
+|| Number of connections. | solace_vpn_connections | gauge
+|| total number of amq connections | solace_vpn_connections_service_amqp | gauge
+|| total number of smf connections | solace_vpn_connections_service_smf | gauge
+|| VPN is enabled | solace_vpn_enabled | gauge
+|| VPN is a management VPN | solace_vpn_is_management_vpn | gauge
+|| Local status (0=Down, 1=Up) | solace_vpn_local_status | gauge
+|| VPN is locally configured | solace_vpn_locally_configured | gauge
+|| VPN is operational | solace_vpn_operational | gauge
+|| Maximum number of connections. | solace_vpn_quota_connections | gauge
+|| Replication Admin Status (0-shutdown, 1-enabled, 2-n/a) | solace_vpn_replication_admin_state | gauge
+|| Replication Config Status (0-standby, 1-active, 2-n/a) | solace_vpn_replication_config_state | gauge
+|| Replication Tx Replication Mode (0-async, 1-sync) | solace_vpn_replication_transaction_replication_mode | gauge
+|| Spool configured max disk usage. | solace_vpn_spool_quota_bytes | gauge
+|| Spool total persisted usage. | solace_vpn_spool_usage_bytes | gauge
+|| Spool total number of persisted messages. | solace_vpn_spool_usage_msgs | gauge
+|| Total unique local subscriptions count | solace_vpn_total_local_unique_subscriptions | gauge
+|| Total unique remote subscriptions count | solace_vpn_total_remote_unique_subscriptions | gauge
+|| Total unique subscriptions count | solace_vpn_total_unique_subscriptions | gauge
+|| Total subscriptions count | solace_vpn_unique_subscriptions | gauge
+| **`solace-det`** |
+|| Is client a slow subscriber? (0=not slow, 1=slow) | solace_client_slow_subscriber | gauge
+|| Number of clients bound to queue | solace_queue_binds | gauge
+|| Number of discarded received messages | solace_client_rx_discarded_msgs_total | counter
+|| Number of discarded received messages | solace_vpn_rx_discarded_msgs_total | counter
+|| Number of discarded transmitted messages | solace_client_tx_discarded_msgs_total | counter
+|| Number of discarded transmitted messages | solace_vpn_tx_discarded_msgs_total | counter
+|| Number of received bytes | solace_client_rx_bytes_total | counter
+|| Number of received bytes | solace_vpn_rx_bytes_total | counter
+|| Number of received messages | solace_client_rx_msgs_total | counter
+|| Number of received messages | solace_vpn_rx_msgs_total | counter
+|| Number of transmitted bytes | solace_client_tx_bytes_total | counter
+|| Number of transmitted bytes | solace_vpn_tx_bytes_total | counter
+|| Number of transmitted messages | solace_client_tx_msgs_total | counter
+|| Number of transmitted messages | solace_vpn_tx_msgs_total | counter
+|| Queue spool configured max disk usage in bytes | solace_queue_spool_quota_bytes | gauge
+|| Queue spool total of all spooled messages in bytes | solace_queue_byte_spooled | gauge
+|| Queue spool total of all spooled messages | solace_queue_msg_spooled | gauge
+|| Queue spool usage in bytes | solace_queue_spool_usage_bytes | gauge
+|| Queue spooled number of messages | solace_queue_spool_usage_msgs | gauge
+|| Queue total msg redeliveries | solace_queue_msg_redelivered | gauge
+|| Queue total msg retransmitted on transport | solace_queue_msg_retransmited | gauge
+|| Queue total number of messages delivered to dmq due to exceeded max redelivery | solace_queue_msg_max_redelivered_dmq | gauge
+|| Queue total number of messages delivered to dmq due to ttl expiry | solace_queue_msg_ttl_dmq | gauge
+|| Queue total number of messages discarded due to exceeded max redelivery | solace_queue_msg_max_redelivered_discarded | gauge
+|| Queue total number of messages discarded due to spool shutdown | solace_queue_msg_shutdown_discarded | gauge
+|| Queue total number of messages discarded due to ttl expiry | solace_queue_msg_ttl_discarded | gauge
+|| Queue total number of messages exceeded the max message size | solace_queue_msg_max_msg_size_exceeded | gauge
+|| Queue total number of messages exceeded the spool usage | solace_queue_msg_spool_usage_exceeded | gauge
+|| Queue total number of messages failed delivery to dmq due to exceeded max redelivery | solace_queue_msg_max_redelivered_dmq_failed | gauge
+|| Queue total number of messages that failed delivery to dmq due to ttl expiry | solace_queue_msg_ttl_dmq_failed | gauge
+|| Queue total number that was deleted | solace_queue_msg_total_deleted | gauge
+|| Was the last scrape of Solace broker successful | solace_up | gauge
 
 
 ### Connecting with Prometheus
@@ -1011,11 +1016,19 @@ To create or customize your own dashboard refer to the [Grafana documentation](h
 
 ![alt text](/docs/images/GrafanaDashboard.png "Grafana dashboard example")
 
-## Deployment Guide
+## Broker Deployment Guide
 
 ### Quick Start
 
 Refer to the [Quick Start guide](/README.md) in the root of this repo. It also provides information about deployment pre-requisites and tools.
+
+Example:
+```sh
+# Initial deployment
+kubectl apply -f <initial-broker-spec>.yaml
+# Wait for the deployment to come up ...
+```
+
 
 ###	Validating the deployment
 
@@ -1118,7 +1131,7 @@ Use the Load Balancer's external Public IP at port 8080 to access management ser
 One option to access the event broker's CLI console is to SSH into the broker as the `admin` user using the Load Balancer's external Public IP, at port 2222:
 
 ```
-ssh -p 2222 admin@35.238.219.112
+prompt:~$ ssh -p 2222 admin@35.238.219.112
 The authenticity of host '[35.238.219.112]:2222 ([35.238.219.112]:2222)' can't be established.
 ECDSA key fingerprint is SHA256:iBVfUuHRh7r8stH4fv3CCzv7966UEK/ZfHTh2Yt79No.
 Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
@@ -1260,35 +1273,36 @@ Pods stuck in CrashLoopBackoff, or Failed, or Running but not Ready "active" sta
 
 If no pods are listed related to your deployment check the StatefulSets for any clues:
 ```
-kubectl describe statefulset | grep <deployment-name>
+kubectl describe statefulset | grep <broker-deployment-name>
 ```
 
 #### Security constraints
 
 Your Kubernetes environment's security constraints may also impact successful deployment. Review the [Security considerations](#security-considerations) section.
 
-## Maintenance mode
+### Maintenance mode
 
 When the Operator is running it is constantly stewarding the broker deployment artifacts and intervene in case of any deviation.
 
 _Maintenance_ _mode_ enables that in special cases users can "turn off" the operator's control for a broker deployment. This can be done by adding a `solace.com/pauseReconcile=true` label to the broker spec:
 
-```
-# Set to maintenance mode by adding the pauseReconcile label
+```sh
+# Activate maintenance mode by adding the pauseReconcile label
 kubectl label eb <broker-deployment-name> solace.com/pauseReconcile=true
-# Remove the label to activate Operator again
+# Operator will now ignore this deployment
+# ... 
+# Remove the label to activate Operator's control again
 kubectl label eb <broker-deployment-name> solace.com/pauseReconcile-
 ```
 
+###	Modifying a Broker Deployment including Broker Upgrade
 
-##	Modifying a Broker Deployment including Upgrade
+Modification of the broker deployment (or update) can be initiated by applying an updated broker spec with modified parameter values. Upgrade is a special modification where the broker's `spec.image.repository` and/or `spec.image.tag` has been modified.
 
-Modification to the broker deployment (or update) can be initiated by applying an updated broker spec with modified parameter values. Upgrade is a special modification where the broker's `spec.image.repository` and/or `spec.image.tag` has been modified.
-
->Note: there are limitations, some parameters cannot be modified or updated values will be ignored. See these exceptions in the [Update Limitations](#update-limitations) section.
+>Note: there are limitations, some parameters cannot be modified or the updated values will be ignored. See these exceptions in the [Update Limitations](#update-limitations) section.
 
 Applying a modified manifest example:
-```
+```sh
 # Initial deployment
 kubectl apply -f <initial-broker-spec>.yaml
 # Wait for the deployment to come up ...
@@ -1312,41 +1326,245 @@ kubectl edit eventbroker <broker-deployment-name>
 
 ### Rolling vs. Manual Update
 
-By default an update will trigger restart of the broker pods. In a non-HA deployment the single broker pod will be restarted. In an HA deployment the three broker pods of the HA redundancy group will be restarted in a _rolling_ update: first the Monitor Broker pod, then the pod hosting the redundancy Standby Broker, and finally the pod hosting the currently Active Broker. Terminating the currently active broker for update in the final step will trigger an [automatic redundancy activity switch](https://docs.solace.com/Features/HA-Redundancy/SW-Broker-Redundancy-and-Fault-Tolerance.htm#Failure) where the already updated standby will take activity.
+By default an update will trigger restart of the broker pods:
+* In a non-HA deployment the single broker pod will be restarted.
+* In an HA deployment the three broker pods of the HA redundancy group will be restarted in a **rolling** update: first the Monitor Broker pod, then the pod hosting the redundancy Standby Broker, and finally the pod hosting the currently Active Broker. When the currently active broker is terminated for update in the final step, an [automatic redundancy activity switch](https://docs.solace.com/Features/HA-Redundancy/SW-Broker-Redundancy-and-Fault-Tolerance.htm#Failure) will happen where the already updated standby will take activity.
 
-Users wishing to manually control the pod restarts may activate _manual_ update by specifying `spec.updateStrategy: manualPodRestart` in the broker spec. In this case the user is responsible for initiating the termination of the individual pods at their discretion. Removing or setting the value back to `automatedRolling` will revert to the rolling update mode.
+Users wishing to manually control the pod restarts may activate **manual** update by specifying `spec.updateStrategy: manualPodRestart` in the broker spec. In this case the user is responsible for initiating the termination of the individual pods at their discretion. Removing or setting the value back to `automatedRolling` will revert to the rolling update mode.
 
 ### Update Limitations
 
+The following table lists parameters for which update using [Modify Deployment](#modifying-a-broker-deployment-including-broker-upgrade) is not supported in the current Operator release.
 
+| Parameter | Notes |
+| --- | ---
+| `spec.adminCredentialsSecret` | Changing the secret name or contained password will not update the password on the broker but will result in broker pods getting out of readiness. It requires an additional [manual action to update the admin password using CLI](https://docs.solace.com/Admin/Configuring-Internal-CLI-User-Accounts.htm?Highlight=admin%20password#Changing-CLI-User-Passwords) on *each* broker.
+| `spec.monitoringCredentialsSecret` | Similarly to the `adminCredentialsSecret`, additional manual action is required to update the password of the `minitor` user on each broker. |
+| `spec.preSharedAuthKeySecret` | Any updates will be ignored, [manual change of key is required using CLI](https://docs.solace.com/Features/HA-Redundancy/Pre-Shared-Keys-SMB.htm?Highlight=pre-shared#How2).|
+| `spec.systemScaling.maxConnections` | Scaling up a broker deployment requires two steps: first, to update the deployment with the desired target `systemScaling` and next, to [manually update scaling using the CLI](https://docs.solace.com/Software-Broker/Set-Scaling-Params-HA.htm#Step_2__Increase_the_Value_of_the_Scaling_Parameter(s)) on each broker. |
+| `spec.systemScaling.maxQueueMessages` | As for `maxConnections` |
+| `spec.systemScaling.maxSpoolUsage` | As for `maxConnections`, but here storage size may need to be increased. Follow the specific instructions of your Kubernetes or storage provider to [manually expand the volume claims](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#expanding-persistent-volumes-claims) for the PVCs used. |
+| `spec.redundancy` | Changing a broker deployment from non-HA to HA or HA to non-HA is not supported by simply updating this parameter. |
 
-
+>**Important**: if using ephemeral storage for Monitor nodes, the monitor will pick up any of above updates. However message routing broker nodes will not and it requires a manual fix to bring all broker nodes back in sync after a monitor restart.
 
 ###	Undeploy Broker
 
+The event broker deployment can be deleted by deleting the EventBroker manifest:
+
+```sh
+kubectl delete eventbroker <broker-deployment-name>
+# Check what has remained from the deployment
+kubectl get statefulsets,services,pods,pvc,pv
+# It may take some time for broker resources to delete
+```
+This will initiate deletion the broker deployment. 
+
+> Important: PVCs and related PVs associated with the broker's persistent storage will be preserved even after  deleting the EventBroker manifest because they may contain important broker configuration. They shall be deleted manually if required.
+
 ###	Re-Install Broker
 
-###	Troubleshooting
+As described in the previous section, broker persistent storage will not be automatically deleted.
 
-CRD in place
-Check operator running
-Check operator settings
-- namespace
-Check operator logs
-Check pod logs
+In this case the deployment may be reinstalled and continue from the point before the `delete eventbroker` command was executed by [running `kubectl apply` again](#quick-start), using the same deployment name and parameters as the previous run. This includes explicitly providing the same admin password as before.
 
+##	Operator Deployment Guide
 
-9.1	Common K8s issues
-9.2	Status, Logs, Events, Conditions
-9.3	Broker stuck in bad state
-9.4	Using Metrics
-## Upgrade Operator
+### Install Operator
 
-### From OLM
-### From command line
+There are two recommended options to acquire the PubSub+ Event Broker Operator:
+* Operator Lifecycle Manager (OLM)
+* Command Line direct install
 
-### Upgrade CRD and Operator
+#### From Operator Lifecycle Manager
 
-##	Migration from Helm-based deployment
-10.1	Possible IP address change
-10.a    PVC, admin password
+The Operator Lifecycle Manager (OLM) tool can be used to install, update, and manage the lifecycle of community operators available from [OperatorHub](https://operatorhub.io).
+
+Follow the steps from [OperatorHub](https://operatorhub.io/operator/pubsubplus-eventbroker-operator) to setup OLM then to install the PubSub+ Event Broker Operator. Click on the Install button to see the detailed instructions.
+
+The default namespace is `operators` for operators installed from OperatorHub.
+
+#### From command line
+
+Use the `deploy.yaml` from the [PubSub+ Event Broker Operator GitHub project](https://github.com/SolaceProducts/pubsubplus-kubernetes-operator). It includes a collection of manifests for all the Kubernetes resources that need to be created.
+
+The following example creates a default deployment. Edit the `deploy.yaml` before applying to customize options:
+```sh
+# Download manifest for possible edit
+wget https://github.com/SolaceProducts/pubsubplus-kubernetes-operator/blob/main/deploy/deploy.yaml
+# Edit manifest as required
+# Manifest creates a namespace and all K8s resources for the Operator deployment
+kubectl apply -f deploy.yaml
+# Wait for deployment to complete
+kubectl get pods -n pubsubplus-operator-system --watch
+```
+
+Customization options:
+* Operator namespace: replace the default `pubsubplus-operator-system`
+* Operator image: replace the default `solace/solace-pubsub-eventbroker-operator:latest`
+* Allowed namespaces for broker deployment: replace default `""` value for `WATCH_NAMESPACE` env variable. Default `""` means all namespaces. Provide the name of a single namespace or a comma-separated list of namespaces.
+* ImagePullSecret used when pulling the operator image fom a private repo: use or replace the name `regcred`. In this case the Operator namespace must exist with the ImagePullSecret created there before applying `deploy.yaml`.
+
+### Validating the Operator deployment
+
+First, check if the PubSubPlusEventBroker Custom Resource Definition (CRD) is in place. This is a global Kubernetes resource so no namespace is required.
+```sh
+prompt:~$ kubectl get crd pubsubpluseventbrokers.pubsubplus.solace.com
+NAME                                           CREATED AT
+pubsubpluseventbrokers.pubsubplus.solace.com   2023-02-14T15:24:22Z
+```
+
+Next, check the operator deployment. The following example assumes that the operator has been deployed in the `pubsubplus-operator-system` namespace, adjust the command for a different namespace.
+
+```
+prompt:~$ kubectl get deployments -n pubsubplus-operator-system
+NAME                              READY   UP-TO-DATE   AVAILABLE   AGE
+pubsubplus-eventbroker-operator   1/1     1            1           3h
+```
+
+### Troubleshooting the Operator deployment
+
+If the deployment is not ready then inspect if the Operator pod is running at all:
+```
+kubectl get pods -n pubsubplus-operator-system
+```
+
+Also get the deployment and the operator pod described for any issues:
+```
+kubectl describe deployment pubsubplus-eventbroker-operator -n pubsubplus-operator-system
+kubectl describe pod pubsubplus-eventbroker-operator-XXX-YYY -n pubsubplus-operator-system
+```
+
+In the Operator Pod description check the `WATCH_NAMESPACE` environment variable. Default `""` value means all namespaces watched, otherwise the namespaces are listed where the Operator is allowed to create a broker deployment.
+
+Also verify adequate RBAC permissions for the Operator, review the [Security section](#security-considerations).
+
+For additional hints refer to the [Broker Troubleshooting](#troubleshooting) section.
+
+### Upgrade the Operator
+
+A given version of the Operator has a dependency on the PubSubPlusEventBroker Custom Resource Definition (CRD) version it can interpret. The CRD can be viewed as a schema. New version of a CRD may not be compatible with an older Operator version. Therefore it is generally recommended to use the latest possible version of the Operator. Installing a newer CRD can be expected to be backwards compatible for existing EventBroker resources, but requires an Operator upgrade to at least the same version or later.
+
+##### Upgrading the Operator only
+
+You can use OLM to manage installing new versions of the Operator as they become available. The default install of the PubSub+ Event Broker Operator is set to automatic updates. This can be changed to `Manual` by editing the broker subscription in the `operators` namespace.
+
+If the Operator has been installed directly from the command line then update `deploy.yaml` to the new operator image tag and run `kubectl apply -f <updated-deploy.yaml>` and then validate the updated deployment.
+
+#### Upgrade CRD and Operator
+
+OLM automatically manages the CRD and Operator updates.
+
+Direct install requires taking `deploy.yaml` from the correctly tagged version of the [PubSub+ Event Broker Operator GitHub project](https://github.com/SolaceProducts/pubsubplus-kubernetes-operator), as it includes the corresponding version of the CRD. 
+
+>Note: while the goal is to keep the CRD API versions backwards compatible, it may become necessary to introduce a new API version. In that case detailed upgrade instructions will be provided in the Release Notes.
+
+##	Migration from Helm-based deployments
+
+Existing deployments that were created using the `pubsubplus` Helm chart may be ported to Operator control. In-service migration is not supported, broker shutdown is required.
+
+Consider the followings:
+* The key elements holding the broker configuration and messaging data are the PVs and associated PVCs. They will need to be assigned to the new deployment. The broker spec allows to [specify individual PVCs for each broker](#assigning-existing-pvc-persistent-volume-claim) in a deployment.
+* The Helm deployment used a single StatefulSet model with HA broker pods named `<deployment>-pubsubplus-0`, `...-1` and `...-2` for Primary, Backup and Monitor broker nodes, respectively. The new Operator deployment model creates a dedicated StatefulSet to each, with pod names `<deployment>-pubsubplus-p-0`, `...-b-0` and `...-m-0`.
+* The already configured admin password must be provided to the new deployment in a secret, refer to the [Users and Passwords section](#admin-and-monitor-users-and-passwords).
+* Naming the Operator-managed broker deployment the same as the Helm-based deployment will help to keep the service name (and hence the DNS name) the same, although the external IP address is expected to change if using LoadBalancer.
+* The TLS secret for broker TLS configuration can be reused.
+
+### Migration process
+
+1. Using the existing Helm-based deployment:
+* Take note of the `admin` user password. 
+* Follow the [documentation](https://docs.solace.com/Admin/Configuring-Internal-CLI-User-Accounts.htm) to create a global read-only `monitor` user and configure a password.
+* Take note of the PVCs used.Their naming scheme is `data-<deplyment-name>-pubsubplus-0`, `...-1` and `...-2` for Primary, Backup and Monitor.
+2. [Create secrets](#admin-and-monitor-users-and-passwords) for the `admin`, `monitoring` users, respectively.
+3. Now shutdown the existing deployment using `helm delete <deployment-name>`. This will delete the broker deployment but not the PV/PVCs.
+4. Create a new broker spec. This example shows one for an HA deployment:
+```yaml
+apiVersion: pubsubplus.solace.com/v1beta1
+kind: PubSubPlusEventBroker
+metadata:
+  name: <deployment-name>
+spec:
+  redundancy: true  # "false" for non-HA
+  image:
+    repository: solace/solace-pubsub-standard  # ensure same as the original
+    tag: latest                                # ensure same as the original
+  systemScaling:
+    messagingNodeCpu: 2                        # ensure same as the original
+    messagingNodeMemory: 3410Mi                # ensure same as the original
+  adminCredentialsSecret: created-admin-credetials-secret
+  monitoringCredentialsSecret: created-monitoring-credetials-secret
+  tls:
+    enabled: true
+    serverTlsConfigSecret: existing-tls-secret
+  storage:
+    customVolumeMount:
+      - name: Primary
+        persistentVolumeClaim:
+          claimName: helm-primary-pvc-name
+      - name: Backup
+        persistentVolumeClaim:
+          claimName: helm-backup-pvc-name
+      - name: Monitor
+        persistentVolumeClaim:
+          claimName: helm-monitor-pvc-name
+  # Add any other parameter from the original deployment as required
+```
+5. Apply the broker spec. This will create a new deployment using the specified resources:
+```
+kubectl apply -f new-broker-spec.yaml
+```
+No further steps are required for non-HA deployments, wait for the deployment to come up as ready.
+
+For HA deployments wait for the pods to come up running but they will never become ready. This is because the redundancy group addresses need to be updated as the pods have new names:
+| Old broker pod name | New broker pod name |
+| --- | --- |
+| `<deployment-name>-pubsubplus-0` | `<deployment-name>-pubsubplus-p-0` |
+| `<deployment-name>-pubsubplus-1` | `<deployment-name>-pubsubplus-b-0` |
+| `<deployment-name>-pubsubplus-2` | `<deployment-name>-pubsubplus-m-0` |
+
+[Log into](#ssh-access-to-individual-event-brokers) each broker pod and follow the [Solace documentation](https://docs.solace.com/Features/HA-Redundancy/Configuring-HA-Groups.htm#Configur2) to configure the HA redundancy group `connect-via` settings.
+
+Example for the monitor node:
+```
+my-pubsubplus-m-0> en
+my-pubsubplus-m-0# conf
+my-pubsubplus-m-0(configure)# redundancy
+my-pubsubplus-m-0(configure/redundancy)# shutdown
+my-pubsubplus-m-0(configure/redundancy)# show redundancy group   <== Existing config
+Node Router-Name   Node Type       Address           Status
+-----------------  --------------  ----------------  ---------
+mypubsubplusha0    Message-Router  my-pubsubplus     Offline
+                                     -0.my-pubsubpl
+                                     us-discover
+                                     y.default.svc
+mypubsubplusha1    Message-Router  my-pubsubplus     Offline
+                                     -1.my-pubsubpl
+                                     us-discover
+                                     y.default.svc
+mypubsubplusha2*   Monitor         my-pubsubplus     Offline
+                                     -2.my-pubsubpl
+                                     us-discover
+                                     y.default.svc
+
+* - indicates the current node
+my-pubsubplus-m-0(configure/redundancy)# group
+my-pubsubplus-m-0(configure/redundancy/group)# node mypubsubplusha0
+my-pubxsubplus-m-0(configure/redundancy/group/node)# connect-via my-pubsubplus-p-0.my-pubsubplus-discovery.default.svc
+my-pubsubplus-m-0(configure/redundancy/group/node)# exit
+my-pubsubplus-m-0(configure/redundancy/group)# node mypubsubplusha1
+my-pubsubplus-m-0(configure/redundancy/group/node)# connect-via my-pubsubplus-b-0.my-pubsubplus-discovery.default.svc
+my-pubsubplus-m-0(configure/redundancy/group/node)# exit
+my-pubsubplus-m-0(configure/redundancy/group)# node mypubsubplusha2
+my-pubsubplus-m-0(configure/redundancy/group/node)# connect-via my-pubsubplus-m-0.my-pubsubplus-discovery.default.svc
+my-pubsubplus-m-0(configure/redundancy/group/node)# exit
+my-pubsubplus-m-0(configure/redundancy/group)# exit
+my-pubsubplus-m-0(configure/redundancy)# no shutdown
+my-pubsubplus-m-0(configure/redundancy)# show redundancy
+Configuration Status     : Enabled
+Redundancy Status        : Down
+…
+my-pubsubplus-m-0(configure/redundancy)# show redundancy
+Configuration Status     : Enabled
+Redundancy Status        : Up
+```
