@@ -13,9 +13,11 @@ Contents:
       - [a) OperatorHub and OLM Option](#a-operatorhub-and-olm-option)
       - [b) Direct Option](#b-direct-option)
     - [3. Install the Solace PubSub+ Software Event Broker with default configuration](#3-install-the-solace-pubsub-software-event-broker-with-default-configuration)
-      - [a) Example Deployment for Developers](#a-example-deployment-for-developers)
+      - [a) Example Minimal Deployment for Developers](#a-example-minimal-deployment-for-developers)
       - [b) Example non-HA Deployment](#b-example-non-ha-deployment)
       - [c) Example HA Deployment](#c-example-ha-deployment)
+    - [4. Test the deployment](#4-test-the-deployment)
+    - [Additional information](#additional-information)
   - [Contributing](#contributing)
   - [Authors](#authors)
   - [License](#license)
@@ -126,9 +128,9 @@ By default this method has installed the Operator in the `pubsubplus-operator-sy
 ### 3. Install the Solace PubSub+ Software Event Broker with default configuration
 
 Three deployment variants will be presented with default small-scale configurations:
-*	*Developer*: recommended PubSub+ Software Event Broker for Developers (standalone) - no guaranteed performance
-* *Non-HA*: PubSub+ Software Event Broker Standalone, supporting 100 client connections
-* *HA*: PubSub+ Software Event Broker with brokers in HA redundancy group, supporting 100 client connections
+*	*Developer*: recommended minimal standalone PubSub+ Software Event Broker for Developers - no guaranteed performance
+* *Non-HA*: PubSub+ Software Event Broker Standalone, production-ready performance supporting up to 100 client connections
+* *HA*: PubSub+ Software Event Broker with brokers in HA redundancy group, production-ready performance supporting up to  100 client connections
 
 By default the publicly available [latest Docker image of PubSub+ Software Event Broker Standard Edition](https://hub.Docker.com/r/solace/solace-pubsub-standard/tags/) will be used.
 
@@ -136,9 +138,9 @@ For other PubSub+ Software Event Broker configurations or sizes, refer to the [P
 
 >Important: While the non-HA and HA deployments will be ready for Production performance, consult the [Security Considerations]() documentation for adequate security hardening in your environment.
 
-#### a) Example Deployment for Developers
+#### a) Example Minimal Deployment for Developers
 
-This deployment requires a minimum of 1 CPU and 4 GB of memory available to the event broker pod.
+This minimal non-HA deployment requires 1 CPU and 4 GB of memory available to the event broker pod.
 ```bash
 # Create deployment manifest
 echo "
@@ -198,17 +200,45 @@ kubectl get pods --show-labels --watch
 kubectl wait --for=condition=ServiceReady eventbroker ha-example
 kubectl wait --for=condition=HAReady eventbroker ha-example
 ```
+### 4. Test the deployment
 
-The above options will create a deployment. Check the event broker deployment status and get information about the service name and type to access the broker services, and the secret that contains the credentials to be used for admin access:
+The following examples use the `dev-example` deployment name. Adjust it to your deployment's name.
+
+The above options will create a deployment. Check the event broker deployment status and get information about the service name and type to access the broker services, and the secret that contains the credentials to be used for admin access.
 ```
-kubectl describe eventbroker <deployment-name>
+kubectl describe eventbroker dev-example
 ```
 
-> Note: When using MiniKube, there is no integrated Load Balancer, which is the default service type. For a workaround, execute `minikube service my-release-pubsubplus-ha` to expose the services. Services will be accessible directly using the NodePort instead of direct Port access, for which the mapping can be obtained from `kubectl describe service my-release-pubsubplus-ha`.
+* Obtain the management admin password:
+```
+ADMIN_SECRET_NAME=$(kubectl get eventbroker dev-example -o jsonpath='{.status.broker.adminCredentialsSecret}')
+kubectl get secret $ADMIN_SECRET_NAME -o jsonpath='{.data.username_admin_password}' | base64 -d
+```
+
+* Obtain the IP address to access the broker services:
+```
+BROKER_SERVICE_NAME=$(kubectl get eventbroker dev-example -o jsonpath='{.status.broker.serviceName}')
+kubectl get svc $BROKER_SERVICE_NAME -o jsonpath='{.status.loadBalancer.ingress}'
+```
+
+> Note: When using MiniKube, there is no integrated Load Balancer, which is the default service type. Above IP will not return anything. For a workaround, execute `minikube service list` to expose the services. The output will provide a table with services mapped to a local IP address and ephemeral Node ports.
+
+* Access the PubSub+ Broker Manager
+
+Use the IP address obtained and point your browser to [`http://<ip-address>:8080`](). Login as user `admin` with the management admin password obtained.
+
+> Minikube users shall use the `tcp-semp/8080` URL from the `minikube service list` output table.
+
+* Use the Broker Manager [built-in Try-Me](https://docs.solace.com/Admin/Broker-Manager/PubSub-Manager-Overview.htm?Highlight=manager#Test-Messages) tool to test messaging.
+
+> Note: MiniKube users shall use the `tcp-web/8008` URL port from the `minikube service list` output table instead of the default `8008` Broker URL port in the Try-Me Publisher's Establish Connection section.
+
+
+### Additional information
 
 Refer to the detailed PubSub+ Kubernetes documentation for:
-* [Validating the deployment](); or
-* [Troubleshooting]()
+* [Validating the deployment](docs/EventBrokerOperatorUserGuide.md#validating-the-deployment); or
+* [Troubleshooting](docs/EventBrokerOperatorUserGuide.md#troubleshooting)
 * [Modifying or Upgrading]()
 * [Deleting the deployment]()
 
