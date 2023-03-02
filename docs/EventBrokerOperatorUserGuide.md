@@ -8,7 +8,7 @@ The following additional set of documentation is also available:
 * For the `PubSubPlusEventBroker` custom resource (deployment configuration) parameter options, refer to the [PubSub+ Event Broker Operator Parameters Reference](/docs/EventBrokerOperatorParametersReference.md).
 * For version-specific information, refer to the [Operator Release Notes](/releases)
 
-This guide is focused on deploying the event broker using the Operator, which is the preferred way to deploy. Note that the legacy way of [Helm-based deployment](https://github.com/SolaceProducts/pubsubplus-kubernetes-quickstart) is also supported but out of scope for this document.
+This guide is focused on deploying the event broker using the Operator, which is the preferred way to deploy. Note that the legacy way of [Helm-based deployment](https://github.com/SolaceProducts/pubsubplus-kubernetes-quickstart/tree/v3.2.0) is also supported but out of scope for this document.
 
 Contents:
 
@@ -296,7 +296,7 @@ spec:
     maxConnections: 100
     maxQueueMessages: 100
     maxSpoolUsage: 1000
-    messagingNodeCpu: 2
+    messagingNodeCpu: "2"
     messagingNodeMemory: 4025Mi
 ```
 
@@ -1490,7 +1490,7 @@ spec:
     repository: solace/solace-pubsub-standard  # ensure same as the original
     tag: latest                                # ensure same as the original
   systemScaling:
-    messagingNodeCpu: 2                        # ensure same as the original
+    messagingNodeCpu: "2"                      # ensure same as the original
     messagingNodeMemory: 3410Mi                # ensure same as the original
   adminCredentialsSecret: created-admin-credetials-secret
   monitoringCredentialsSecret: created-monitoring-credetials-secret

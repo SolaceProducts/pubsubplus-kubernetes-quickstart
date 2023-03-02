@@ -35,7 +35,7 @@ metadata:
           }
         }
       ]
-    capabilities: Basic Install
+    capabilities: Full Lifecycle
     operators.operatorframework.io/builder: operator-sdk-v1.25.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
   name: pubsubplus-eventbroker-operator.v1.0.0-rc.1
@@ -46,7 +46,7 @@ spec:
     owned:
     - description: PubSubPlusEventBroker is the Schema for the pubsubpluseventbrokers
         API
-      displayName: Pub Sub Plus Event Broker
+      displayName: PubSubPlus Event Broker
       kind: PubSubPlusEventBroker
       name: pubsubpluseventbrokers.pubsubplus.solace.com
       version: v1beta1
