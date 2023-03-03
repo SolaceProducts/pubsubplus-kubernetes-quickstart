@@ -5,7 +5,7 @@ This document provides detailed information for deploying the [Solace PubSub+ So
 The following additional set of documentation is also available:
 
 * For a hands-on quick start, refer to the [Quick Start guide](/README.md).
-* For the `PubSubPlusEventBroker` custom resource (deployment configuration) parameter options, refer to the [PubSub+ Event Broker Operator Parameters Reference](/docs/EventBrokerOperatorParametersReference.md).
+* For the `PubSubPlusEventBroker` custom resource (deployment configuration, or "broker spec") parameter options, refer to the [PubSub+ Event Broker Operator Parameters Reference](/docs/EventBrokerOperatorParametersReference.md).
 * For version-specific information, refer to the [Operator Release Notes](/releases)
 
 This guide is focused on deploying the event broker using the Operator, which is the preferred way to deploy. Note that [Helm-based deployment](https://github.com/SolaceProducts/pubsubplus-kubernetes-helm-quickstart) is also supported but out of scope for this document.
