@@ -643,7 +643,7 @@ NodeAssignment defines labels to constrain PubSubPlusEventBroker nodes to specif
           <br/>
             <i>Enum</i>: Primary, Backup, Monitor<br/>
         </td>
-        <td>false</td>
+        <td>true</td>
       </tr><tr>
         <td><b><a href="#pubsubpluseventbrokerspecnodeassignmentindexspec">spec</a></b></td>
         <td>object</td>

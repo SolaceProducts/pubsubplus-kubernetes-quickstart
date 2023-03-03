@@ -295,10 +295,10 @@ type NodeAssignment struct {
 	//+kubebuilder:validation:Type:=string
 	//+kubebuilder:validation:Enum=Primary;Backup;Monitor
 	// Defines the name of broker node type that has the nodeAssignment spec defined
-	Name string `json:"name,omitempty"`
+	Name string `json:"name"`
 	//+kubebuilder:validation:Type:=object
 	// If provided defines the labels to constrain the PubSubPlusEventBroker node to specific nodes
-	Spec NodeAssignmentSpec `json:"spec,omitempty"`
+	Spec NodeAssignmentSpec `json:"spec"`
 }
 
 // NodeAssignmentSpec defines the NodeAffinity and NodeSelector details to be used for event broker nodes
