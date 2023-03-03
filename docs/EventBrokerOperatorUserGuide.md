@@ -297,7 +297,7 @@ spec:
     maxQueueMessages: 100
     maxSpoolUsage: 1000
     messagingNodeCpu: "2"
-    messagingNodeMemory: 4025Mi
+    messagingNodeMemory: "4025Mi"
 ```
 
 >Note: beyond CPU and memory requirements, broker storage size (see [Storage](#storage) section) must also support the provided scaling. The calculator can be used to determine that as well.
@@ -1487,11 +1487,11 @@ metadata:
 spec:
   redundancy: true  # "false" for non-HA
   image:
-    repository: solace/solace-pubsub-standard  # ensure same as the original
-    tag: latest                                # ensure same as the original
+    repository: solace/solace-pubsub-standard  # ensure this is matching the original
+    tag: latest                                # ensure this is matching the original
   systemScaling:
-    messagingNodeCpu: "2"                      # ensure same as the original
-    messagingNodeMemory: 3410Mi                # ensure same as the original
+    messagingNodeCpu: "2"                      # ensure this is matching the original
+    messagingNodeMemory: "3410Mi"              # ensure this is matching the original
   adminCredentialsSecret: created-admin-credetials-secret
   monitoringCredentialsSecret: created-monitoring-credetials-secret
   tls:

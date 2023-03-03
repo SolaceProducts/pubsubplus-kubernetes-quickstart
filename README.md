@@ -1,11 +1,11 @@
-# Solace PubSub+ Event Broker Operator Quick Start Guide
+# Solace PubSub+ Event Broker Operator Quick Start
 
 Using Solace PubSub+ Event Broker Operator (Operator) is the Kubernetes-native method to install and manage a Solace PubSub+ Software Event Broker on a Kubernetes cluster.
 
 Solace [PubSub+ Platform](https://solace.com/products/platform/) is a complete event streaming and management platform for the real-time enterprise. The [PubSub+ Software Event Broker](https://solace.com/products/event-broker/software/) efficiently streams event-driven information between applications, IoT devices, and user interfaces running in the cloud, on-premises, and in hybrid environments using open APIs and protocols like AMQP, JMS, MQTT, REST and WebSocket. It can be installed into a variety of public and private clouds, PaaS, and on-premises environments. Event brokers in multiple locations can be linked together in an [Event Mesh](https://solace.com/what-is-an-event-mesh/) to dynamically share events across the distributed enterprise.
 
 Contents:
-- [Solace PubSub+ Event Broker Operator Quick Start Guide](#solace-pubsub-event-broker-operator-quick-start-guide)
+- [Solace PubSub+ Event Broker Operator Quick Start](#solace-pubsub-event-broker-operator-quick-start)
   - [Overview](#overview)
     - [Additional Documentation](#additional-documentation)
   - [How to deploy the Solace PubSub+ Software Event Broker onto Kubernetes using the Operator](#how-to-deploy-the-solace-pubsub-software-event-broker-onto-kubernetes-using-the-operator)
@@ -13,7 +13,7 @@ Contents:
     - [2. Install the Operator](#2-install-the-operator)
       - [a) OperatorHub and OLM Option](#a-operatorhub-and-olm-option)
       - [b) Direct Option](#b-direct-option)
-    - [3. Install the Solace PubSub+ Software Event Broker with default configuration](#3-install-the-solace-pubsub-software-event-broker-with-default-configuration)
+    - [3. PubSub+ Software Event Broker Deployment Examples](#3-pubsub-software-event-broker-deployment-examples)
       - [a) Example Minimum-footprint Deployment for Developers](#a-example-minimum-footprint-deployment-for-developers)
       - [b) Example non-HA Deployment](#b-example-non-ha-deployment)
       - [c) Example HA Deployment](#c-example-ha-deployment)
@@ -74,7 +74,7 @@ By completing any of the following install options with default settings the Eve
 
 #### a) OperatorHub and OLM Option
 
-Follow the steps from [OperatorHub](https://operatorhub.io/operator/pubsubplus-eventbroker-operator) to setup OLM then to install the PubSub+ Event Broker Operator. Click on the Install button to see the detailed instructions.
+Follow the steps from [OperatorHub](https://operatorhub.io/operator/pubsubplus-eventbroker-operator) to first setup OLM, then to install the PubSub+ Event Broker Operator. Click on the Install button to see the detailed instructions.
 
 ```bash
 # BEGIN: For internal use only, DELETE when publishing
@@ -129,13 +129,13 @@ kubectl get pods -n pubsubplus-operator-system --watch
 
 By default this method has installed the Operator in the `pubsubplus-operator-system` namespace.
 
-### 3. Install the Solace PubSub+ Software Event Broker with default configuration
+### 3. PubSub+ Software Event Broker Deployment Examples
 
 Following deployment variants will be presented with default small-scale configurations:
 1.	*Developer*: recommended minimal standalone PubSub+ Software Event Broker for Developers - no guaranteed performance
 2. *Non-HA*: PubSub+ Software Event Broker Standalone, production-ready performance supporting up to 100 client connections
 3. *HA*: PubSub+ Software Event Broker with brokers in HA redundancy group, production-ready performance supporting up to  100 client connections
-4. *With Monitoring*: an example non-HA deployment with Prometheus monitoring enabled
+4. *Monitoring-enabled*: an example non-HA deployment with Prometheus monitoring enabled
 
 By default the publicly available [latest Docker image of PubSub+ Software Event Broker Standard Edition](https://hub.docker.com/r/solace/solace-pubsub-standard/tags/) will be used.
 
@@ -242,12 +242,14 @@ kubectl describe eventbroker dev-example
 * Obtain the management admin password:
 ```
 ADMIN_SECRET_NAME=$(kubectl get eventbroker dev-example -o jsonpath='{.status.broker.adminCredentialsSecret}')
+# This will return the management "admin" user's password
 kubectl get secret $ADMIN_SECRET_NAME -o jsonpath='{.data.username_admin_password}' | base64 -d
 ```
 
 * Obtain the IP address to access the broker services:
 ```
 BROKER_SERVICE_NAME=$(kubectl get eventbroker dev-example -o jsonpath='{.status.broker.serviceName}')
+# This will return the broker service's external IP address
 kubectl get svc $BROKER_SERVICE_NAME -o jsonpath='{.status.loadBalancer.ingress}'
 ```
 
@@ -266,11 +268,11 @@ Use the IP address obtained and point your browser to [`http://<ip-address>:8080
 
 ### Additional information
 
-Refer to the detailed PubSub+ Operator documentation for:
+Refer to the detailed PubSub+ Event Broker Operator documentation for:
 * [Validating the deployment](docs/EventBrokerOperatorUserGuide.md#validating-the-deployment); or
 * [Troubleshooting](docs/EventBrokerOperatorUserGuide.md#troubleshooting)
-* [Modifying or Upgrading]()
-* [Deleting the deployment]()
+* [Modifying or Upgrading](docs/EventBrokerOperatorUserGuide.md#modifying-a-broker-deployment-including-broker-upgrade)
+* [Deleting the deployment](docs/EventBrokerOperatorUserGuide.md#undeploy-broker)
 
 ## Contributing
 
