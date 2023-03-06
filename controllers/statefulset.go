@@ -240,7 +240,7 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(sts *a
 							Value: strconv.Itoa(maxSpoolUsage),
 						},
 						{
-							Name:  "BROKER_TLS_ENEBLED",
+							Name:  "BROKER_TLS_ENABLED",
 							Value: strconv.FormatBool(m.Spec.BrokerTLS.Enabled),
 						},
 						{

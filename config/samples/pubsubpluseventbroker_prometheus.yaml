@@ -1,6 +1,7 @@
 apiVersion: pubsubplus.solace.com/v1beta1
 kind: PubSubPlusEventBroker
 metadata:
-  name: minimum-for-developers-example
+  name: non-ha-monitoring-enabled-example
 spec:
-  developer: true
+  monitoring:
+    enabled: true

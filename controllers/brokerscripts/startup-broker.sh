@@ -23,7 +23,7 @@ if [ ${count} -eq ${loop_guard} ]; then
   echo "$(date) ERROR: ${APP}-Solace Management API never came up"  >&2
   exit 1
 fi
-if [ "${BROKER_TLS_ENEBLED}" = "true" ]; then
+if [ "${BROKER_TLS_ENABLED}" = "true" ]; then
   rm /dev/shm/server.cert # remove as soon as possible
   cert_results=$(curl --write-out '%{http_code}' --silent --output /dev/null -k -X PATCH -u admin:${password} https://localhost:1943/SEMP/v2/config/ \
   -H "content-type: application/json" \

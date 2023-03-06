@@ -47,7 +47,7 @@ func (r *PubSubPlusEventBrokerReconciler) newDeploymentForPrometheusExporter(nam
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
-							Name:            name,
+							Name:            "exporter",
 							Image:           getExporterImageDetails(m.Spec.Monitoring.MonitoringImage),
 							ImagePullPolicy: getExporterImagePullPolicy(m.Spec.Monitoring.MonitoringImage),
 							Ports: []corev1.ContainerPort{{
@@ -103,7 +103,6 @@ func (r *PubSubPlusEventBrokerReconciler) newDeploymentForPrometheusExporter(nam
 										corev1.Capability("ALL"),
 									},
 								},
-								RunAsUser:                &[]int64{10001}[0],
 								RunAsNonRoot:             &[]bool{true}[0],  // Set to true
 								AllowPrivilegeEscalation: &[]bool{false}[0], // Set to false
 								SeccompProfile: &corev1.SeccompProfile{
@@ -116,6 +115,13 @@ func (r *PubSubPlusEventBrokerReconciler) newDeploymentForPrometheusExporter(nam
 				},
 			},
 		},
+	}
+
+	// OpenShift and namespace must be considered for RunAsUser
+	// Only set it if not on OpenShift or using the "default" namespace
+	// otherwise leave it undefined
+	if !r.IsOpenShift || m.Namespace == corev1.NamespaceDefault {
+		dep.Spec.Template.Spec.Containers[0].SecurityContext.RunAsUser = &[]int64{10001}[0]
 	}
 
 	//Set TLS configuration

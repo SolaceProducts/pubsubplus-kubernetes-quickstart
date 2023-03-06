@@ -144,7 +144,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 			}
 			// ServiceAccount created successfully - return and requeue
 			r.emitResourceSuccessEvent(pubsubpluseventbroker, "ServiceAccount", saName)
-			return ctrl.Result{Requeue: true}, nil
+			return ctrl.Result{RequeueAfter: time.Duration(3) * time.Second}, nil
 		} else if err != nil {
 			r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to get ServiceAccount")
 			return ctrl.Result{}, err
@@ -168,7 +168,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 		}
 		// Role created successfully - return and requeue
 		r.emitResourceSuccessEvent(pubsubpluseventbroker, "Podtagupdater Role", roleName)
-		return ctrl.Result{Requeue: true}, nil
+		return ctrl.Result{RequeueAfter: time.Duration(3) * time.Second}, nil
 	} else if err != nil {
 		r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to get Role")
 		return ctrl.Result{}, err
@@ -191,7 +191,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 		}
 		// RoleBinding created successfully - return and requeue
 		r.emitResourceSuccessEvent(pubsubpluseventbroker, "RoleBinding", rbName)
-		return ctrl.Result{Requeue: true}, nil
+		return ctrl.Result{RequeueAfter: time.Duration(3) * time.Second}, nil
 	} else if err != nil {
 		r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to get RoleBinding")
 		return ctrl.Result{}, err
@@ -214,7 +214,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 		}
 		// ConfigMap created successfully - return and requeue
 		r.emitResourceSuccessEvent(pubsubpluseventbroker, "ConfigMap", cmName)
-		return ctrl.Result{Requeue: true}, nil
+		return ctrl.Result{RequeueAfter: time.Duration(3) * time.Second}, nil
 	} else if err != nil {
 		r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to get ConfigMap")
 		return ctrl.Result{}, err
@@ -238,7 +238,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 		}
 		// Broker Service created successfully - return and requeue
 		r.emitResourceSuccessEvent(pubsubpluseventbroker, "Broker Service", svcName)
-		return ctrl.Result{Requeue: true}, nil
+		return ctrl.Result{RequeueAfter: time.Duration(3) * time.Second}, nil
 	} else if err != nil {
 		r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to get Broker Service")
 		return ctrl.Result{}, err
@@ -275,7 +275,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 			}
 			// Discovery Service created successfully - return and requeue
 			r.emitResourceSuccessEvent(pubsubpluseventbroker, "Discovery Service", dsvcName)
-			return ctrl.Result{Requeue: true}, nil
+			return ctrl.Result{RequeueAfter: time.Duration(3) * time.Second}, nil
 		} else if err != nil {
 			r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to get Discovery Service")
 			return ctrl.Result{}, err
@@ -300,7 +300,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 			}
 			// Admin Credentials Secret created successfully - return and requeue
 			r.emitResourceSuccessEvent(pubsubpluseventbroker, "Admin Credentials Secret", adminSecretName)
-			return ctrl.Result{Requeue: true}, nil
+			return ctrl.Result{RequeueAfter: time.Duration(3) * time.Second}, nil
 		} else if err != nil {
 			r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to get Admin Credentials Secret")
 			return ctrl.Result{}, err
@@ -333,7 +333,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 			}
 			// Monitoring Exporter Secret created successfully - return and requeue
 			r.emitResourceSuccessEvent(pubsubpluseventbroker, "Monitoring Exporter Secret", monitoringSecretName)
-			return ctrl.Result{Requeue: true}, nil
+			return ctrl.Result{RequeueAfter: time.Duration(3) * time.Second}, nil
 		} else if err != nil {
 			r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to get Monitoring Exporter Secret")
 			return ctrl.Result{}, err
@@ -367,7 +367,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 				}
 				// PreSharedAuthKey Secret created successfully - return and requeue
 				r.emitResourceSuccessEvent(pubsubpluseventbroker, "PreSharedAuthKey Secret", preSharedAuthSecretName)
-				return ctrl.Result{Requeue: true}, nil
+				return ctrl.Result{RequeueAfter: time.Duration(3) * time.Second}, nil
 			} else if err != nil {
 				r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to get PreSharedAuthKey Secret")
 				return ctrl.Result{}, err
@@ -402,7 +402,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 			}
 			// PodDisruptionBudget created successfully - return and requeue
 			r.emitResourceSuccessEvent(pubsubpluseventbroker, "PodDisruptionBudget", podDisruptionBudgetHAName)
-			return ctrl.Result{Requeue: true}, nil
+			return ctrl.Result{RequeueAfter: time.Duration(3) * time.Second}, nil
 		} else if err != nil {
 			r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to get PodDisruptionBudget")
 			return ctrl.Result{}, err
@@ -453,7 +453,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 		}
 		// Primary StatefulSet created successfully - return and requeue
 		r.emitResourceSuccessEvent(pubsubpluseventbroker, "Primary StatefulSet", stsPName)
-		return ctrl.Result{Requeue: true}, nil
+		return ctrl.Result{RequeueAfter: time.Duration(3) * time.Second}, nil
 	} else if err != nil {
 		r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to get Primary StatefulSet")
 		return ctrl.Result{}, err
@@ -476,7 +476,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 			}
 			// Backup StatefulSet created successfully - return and requeue
 			r.emitResourceSuccessEvent(pubsubpluseventbroker, "Backup StatefulSet", stsBName)
-			return ctrl.Result{Requeue: true}, nil
+			return ctrl.Result{RequeueAfter: time.Duration(3) * time.Second}, nil
 		} else if err != nil {
 			r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to get Backup StatefulSet")
 			return ctrl.Result{}, err
@@ -497,7 +497,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 			}
 			// Monitor StatefulSet created successfully - return and requeue
 			r.emitResourceSuccessEvent(pubsubpluseventbroker, "Monitor StatefulSet", stsMName)
-			return ctrl.Result{Requeue: true}, nil
+			return ctrl.Result{RequeueAfter: time.Duration(3) * time.Second}, nil
 		} else if err != nil {
 			r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to get Monitor StatefulSet")
 			return ctrl.Result{}, err
@@ -676,7 +676,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 			}
 			// Prometheus Exporter Deployment created successfully - return and requeue
 			r.emitResourceSuccessEvent(pubsubpluseventbroker, "Prometheus Exporter Deployment", prometheusExporterDeploymentName)
-			return ctrl.Result{Requeue: true}, nil
+			return ctrl.Result{RequeueAfter: time.Duration(3) * time.Second}, nil
 		} else if err != nil {
 			r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to get Prometheus Exporter Deployment")
 			return ctrl.Result{}, err
@@ -699,7 +699,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 			}
 			// Prometheus Exporter Service created successfully - return and requeue
 			r.emitResourceSuccessEvent(pubsubpluseventbroker, "Prometheus Exporter Service", prometheusExporterSvcName)
-			return ctrl.Result{Requeue: true}, nil
+			return ctrl.Result{RequeueAfter: time.Duration(3) * time.Second}, nil
 		} else if err != nil {
 			r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to get Prometheus Exporter Service")
 			return ctrl.Result{}, err

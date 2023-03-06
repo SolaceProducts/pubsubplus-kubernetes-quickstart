@@ -5,10 +5,10 @@ This document provides detailed information for deploying the [Solace PubSub+ So
 The following additional set of documentation is also available:
 
 * For a hands-on quick start, refer to the [Quick Start guide](/README.md).
-* For the `PubSubPlusEventBroker` custom resource (deployment configuration) parameter options, refer to the [PubSub+ Event Broker Operator Parameters Reference](/docs/EventBrokerOperatorParametersReference.md).
+* For the `PubSubPlusEventBroker` custom resource (deployment configuration, or "broker spec") parameter options, refer to the [PubSub+ Event Broker Operator Parameters Reference](/docs/EventBrokerOperatorParametersReference.md).
 * For version-specific information, refer to the [Operator Release Notes](/releases)
 
-This guide is focused on deploying the event broker using the Operator, which is the preferred way to deploy. Note that the legacy way of [Helm-based deployment](https://github.com/SolaceProducts/pubsubplus-kubernetes-quickstart) is also supported but out of scope for this document.
+This guide is focused on deploying the event broker using the Operator, which is the preferred way to deploy. Note that [Helm-based deployment](https://github.com/SolaceProducts/pubsubplus-kubernetes-helm-quickstart) is also supported but out of scope for this document.
 
 Contents:
 
@@ -109,7 +109,7 @@ Contents:
 
 ## The Solace PubSub+ Software Event Broker
 
-The [PubSub+ Software Event Broker](https://solace.com/products/event-broker/) of the [Solace PubSub+ Platform](https://solace.com/products/platform/) efficiently streams event-driven information between applications, IoT devices and user interfaces running in the cloud, on-premises, and hybrid environments using open APIs and protocols like AMQP, JMS, MQTT, REST and WebSocket. It can be installed into a variety of public and private clouds, PaaS, and on-premises environments, and brokers in multiple locations can be linked together in an [event mesh](https://solace.com/what-is-an-event-mesh/) to dynamically share events across the distributed enterprise.
+Solace [PubSub+ Platform](https://solace.com/products/platform/) is a complete event streaming and management platform for the real-time enterprise. The [PubSub+ Software Event Broker](https://solace.com/products/event-broker/software/) efficiently streams event-driven information between applications, IoT devices, and user interfaces running in the cloud, on-premises, and in hybrid environments using open APIs and protocols like AMQP, JMS, MQTT, REST and WebSocket. It can be installed into a variety of public and private clouds, PaaS, and on-premises environments. Event brokers in multiple locations can be linked together in an [Event Mesh](https://solace.com/what-is-an-event-mesh/) to dynamically share events across the distributed enterprise.
 
 ## Overview
 
@@ -296,8 +296,8 @@ spec:
     maxConnections: 100
     maxQueueMessages: 100
     maxSpoolUsage: 1000
-    messagingNodeCpu: 2
-    messagingNodeMemory: 4025Mi
+    messagingNodeCpu: "2"
+    messagingNodeMemory: "4025Mi"
 ```
 
 >Note: beyond CPU and memory requirements, broker storage size (see [Storage](#storage) section) must also support the provided scaling. The calculator can be used to determine that as well.
@@ -1487,11 +1487,11 @@ metadata:
 spec:
   redundancy: true  # "false" for non-HA
   image:
-    repository: solace/solace-pubsub-standard  # ensure same as the original
-    tag: latest                                # ensure same as the original
+    repository: solace/solace-pubsub-standard  # ensure this is matching the original
+    tag: latest                                # ensure this is matching the original
   systemScaling:
-    messagingNodeCpu: 2                        # ensure same as the original
-    messagingNodeMemory: 3410Mi                # ensure same as the original
+    messagingNodeCpu: "2"                      # ensure this is matching the original
+    messagingNodeMemory: "3410Mi"              # ensure this is matching the original
   adminCredentialsSecret: created-admin-credetials-secret
   monitoringCredentialsSecret: created-monitoring-credetials-secret
   tls:

@@ -1,6 +1,4 @@
 ## Append samples you want in your CSV to this file as resources ##
 resources:
-- pubsubplus_v1beta1_pubsubpluseventbroker_dev.yaml
-- pubsubplus_v1beta1_pubsubpluseventbroker_nonha.yaml
-- pubsubplus_v1beta1_pubsubpluseventbroker_ha.yaml
+- pubsubpluseventbroker_dev.yaml
 #+kubebuilder:scaffold:manifestskustomizesamples
