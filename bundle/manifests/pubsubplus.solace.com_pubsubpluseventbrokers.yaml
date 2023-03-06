@@ -1192,6 +1192,9 @@ spec:
                             be scheduled
                           type: object
                       type: object
+                  required:
+                  - name
+                  - spec
                   type: object
                 type: array
               podAnnotations:

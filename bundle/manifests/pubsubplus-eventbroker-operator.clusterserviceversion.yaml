@@ -25,7 +25,7 @@ metadata:
     operators.operatorframework.io/builder: operator-sdk-v1.25.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
     repository: https://github.com/SolaceProducts/pubsubplus-kubernetes-operator
-  name: pubsubplus-eventbroker-operator.v1.0.0-dev
+  name: pubsubplus-eventbroker-operator.v1.0.0-rc.2
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -254,7 +254,7 @@ spec:
                   valueFrom:
                     fieldRef:
                       fieldPath: metadata.annotations['olm.targetNamespaces']
-                image: ghcr.io/solacedev/pubsubplus-eventbroker-operator:v1.0.0-dev
+                image: ghcr.io/solacedev/pubsubplus-eventbroker-operator:v1.0.0-rc.2
                 imagePullPolicy: Always
                 livenessProbe:
                   httpGet:
@@ -368,4 +368,4 @@ spec:
   provider:
     name: Solace Corporation
     url: www.solace.com
-  version: 1.0.0-dev
+  version: 1.0.0-rc.2
