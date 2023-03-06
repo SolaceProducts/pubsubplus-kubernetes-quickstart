@@ -11,7 +11,7 @@ export logging_debug_output=all
 export system_scaling_maxconnectioncount=${BROKER_MAXCONNECTIONCOUNT}
 export system_scaling_maxqueuemessagecount=${BROKER_MAXQUEUEMESSAGECOUNT}
 export messagespool_maxspoolusage=${BROKER_MAXSPOOLUSAGE}
-if [ "${BROKER_TLS_ENEBLED}" = "true" ]; then
+if [ "${BROKER_TLS_ENABLED}" = "true" ]; then
   cat /mnt/disks/certs/server/${BROKER_CERT_FILENAME} /mnt/disks/certs/server/${BROKER_CERTKEY_FILENAME} > /dev/shm/server.cert
   export tls_servercertificate_filepath="/dev/shm/server.cert"
 fi
