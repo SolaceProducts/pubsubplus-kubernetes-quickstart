@@ -689,6 +689,9 @@ spec:
                           description: NodeSelector if provided defines the exact labels of nodes to which PubSubPlusEventBroker nodes can be scheduled
                           type: object
                       type: object
+                  required:
+                  - name
+                  - spec
                   type: object
                 type: array
               podAnnotations:
@@ -1304,7 +1307,7 @@ spec:
         env:
         - name: WATCH_NAMESPACE
           value: ""
-        image: ghcr.io/solacedev/pubsubplus-eventbroker-operator:v1.0.0-rc.1
+        image: ghcr.io/solacedev/pubsubplus-eventbroker-operator:v1.0.0-rc.2
         imagePullPolicy: Always
         livenessProbe:
           httpGet:
