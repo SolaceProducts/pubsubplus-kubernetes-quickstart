@@ -1,14 +1,14 @@
 # Solace PubSub+ Event Broker Operator Quick Start
 
-Using Solace PubSub+ Event Broker Operator (Operator) is the Kubernetes-native method to install and manage a Solace PubSub+ Software Event Broker on a Kubernetes cluster.
+The Solace PubSub+ Event Broker Operator (or simply the Operator) is a Kubernetes-native method to install and manage a Solace PubSub+ Software Event Broker on a Kubernetes cluster.
 
-Solace [PubSub+ Platform](https://solace.com/products/platform/) is a complete event streaming and management platform for the real-time enterprise. The [PubSub+ Software Event Broker](https://solace.com/products/event-broker/software/) efficiently streams event-driven information between applications, IoT devices, and user interfaces running in the cloud, on-premises, and in hybrid environments using open APIs and protocols like AMQP, JMS, MQTT, REST and WebSocket. It can be installed into a variety of public and private clouds, PaaS, and on-premises environments. Event brokers in multiple locations can be linked together in an [Event Mesh](https://solace.com/what-is-an-event-mesh/) to dynamically share events across the distributed enterprise.
+The Solace [PubSub+ Platform](https://solace.com/products/platform/) is a complete event streaming and management platform for the real-time enterprise. The [PubSub+ Software Event Broker](https://solace.com/products/event-broker/software/) efficiently streams event-driven information between applications, IoT devices, and user interfaces running in the cloud, on-premises, and in hybrid environments using open APIs and protocols like AMQP, JMS, MQTT, REST and WebSocket. It can be installed into a variety of public and private clouds, PaaS, and on-premises environments. Event brokers in multiple locations can be linked together in an [Event Mesh](https://solace.com/what-is-an-event-mesh/) to dynamically share events across the distributed enterprise.
 
 Contents:
-- [Solace PubSub+ Event Broker Operator Quick Start](#solace-pubsub-event-broker-operator-quick-start)
+- [PubSub+ Event Broker Operator Quick Start](#pubsub-event-broker-operator-quick-start)
   - [Overview](#overview)
     - [Additional Documentation](#additional-documentation)
-  - [How to deploy the Solace PubSub+ Software Event Broker onto Kubernetes using the Operator](#how-to-deploy-the-solace-pubsub-software-event-broker-onto-kubernetes-using-the-operator)
+  - [How to deploy the PubSub+ Software Event Broker onto Kubernetes using the Operator](#how-to-deploy-the-pubsub-software-event-broker-onto-kubernetes-using-the-operator)
     - [1. Get a Kubernetes environment](#1-get-a-kubernetes-environment)
     - [2. Install the Operator](#2-install-the-operator)
       - [a) OperatorHub and OLM Option](#a-operatorhub-and-olm-option)
@@ -27,48 +27,48 @@ Contents:
 
 ## Overview
 
-This project is a best practice template intended for development and demo purposes. The tested and recommended Solace PubSub+ Software Event Broker version is 10.2.
+This project is a best practice template intended for development and demo purposes. The tested and recommended PubSub+ Software Event Broker version is 10.2.
 
-This document provides a quick getting started guide to install a software event broker in various configurations onto a [Kubernetes](https://kubernetes.io/docs/home/) cluster using the PubSub+ Event Broker Operator. Note that [Helm-based deployment](https://github.com/SolaceProducts/pubsubplus-kubernetes-helm-quickstart) of the broker is also supported but out of scope for this document.
+This document provides a quick getting started guide to install a software event broker in various configurations onto a [Kubernetes](https://kubernetes.io/docs/home/) cluster using the PubSub+ Event Broker Operator. Note that a [Helm-based deployment](https://github.com/SolaceProducts/pubsubplus-kubernetes-helm-quickstart) of the broker is also supported but out of scope for this document.
 
-Contents are applicable to any platform supporting Kubernetes, with specific hints on how to set up a simple [MiniKube](https://kubernetes.io/docs/tasks/tools/#minikube) or [Kind](https://kubernetes.io/docs/tasks/tools/#kind) deployment on a Linux-based machine. To view examples of other Kubernetes platforms see:
+These instructions apply to any platform supporting Kubernetes, and include specific hints for setting up a simple [MiniKube](https://kubernetes.io/docs/tasks/tools/#minikube) or [Kind](https://kubernetes.io/docs/tasks/tools/#kind) deployment on a Linux-based machine. Examples for other Kubernetes platforms are available as follows:
 
-- Deploying a Solace PubSub+ Software Event Broker HA Group onto Amazon EKS (Amazon Elastic Container Service for Kubernetes): follow the [AWS documentation](https://docs.aws.amazon.com/eks/latest/userguide/getting-started.html ) to set up EKS then this guide to deploy.
-- Deploying a Solace PubSub+ Software Event Broker HA Group onto Azure Kubernetes Service (AKS): follow the [Azure documentation](https://docs.microsoft.com/en-us/azure/aks/ ) to deploy an AKS cluster then this guide to deploy.
-- [Deploying a Solace PubSub+ Software Event Broker HA group onto a Google Kubernetes Engine](https://github.com/SolaceProducts/solace-gke-quickstart )
-- [Deploying a Solace PubSub+ Software Event Broker HA Group onto an OpenShift 4 platform](https://github.com/SolaceProducts/solace-openshift-quickstart )
-- [Install a Solace PubSub+ Software Event Broker onto a Tanzu Kubernetes Cluster](https://github.com/SolaceProducts/solace-pks )
+- EKS—To deploy an HA group of software event brokers in Amazon Elastic Container Service for Kubernetes (EKS), follow the [Amazon documentation](https://docs.aws.amazon.com/eks/latest/userguide/getting-started.html ) to configure EKS, then use this guide to deploy your software brokers.
+- AKS—To deploy an HA group of software event brokers in Azure Kubernetes Service (AKS), follow the [Azure documentation](https://docs.microsoft.com/en-us/azure/aks/ ) to configure AKS, then use this guide to deploy your software brokers.
+- GKE—See [Deploying a PubSub+ Software Event Broker HA group onto a Google Kubernetes Engine Cluster](https://github.com/SolaceProducts/solace-gke-quickstart )
+- OpenShift—See [Deploying a PubSub+ Software Event Broker HA Group onto an OpenShift 4 Platform](https://github.com/SolaceProducts/solace-openshift-quickstart )
+- Tanzu—See [Install a PubSub+ Software Event Broker onto a Tanzu Kubernetes Cluster](https://github.com/SolaceProducts/solace-pks )
 
 ### Additional Documentation
 
 Detailed documentation is provided in the [Solace PubSub+ Event Broker Operator User Guide](docs/EventBrokerOperatorUserGuide.md). In particular, consult the [Deployment Planning](docs/EventBrokerOperatorUserGuide.md#deployment-planning) section of the User Guide when planning your deployment.
 
-## How to deploy the Solace PubSub+ Software Event Broker onto Kubernetes using the Operator
+## How to deploy the PubSub+ Software Event Broker onto Kubernetes using the Operator
 
-Solace PubSub+ Software Event Broker can be deployed in either a three-node High-Availability (HA) group or as a single-node standalone deployment. For simple test environments that need only to validate application functionality, a single instance will suffice. Note that in production, or any environment where message loss cannot be tolerated, an HA deployment is required.
+The PubSub+ Software Event Broker can be deployed in either a three-node High-Availability (HA) group or as a single-node standalone deployment. For simple test environments that need only to validate application functionality, a single instance will suffice. Note that in production, or any environment where message loss cannot be tolerated, an HA deployment is required.
 
-In this quick start we go through the steps to deploy a PubSub+ Software Event Broker using the Solace PubSub+ Event Broker Operator.
+In this quick start we go through the steps to deploy a PubSub+ Software Event Broker using the PubSub+ Event Broker Operator.
 
 ### 1. Get a Kubernetes environment
 
-Follow your Kubernetes provider's instructions ([additional options available here](https://kubernetes.io/docs/setup/)). Ensure you meet [minimum CPU, Memory and Storage requirements]() for the targeted PubSub+ Software Event Broker configuration size. Important: the broker resource requirements refer to available resources on a [Kubernetes node](https://kubernetes.io/docs/concepts/scheduling-eviction/kube-scheduler/#kube-scheduler).
+Follow your Kubernetes provider's instructions ([additional options available here](https://kubernetes.io/docs/setup/)). Ensure you meet [minimum CPU, Memory, and Storage requirements](https://docs.solace.com/Software-Broker/System-Resource-Calculator.htm) for the targeted PubSub+ Software Event Broker configuration size. Important: the broker resource requirements refer to available resources on a [Kubernetes node](https://kubernetes.io/docs/concepts/scheduling-eviction/kube-scheduler/#kube-scheduler).
 > Note: If using [MiniKube](https://kubernetes.io/docs/setup/learning-environment/minikube/), use `minikube start` with specifying the options `--memory` and `--cpus` to assign adequate resources to the MiniKube VM. The recommended memory is 1GB plus the minimum requirements of your event broker.
 
-Also have the `kubectl` tool [installed](https://kubernetes.io/docs/tasks/tools/install-kubectl/) locally.
+You must also have the `kubectl` tool [installed](https://kubernetes.io/docs/tasks/tools/install-kubectl/) locally.
 
-Check to ensure your Kubernetes environment is ready:
+To verify that your Kubernetes environment is ready, run the following command:
 ```bash
-# This shall return worker nodes listed and ready
+# This command returns the list of worker nodes and their status
 kubectl get nodes
 ```
 
 ### 2. Install the Operator
 
-The Operator is available from the Registry for Kubernetes Operators, [OperatorHub.io](https://operatorhub.io/). When using OperatorHub, operator lifecycle including installation and upgrades is managed by the Operator Lifecycle Manager (OLM), which needs to be added first or may already be pre-installed on your Kubernetes distribution.
+The Operator is available from the Registry for Kubernetes Operators, [OperatorHub.io](https://operatorhub.io/). With OperatorHub, the operator lifecycle, including installation and upgrades, is managed by the Operator Lifecycle Manager (OLM). Depending on your Kubernetes distribution, the OLM may already be pre-installed. If it is not, you must add it before you install the Operator.
 
-While OLM is the recommended way to install the PubSub+ Event Broker Operator because of the lifecycle-services it provides, a simpler Direct install method is also available that doesn't require OLM.
+Althought the OLM is the recommended way to install the PubSub+ Event Broker Operator because of the lifecycle-services it provides, a simpler, direct install method is also available that doesn't require OLM.
 
-By completing any of the following install options with default settings the Event Broker Operator shall be [up and running, watching all namespaces for `PubSubPlusEventBroker` Custom Resources](docs/EventBrokerOperatorUserGuide.md#operator), ready for the next step. 
+After you complete any of the following install options with the default settings, the Event Broker Operator will be [up and running, watching all namespaces for `PubSubPlusEventBroker` Custom Resources](docs/EventBrokerOperatorUserGuide.md#operator), ready for the next steps. 
 
 >Note: ensure there is only one installation of the Operator at any time to avoid conflicts.
 
@@ -103,11 +103,11 @@ kubectl get pods -n operators --watch
 # END: internal use
 ```
 
-By default this method has installed the Operator in the `operators` namespace.
+By default this method installs the Operator in the `operators` namespace.
 
 #### b) Direct Option
 
-Following steps will directly install the Operator:
+The following commands directly install the Operator:
 
 ```bash
 # BEGIN: For internal use only, DELETE when publishing
@@ -127,21 +127,21 @@ kubectl apply -f deploy.yaml
 kubectl get pods -n pubsubplus-operator-system --watch
 ```
 
-By default this method has installed the Operator in the `pubsubplus-operator-system` namespace.
+By default this method installs the Operator in the `pubsubplus-operator-system` namespace.
 
 ### 3. PubSub+ Software Event Broker Deployment Examples
 
-Following deployment variants will be presented with default small-scale configurations:
-1.	*Developer*: recommended minimal standalone PubSub+ Software Event Broker for Developers - no guaranteed performance
-2. *Non-HA*: PubSub+ Software Event Broker Standalone, production-ready performance supporting up to 100 client connections
-3. *HA*: PubSub+ Software Event Broker with brokers in HA redundancy group, production-ready performance supporting up to  100 client connections
-4. *Monitoring-enabled*: an example non-HA deployment with Prometheus monitoring enabled
+The section includes examples for the following deployment variants, with default small-scale configurations:
+- [a) Example Minimum-footprint Deployment for Developers](#a-example-minimum-footprint-deployment-for-developers)—Recommended minimal standalone PubSub+ Software Event Broker for Developers. No guaranteed performance
+- [b) Example non-HA Deployment](#b-example-non-ha-deployment)—Standalone, production-ready PubSub+ Software Event Broker with performance supporting up to 100 client connections
+- [c) Example HA Deployment](#c-example-ha-deployment)—PubSub+ Software Event Broker with brokers in HA redundancy group, production-ready performance supporting up to 100 client connections
+- [d) Deployment with Prometheus Monitoring Enabled](#d-deployment-with-prometheus-monitoring-enabled)—an example non-HA deployment with Prometheus monitoring enabled
 
-By default the publicly available [latest Docker image of PubSub+ Software Event Broker Standard Edition](https://hub.docker.com/r/solace/solace-pubsub-standard/tags/) will be used.
+By default the [latest publicly available Docker image](https://hub.docker.com/r/solace/solace-pubsub-standard/tags/) of the PubSub+ Software Event Broker Standard Edition will be used.
 
 For other PubSub+ Software Event Broker configurations, refer to the [PubSub+ Event Broker Operator Parameters Reference](/docs/EventBrokerOperatorParametersReference.md) and the [User Guide](/docs/EventBrokerOperatorUserGuide.md).
 
->Important: While the non-HA and HA deployments will be ready for Production performance, consult the [Security Considerations]() documentation for adequate security hardening in your environment.
+>Important: Although the non-HA and HA deployments have performance that is suitable for Production, we recommend that you consult the [Security Considerations](docs/EventBrokerOperatorUserGuide#security-considerations) documentation for information about  adequate security hardening in your environment.
 
 #### a) Example Minimum-footprint Deployment for Developers
 
@@ -257,19 +257,23 @@ kubectl get svc $BROKER_SERVICE_NAME -o jsonpath='{.status.loadBalancer.ingress}
 
 * Access the PubSub+ Broker Manager
 
-Use the IP address obtained and point your browser to [`http://<ip-address>:8080`](). Login as user `admin` with the management admin password obtained.
+In your browser, navigate to the IP address you obtained, using port 8080: 
+```
+http://<ip-address>:8080
+```
+ Login as user `admin` with the management admin password you obtained.
 
-> Minikube users shall use the `tcp-semp/8080` URL from the `minikube service list` output table.
+> Minikube users must use the `tcp-semp/8080` URL from the `minikube service list` output table.
 
 * Use the Broker Manager [built-in Try-Me](https://docs.solace.com/Admin/Broker-Manager/PubSub-Manager-Overview.htm?Highlight=manager#Test-Messages) tool to test messaging.
 
-> Note: MiniKube users shall use the `tcp-web/8008` URL port from the `minikube service list` output table instead of the default `8008` Broker URL port in the Try-Me Publisher's Establish Connection section.
+> Note: MiniKube users must use the `tcp-web/8008` URL port from the `minikube service list` output table instead of the default `8008` Broker URL port in the Try-Me Publisher's Establish Connection section.
 
 
 ### Additional information
 
 Refer to the detailed PubSub+ Event Broker Operator documentation for:
-* [Validating the deployment](docs/EventBrokerOperatorUserGuide.md#validating-the-deployment); or
+* [Validating the deployment](docs/EventBrokerOperatorUserGuide.md#validating-the-deployment)
 * [Troubleshooting](docs/EventBrokerOperatorUserGuide.md#troubleshooting)
 * [Modifying or Upgrading](docs/EventBrokerOperatorUserGuide.md#modifying-a-broker-deployment-including-broker-upgrade)
 * [Deleting the deployment](docs/EventBrokerOperatorUserGuide.md#undeploy-broker)
