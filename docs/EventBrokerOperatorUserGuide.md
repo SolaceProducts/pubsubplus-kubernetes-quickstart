@@ -8,9 +8,9 @@ The following additional set of documentation is also available:
 * For the `PubSubPlusEventBroker` custom resource (deployment configuration, or "broker spec") parameter options, refer to the [PubSub+ Event Broker Operator Parameters Reference](/docs/EventBrokerOperatorParametersReference.md).
 * For version-specific information, refer to the [Operator Release Notes](/releases)
 
-This guide is focused on deploying the event broker using the Operator, which is the preferred way to deploy. Note that [Helm-based deployment](https://github.com/SolaceProducts/pubsubplus-kubernetes-helm-quickstart) is also supported but out of scope for this document.
+This guide is focused on deploying the event broker using the Operator, which is the preferred way to deploy. Note that a [Helm-based deployment](https://github.com/SolaceProducts/pubsubplus-kubernetes-helm-quickstart) is also supported but out of scope for this document.
 
-Contents:
+__Contents:__
 
 - [Solace PubSub+ Event Broker Operator User Guide](#solace-pubsub-event-broker-operator-user-guide)
   - [The Solace PubSub+ Software Event Broker](#the-solace-pubsub-software-event-broker)
@@ -92,7 +92,7 @@ Contents:
     - [Modifying a Broker Deployment including Broker Upgrade](#modifying-a-broker-deployment-including-broker-upgrade)
     - [Rolling vs. Manual Update](#rolling-vs-manual-update)
     - [Update Limitations](#update-limitations)
-    - [Undeploy Broker](#undeploy-broker)
+    - [Deleting a Deployment](#deleting-a-deployment)
     - [Re-Install Broker](#re-install-broker)
   - [Operator Deployment Guide](#operator-deployment-guide)
     - [Install Operator](#install-operator)
@@ -109,27 +109,27 @@ Contents:
 
 ## The Solace PubSub+ Software Event Broker
 
-Solace [PubSub+ Platform](https://solace.com/products/platform/) is a complete event streaming and management platform for the real-time enterprise. The [PubSub+ Software Event Broker](https://solace.com/products/event-broker/software/) efficiently streams event-driven information between applications, IoT devices, and user interfaces running in the cloud, on-premises, and in hybrid environments using open APIs and protocols like AMQP, JMS, MQTT, REST and WebSocket. It can be installed into a variety of public and private clouds, PaaS, and on-premises environments. Event brokers in multiple locations can be linked together in an [Event Mesh](https://solace.com/what-is-an-event-mesh/) to dynamically share events across the distributed enterprise.
+[PubSub+ Platform](https://solace.com/products/platform/) is a complete event streaming and management platform for the real-time enterprise. The [PubSub+ Software Event Broker](https://solace.com/products/event-broker/software/) efficiently streams event-driven information between applications, IoT devices, and user interfaces running in the cloud, on-premises, and in hybrid environments using open APIs and protocols like AMQP, JMS, MQTT, REST and WebSocket. It can be installed into a variety of public and private clouds, PaaS, and on-premises environments. Event brokers in multiple locations can be linked together in an [Event Mesh](https://solace.com/what-is-an-event-mesh/) to dynamically share events across the distributed enterprise.
 
 ## Overview
 
 The PubSub+ Event Broker Operator supports:
-- Installation of a PubSub+ Software Event Broker in non-HA or HA mode
-- Adjusting the deployment to updated parameters (with limitations)
-- Upgrade to a new broker version
-- Repair the deployment
-- Enable Prometheus monitoring
-- Provide status of the deployment
+- Installing a PubSub+ Software Event Broker in non-HA or HA mode.
+- Adjusting the deployment to updated parameters (with limitations).
+- Upgrading to a new broker version.
+- Repairing the deployment.
+- Enabling Prometheus monitoring.
+- Providing status of the deployment.
 
-Once the Operator has been installed, deployment of a broker is simply matter of creating a `PubSubPlusEventBroker` manifest that declares the broker properties, in Kubernetes. This is not different from creating any Kubernetes-native resource, for example a Pod.
+After you have installed the Operator, you can deploy an event broker by simply creating a `PubSubPlusEventBroker` manifest that declares the broker properties in Kubernetes. This is no different from creating any Kubernetes-native resource, for example a Pod.
 
-Kubernetes will pass the manifest to the Operator and the Operator will supervise the deployment from beginning to completion. The Operator will also take corrective action or provide notification if the deployment deviates from the desired state.
+Kubernetes passes the manifest to the Operator and the Operator supervises the deployment from beginning to completion. The Operator also takes corrective action or provides notification if the deployment deviates from the desired state.
 
 ## Supported Kubernetes Environments
 
 The Operator supports Kubernetes version 1.23 or later and is generally expected to work in complying Kubernetes environments.
 
-This includes OpenShift as there are provisions in the Operator to detect OpenShift environment and seamlessly adjust defaults. Details will be provided at the appropriate parameters.
+This includes OpenShift because there are provisions in the Operator to detect OpenShift environment and seamlessly adjust defaults. Details are provided with the appropriate parameters.
 
 ##	Deployment Architecture
 
@@ -154,16 +154,16 @@ The diagram illustrates a [Highly Available (HA)](https://docs.solace.com/Featur
 
 ![alt text](/docs/images/BrokerDeployment.png "HA broker deployment")
 
-* At the core, there are the Pods running the broker containers and the associated PVC storage elements, directly managed by dedicated StatefulSets.
+* At the core, there are the Pods running the broker containers and the associated Persistent Volume Claim (PVC) storage elements, directly managed by dedicated StatefulSets.
 * Secrets are mounted on the containers feeding into the security configuration.
 * There are also a set of shell scripts in a ConfigMap mounted on each broker container. They take care of configuring the broker at startup and conveying internal broker state to Kubernetes by reporting readiness and signalling which Pod is active and ready for service traffic. Active status is signalled by setting an `active=true` Pod label.
 * A Service exposes the active broker Pod's services at service ports to clients.
 * An additional Discovery Service enables internal access between brokers.
-* Signalling active broker state requires permissions for a Pod to update its own label so this needs to be configured through RBAC settings for the deployment.
+* Signaling active broker state requires permissions for a Pod to update its own label so this needs to be configured using RBAC settings for the deployment.
 
-The Operator ensures that all above objects are in place with the exeception of the Pods and storage managed by the StatefulSets. This enables that even if the Operator is temporarily out of service, the broker will stay functional and resilient (noting that introducing changes will not be possible during that time) because the StatefulSets control the Pods directly.
+The Operator ensures that all above objects are in place, with the exception of the Pods and storage managed by the StatefulSets. This ensures that even if the Operator is temporarily out of service, the broker stays functional and resilient (noting that introducing changes are note possible during that time) because the StatefulSets control the Pods directly.
 
-A non-HA deployment differs from HA in that (1) there is only one StatefulSet managing one Pod that hosts the single broker, (2) there is no Discovery Service for internal communication, and (3) there is no PreShared AuthenticationKey to secure internal communication.
+A non-HA deployment differs from HA in that: (1) there is only one StatefulSet managing one Pod that hosts the single broker; (2) there is no Discovery Service for internal communication; and (3) there is no pre-shared AuthenticationKey to secure internal communication.
 
 ### Prometheus Monitoring Support
 
@@ -171,11 +171,11 @@ Support can be enabled for exposing broker metrics to [Prometheus Monitoring](ht
 
 ![alt text](/docs/images/MonitoringDeployment.png "Monitoring deployment")
 
-* When monitoring is enabled the Operator will add to the broker deployment an Exporter Pod, which acts as a bridge between Prometheus and the broker deployment to deliver metrics.
-* On one side, the Exporter Pod obtains metrics from the broker through SEMP requests. To access the broker, it uses the username and password from the MonitoringCredentials secret, and uses TLS access to the broker if Broker TLS has been configured.
-* The metrics are exposed to Prometheus through the Prometheus Metrics Service via the metrics port. Metrics port will be accessible using TLS if Metrics TLS has been enabled.
-* As Kubernetes recommended practice, it is assumed that the Prometheus stack has been deployed using the [Prometheus operator](https://github.com/prometheus-operator/prometheus-operator#overview) in a dedicated Prometheus Monitoring namespace. In this setup a `ServiceMonitor` custom resource, placed in the Event Broker namespace, defines how Prometheus can access the broker metrics: which service to select and which endpoint to use.
-* Prometheus comes installed with strict security by default and its ClusterRole RBAC settings must be edited to enable watch ServiceMonitor in the Event Broker namespace.
+* When monitoring is enabled, the Operator adds an Exporter Pod to the broker deployment. The Exporter Pod acts as a bridge between Prometheus and the broker deployment to deliver metrics.
+* On one side, the Exporter Pod obtains metrics from the broker using SEMP requests. To access the broker, it uses the username and password from the MonitoringCredentials secret, and uses TLS access to the broker if Broker TLS has been configured.
+* The metrics are exposed to Prometheus through the Prometheus Metrics Service via the metrics port. The Metrics port is accessible using TLS if Metrics TLS has been enabled.
+* As Kubernetes recommended practice, it is assumed that the Prometheus stack has been deployed using the [Prometheus operator](https://github.com/prometheus-operator/prometheus-operator#overview) in a dedicated Prometheus Monitoring namespace. In this setup, a `ServiceMonitor` custom resource, placed in the Event Broker namespace, defines how Prometheus can access the broker metrics—which service to select and which endpoint to use.
+* Prometheus comes installed with strict security by default. Its ClusterRole RBAC settings must be edited to enable watching ServiceMonitor in the Event Broker namespace.
 
 ## Deployment Planning
 
@@ -189,13 +189,13 @@ The Operator supports deploying a single non-HA broker and also HA deployment fo
 
 #### Node Assignment
 
-No single point of failure is important for HA deployments. Kubernetes by default tries to spread broker pods of an HA redundancy group across Availability Zones. For more deterministic deployments, specific control is enabled through the `spec.nodeAssignment` section of the broker spec for the Primary, Backup and Monitor brokers where Kubernetes standard [Affinity and NodeSelector](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/) definitions can be provided.
+No single point of failure is important for HA deployments. Kubernetes by default tries to spread broker pods of an HA redundancy group across Availability Zones. For more deterministic deployments, specific control is enabled using the `spec.nodeAssignment` section of the broker spec for the Primary, Backup and Monitor brokers where Kubernetes standard [Affinity and NodeSelector](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/) definitions can be provided.
 
 #### Enabling Pod Disruption Budget
 
-In an HA deployment with Primary, Backup and Monitor nodes, a minimum of two nodes need to be available to reach quorum. Specifying a [Pod Disruption Budget](https://kubernetes.io/docs/tasks/run-application/configure-pdb/) is recommended to limit situations where quorum may be lost.
+In an HA deployment with Primary, Backup, and Monitor nodes, a minimum of two nodes must be available to reach quorum. Specifying a [Pod Disruption Budget](https://kubernetes.io/docs/tasks/run-application/configure-pdb/) is recommended to limit situations where quorum might be lost.
 
-This can be enabled setting the `spec.podDisruptionBudgetForHA` parameter to `true`. This will create a PodDisruptionBudget resource adapted to the broker deployment's needs, that is the number of minimum available pods set to two. Note that the parameter is ignored for a non-HA deployment.
+This can be enabled setting the `spec.podDisruptionBudgetForHA` parameter to `true`. This creates a PodDisruptionBudget resource adapted to the broker deployment's needs, that is the number of minimum available pods set to two. Note that the parameter is ignored for a non-HA deployment.
 
 ### Container Images
 
@@ -232,7 +232,7 @@ Similarly, the default exporter image values are `solace/solace-pubsub-prometheu
 Follow the general steps below to load an image into a private container registry (e.g.: GCR, ECR or Harbor). For specifics, consult the documentation of the registry you are using.
 
 * Prerequisite: local installation of [Podman](https://podman.io/) or [Docker](https://www.docker.com/get-started/)
-* Login to the private registry:
+* Log into the private registry:
 ```sh
 podman login <private-registry> ...
 ```
@@ -256,11 +256,11 @@ podman tag <image-id> <private-registry>/<path>/<image-name>:<tag>
 ```sh
 podman push <private-registry>/<path>/<image-name>:<tag>
 ```
-Note that additional steps may be required if using signed images.
+Note that additional steps might be required if using signed images.
 
 #### Pulling images from a private registry
 
-An ImagePullSecret may be required if pulling images from a private registry, e.g.: Harbor. 
+An ImagePullSecret might be required if pulling images from a private registry, e.g.: Harbor. 
 
 Here is an example of creating an ImagePullSecret. Refer to your registry's documentation for the specific details of use.
 
@@ -274,20 +274,20 @@ Then add `<pull-secret-name>` to the list under the `image.pullSecrets` paramete
 
 ### Broker Scaling
 
-The Solace PubSub+ Event Mesh can be scaled vertically and horizontally.
+The PubSub+ Event Mesh can be scaled vertically and horizontally.
 
-Horizontal scaling is possible through [connecting multiple broker deployments](https://docs.solace.com/Features/DMR/DMR-Overview.htm#Horizontal_Scaling). This is out of scope for this document.
+You can horizontally scale your mesh by [connecting multiple broker deployments](https://docs.solace.com/Features/DMR/DMR-Overview.htm#Horizontal_Scaling). This is out of scope for this document.
 
 #### Vertical Scaling
 
-Vertical scaling sets the maximum capacity of a given broker deployment using [system scaling parameters](https://docs.solace.com/Software-Broker/System-Scaling-Parameters.htm).
+For vertical scaling, you set the maximum capacity of a given broker deployment using [system scaling parameters](https://docs.solace.com/Software-Broker/System-Scaling-Parameters.htm).
 
-Following scaling parameters can be specified:
+The following scaling parameters can be specified:
 * [Maximum Number of Client Connections](https://docs.solace.com/Software-Broker/System-Scaling-Parameters.htm#max-client-connections), in `spec.systemScaling.maxConnections` parameter
 * [Maximum Number of Queue Messages](https://docs.solace.com/Software-Broker/System-Scaling-Parameters.htm#max-queue-messages), in `spec.systemScaling.maxQueueMessages` parameter
 * [Maximum Spool Usage](https://docs.solace.com/Messaging/Guaranteed-Msg/Message-Spooling.htm#max-spool-usage), in `spec.systemScaling.maxSpoolUsage` parameter
 
-Additionally, for a given set of scaling, broker container CPU and Memory must be calculated  and provided in `spec.systemScaling.cpu` and `spec.systemScaling.memory` parameters. Use the [Solace online System Resource Calculator](https://docs.solace.com/Admin-Ref/Resource-Calculator/pubsubplus-resource-calculator.html) to determine CPU and memory requirements for the selected scaling parameters.
+In addition, for a given set of scaling parameters, the event broker container CPU and memory requirements must be calculated and provided in the `spec.systemScaling.cpu` and `spec.systemScaling.memory` parameters. Use the [System Resource Calculator](https://docs.solace.com/Admin-Ref/Resource-Calculator/pubsubplus-resource-calculator.html) to determine the CPU and memory requirements for the selected scaling parameters.
 
 Example:
 ```yaml
@@ -300,9 +300,9 @@ spec:
     messagingNodeMemory: "4025Mi"
 ```
 
->Note: beyond CPU and memory requirements, broker storage size (see [Storage](#storage) section) must also support the provided scaling. The calculator can be used to determine that as well.
+>Note: Beyond CPU and memory requirements, broker storage size (see [Storage](#storage) section) must also support the provided scaling. The calculator can be used to determine that as well.
 
-Also note, that specifying maxConnections, maxQueueMessages and maxSpoolUsage on initial deployment will overwrite the broker’s default values. On the other hand, doing the same using upgrade on an existing deployment will not overwrite these values on brokers configuration, but it can be used to prepare (first step) for a manual scale up through CLI where these parameter changes would actually become effective (second step).
+Also note, that specifying maxConnections, maxQueueMessages, and maxSpoolUsage on initial deployment overwrites the broker’s default values. On the other hand, doing the same using upgrade on an existing deployment does not overwrite these values on brokers configuration, but it can be used to prepare (first step) for a manual scale up using CLI where these parameter changes would actually become effective (second step).
 
 ##### Minimum footprint deployment for Developers
 
@@ -320,16 +320,16 @@ For a given set of [scaling](#vertical-scaling), use the [Solace online System R
 
 The broker pods can use following storage options:
 * Dynamically allocated storage from a Kubernetes Storage Class (default)
-* Static storage through a Persistent Volume Claim linked to a Persistent Volume
+* Static storage using a Persistent Volume Claim linked to a Persistent Volume
 * Ephemeral storage
 
->Note: Ephemeral storage is generally not recommended. It may be acceptable for temporary deployments understanding that all configuration and messages will be lost with the loss of the broker pod.
+>Note: Ephemeral storage is generally not recommended. It might be acceptable for temporary deployments understanding that all configuration and messages are lost with the loss of the broker pod.
 
 #### Dynamically allocated storage from a Storage Class
 
 The recommended default allocation is using Kubernetes [Dynamic Volume Provisioning](https://kubernetes.io/docs/concepts/storage/dynamic-provisioning/) utilizing [Storage Classes](https://kubernetes.io/docs/concepts/storage/storage-classes/). 
 
-The StatefulSet controlling a broker pod will create a Persistent Volume Claim (PVC) specifying the requested size and the Storage Class of the volume, and a Persistent Volume (PV) will be allocated from the storage class pool that meets the requirements. Both the PVC and PV names will be linked to the broker pod's name. When deleting the event broker pod(s) or even the entire deployment, the PVC and the allocated PV will not be deleted, so potentially complex configuration is preserved. They will be re-mounted and reused with the existing configuration when a new pod starts (controlled by the StatefulSet, automatically matched to the old pod even in an HA deployment) or when a deployment with the same as the old name is started. Explicitly delete a PVC if no longer needed, which will delete the corresponding PV - refer to [Deleting a Deployment]().
+The StatefulSet controlling a broker pod creates a Persistent Volume Claim (PVC) specifying the requested size and the Storage Class of the volume; a Persistent Volume (PV) is allocated from the storage class pool that meets these requirements. Both the PVC and PV names are linked to the broker pod's name. If you delete the event broker pod(s) or even the entire deployment, the PVC and the allocated PV are not deleted, so potentially complex configuration is preserved. The PVC and PV are re-mounted and reused with the existing configuration when a new pod starts (controlled by the StatefulSet, automatically matched to the old pod even in an HA deployment) or when a deployment with the same as the old name is started. Explicitly delete a PVC if you no longer need it—this deletes the corresponding PV. For more information, see to [Deleting a Deployment](#deleting-a-deployment).
 
 Example:
 ```yaml
@@ -341,7 +341,7 @@ spec:
     useStorageClass: standard
 ```
 
-For message processing brokers (this includes the single broker in non-HA deployment), the requested storage size is set using the `spec.storage.messagingNodeStorageSize` parameter. If not specified then the default value of `30Gi` is used. If the storage size is set to `0` then `useStorageClass` will be disregarded and pod-local ephemeral storage will be used.
+For message processing brokers (this includes the single broker in non-HA deployment), the requested storage size is set using the `spec.storage.messagingNodeStorageSize` parameter. If not specified then the default value of `30Gi` is used. If the storage size is set to `0` then `useStorageClass` is disregarded and pod-local ephemeral storage is used.
 
 When deploying PubSub+ in an HA redundancy group, monitoring broker nodes have minimal storage requirements compared to working nodes. It is recommended to leave the `spec.storage.monitorNodeStorageSize` parameter unspecified or at default. Although monitoring nodes will work with zero persistent (ephemeral) storage it is recommended to allocate the minimum so diagnostic information remains available with the loss of the monitoring pod.
 
@@ -401,9 +401,9 @@ spec:
 
 #### Assigning existing PVC (Persistent Volume Claim)
 
-You can to use an existing PVC with its associated PV for storage, but it must be taken into account that the deployment will try to use any existing, potentially incompatible, configuration data on that volume. The PV size must also meet the broker scaling requirements.
+You can to use an existing PVC with its associated PV for storage, but it must be taken into account that the deployment tries to use any existing, potentially incompatible, configuration data on that volume. The PV size must also meet the broker scaling requirements.
 
-PVCs need to be assigned individually to the brokers in an HA deployment. Assign a PVC to the Primary in case of non-HA.
+PVCs must be assigned individually to the brokers in an HA deployment. Assign a PVC to the Primary in case of non-HA.
 ```yaml
 spec:
   storage:
@@ -429,20 +429,20 @@ Regarding providers, note that for [EKS](https://docs.solace.com/Cloud/Deploymen
 
 Broker services (messaging, management) are available through the service ports of the [Broker Service](#event-broker-deployment) object created as part of the deployment.
 
-Clients may access the service ports directly through a configured [standard Kubernetes service type](https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types). Alternatively, services can be mapped to Kubernetes [Ingress](https://kubernetes.io/docs/concepts/services-networking/ingress). These options are discussed in details in the upcoming [Using Service Type](#using-a-service-type) and [Using Ingress](#using-ingress) sections.
->Note: an OpenShift-specific alternative of exposing services through Routes is described in the [PubSub+ Openshift Deployment Guide](https://github.com/SolaceProducts/pubsubplus-openshift-quickstart/blob/master/docs/PubSubPlusOpenShiftDeployment.md).
+Clients can access the service ports directly through a configured [standard Kubernetes service type](https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types). Alternatively, services can be mapped to Kubernetes [Ingress](https://kubernetes.io/docs/concepts/services-networking/ingress). These options are discussed in details in the upcoming [Using Service Type](#using-a-service-type) and [Using Ingress](#using-ingress) sections.
+>Note: An OpenShift-specific alternative of exposing services through Routes is described in the [PubSub+ Openshift Deployment Guide](https://github.com/SolaceProducts/pubsubplus-openshift-quickstart/blob/master/docs/PubSubPlusOpenShiftDeployment.md).
 
-Enabling TLS for services is recommended and will also be [described](#configuring-tls-for-services).
+Enabling TLS for services is recommended. For details, see [Configuring TLS for Services](#configuring-tls-for-services).
 
 Regardless the way to access services, the Service object is always used and it determines when and which broker Pod provides the actual service as explained in the next section.
 
 #### Serving Pod Selection
 
-The first criteria for a broker Pod to be selected for service is its readiness - if readiness  starts to fail Kubernetes will stop sending traffic to the pod until it passes again.
+The first criteria for a broker Pod to be selected for service is its readiness—if readiness is failing, Kubernetes stops sending traffic to the pod until it passes again.
 
 The second, additional criteria is the pod label set to `active=true`.
 
-Both pod readiness and label are updated periodically (every 5 seconds) triggered by the pod readiness probe which invokes the `readiness_check.sh` script which is mounted on the broker container.
+Both pod readiness and label are updated periodically (every 5 seconds), triggered by the pod readiness probe. This probe invokes the `readiness_check.sh` script which is mounted on the broker container.
 
 The requirements for a broker pod to satisfy both criteria are:
 * The broker must be in Guaranteed Active service state, that is providing [Guaranteed Messaging Quality-of-Service (QoS) level of event messages persistence](https://docs.solace.com/PubSub-Basics/Guaranteed-Messages.htm). If service level is degraded even to [Direct Messages QoS](//docs.solace.com/PubSub-Basics/Direct-Messages.htm) this is no longer sufficient.
@@ -451,20 +451,20 @@ The requirements for a broker pod to satisfy both criteria are:
 * The Kubernetes service account associated with the deployment must have sufficient rights to patch the pod's label when the active event broker is service ready
 * The broker pods must be able to communicate with the Kubernetes API at kubernetes.default.svc.cluster.local at port $KUBERNETES_SERVICE_PORT. You can find out the address and port by SSH into the pod.
 
-In summary, a deployment is ready for service requests when there is a broker pod that is running, `1/1` ready, and the pod's label is `active=true`. An exposed service port will forward traffic to that active event broker node. Pod readiness and labels can be checked with the command:
+In summary, a deployment is ready for service requests when there is a broker pod that is running, `1/1` ready, and the pod's label is `active=true`. An exposed service port forwards traffic to that active event broker node. Pod readiness and labels can be checked with the command:
 ```
 kubectl get pods --show-labels
 ```
 
 #### Using a Service Type
 
-[PubSub+ services](//docs.solace.com/Configuring-and-Managing/Default-Port-Numbers.htm#Software) can be exposed through one of the following [Kubernetes service types](//kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types) by specifying the `spec.service.type` parameter:
+[PubSub+ services](//docs.solace.com/Configuring-and-Managing/Default-Port-Numbers.htm#Software) can be exposed using one of the following [Kubernetes service types](//kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types) by specifying the `spec.service.type` parameter:
 
 * LoadBalancer (default) - a load balancer, typically externally accessible depending on the K8s provider.
 * NodePort - maps PubSub+ services to a port on a Kubernetes node; external access depends on access to the Kubernetes node.
 * ClusterIP - internal access only from within K8s.
 
-To support [Internal load balancers](//kubernetes.io/docs/concepts/services-networking/service/#internal-load-balancer), provider-specific service annotation may be added through defining the `spec.service.annotations` parameter.
+To support [Internal load balancers](//kubernetes.io/docs/concepts/services-networking/service/#internal-load-balancer), a provider-specific service annotation can be added by defining the `spec.service.annotations` parameter.
 
 The `spec.service.ports` parameter defines the broker ports/services exposed. It specifies the event broker `containerPort` that provides the service and the mapping to the `servicePort` where the service can be accessed when using LoadBalancer or ClusterIP - however there is no control over the port number mapping when using NodePort. By default most broker service ports are exposed, refer to the ["pubsubpluseventbrokers" Custom Resource definition](/config/crd/bases/pubsubplus.solace.com_pubsubpluseventbrokers.yaml).
 
@@ -491,14 +491,14 @@ Default broker deployment does not have TLS over TCP enabled to access broker se
 
 To enable accessing services over TLS a server key and certificate must be configured.
 
-It is assumed that a provider out of scope of this document will be used to create a server key and certificate for the event broker, that meet the [requirements described in the Solace Documentation](https://docs.solace.com/Configuring-and-Managing/Managing-Server-Certs.htm). If the server key is password protected it shall be transformed to an unencrypted key, e.g.:  `openssl rsa -in encryedprivate.key -out unencryed.key`.
+It is assumed that you will use a third-party provider to create a server key and certificate for the event broker. The key and certificate must meet the requirements described in the [Solace Documentation](https://docs.solace.com/Configuring-and-Managing/Managing-Server-Certs.htm). If the server key is password protected it must be transformed to an unencrypted key, e.g.:  `openssl rsa -in encryedprivate.key -out unencryed.key`.
 
 The server key and certificate must be packaged in a Kubernetes secret, for example by [creating a TLS secret](https://kubernetes.io/docs/concepts/configuration/secret/#tls-secrets). Example:
 ```yaml
 kubectl create secret tls <my-tls-secret> --key="<my-server-key-file>" --cert="<my-certificate-file>"
 ```
 
-This secret name and related parameters shall be specified in the broker spec:
+This secret name and related parameters must be specified in the broker spec:
 ```
 spec:
   tls:
@@ -508,21 +508,21 @@ spec:
     certKeyFilename: # optional, default if not provided: tls.key
 ```
 
-> Note: ensure filenames are matching the files reported from running `kubectl describe secret <my-tls-secret>`.
+> Note: Ensure that all filenames match those reported when you run `kubectl describe secret <my-tls-secret>`.
 
-Important: it is not possible to update an existing deployment to enable TLS that has been created without TLS enabled, by a simply using the [update deployment]() procedure. In this case, for the first time, certificates need to be [manually loaded and set up](//docs.solace.com/Configuring-and-Managing/Managing-Server-Certs.htm) on each broker node. After that it is possible to use update with a secret specified.
+Important: It is not possible to update an existing deployment (created without TLS) to enable TLS using the [update deployment]() procedure. In this case, for the first time, certificates must be [manually loaded and set up](//docs.solace.com/Configuring-and-Managing/Managing-Server-Certs.htm) on each broker node. After that it is possible to use update with a secret specified.
 
 ##### Rotating the TLS certificate
 
-In the event the server key or certificate need to be rotated the TLS Config Secret shall be updated or recreated with the new contents. Alternatively a new secret can be created and the broker spec can be updated with that secret's name.
+In the event the server key or certificate must be rotated the TLS Config Secret must be updated or recreated with the new contents. Alternatively a new secret can be created and the broker spec can be updated with that secret's name.
 
-If reusing an existing TLS secret, the new contents will be automatically mounted on the broker containers. The Operator is already watching the configured secret for any changes and will automatically initiate a rolling pod restart to take effect. Deleting the existing TLS secret will not result in immediate action but broker pods will not start if the specified TLS secret does not exist.
+If you are reusing an existing TLS secret, the new contents are automatically mounted on the broker containers. The Operator is already watching the configured secret for any changes and automatically initiates a rolling pod restart to take effect. Deleting the existing TLS secret does not result in immediate action, but broker pods will not start if the specified TLS secret does not exist.
 
-> Note: a pod restart will result in provisioning the server certificate from the secret again so it will revert back from any other server certificate that may have been provisioned on the broker through other mechanism.
+> Note: A pod restart results in provisioning the server certificate from the secret again, so it reverts back from any other server certificate that might have been provisioned on the broker through another mechanism.
 
 #### Using Ingress
 
-The `LoadBalancer` or `NodePort` service types can be used to expose all services from one PubSub+ broker (one-to-one relationship). [Ingress](https://kubernetes.io/docs/concepts/services-networking/ingress) may be used to enable efficient external access from a single external IP address to multiple PubSub+ services, potentially provided by multiple brokers.
+The `LoadBalancer` or `NodePort` service types can be used to expose all services from one PubSub+ broker (one-to-one relationship). [Ingress](https://kubernetes.io/docs/concepts/services-networking/ingress) can be used to enable efficient external access from a single external IP address to multiple PubSub+ services, potentially provided by multiple brokers.
 
 The following table gives an overview of how external access can be configured for PubSub+ services via Ingress.
 
@@ -545,11 +545,11 @@ To deploy the NGINX Ingress Controller, refer to the [Quick start in the NGINX d
 
 `kubectl get service ingress-nginx-controller --namespace=ingress-nginx`
 
-This is the IP (or the IP address the FQDN resolves to) of the ingress where external clients shall target their request and any additional DNS-resolvable hostnames, used for name-based virtual host routing, must also be configured to resolve to this IP address. If using TLS then the host certificate Common Name (CN) and/or Subject Alternative Name (SAN) must be configured to match the respective FQDN.
+This is the IP (or the IP address the FQDN resolves to) of the ingress where external clients must target their request and any additional DNS-resolvable hostnames, used for name-based virtual host routing, must also be configured to resolve to this IP address. If using TLS then the host certificate Common Name (CN) and/or Subject Alternative Name (SAN) must be configured to match the respective FQDN.
 
 For options to expose multiple services from potentially multiple brokers, review the [Types of Ingress from the Kubernetes documentation](https://kubernetes.io/docs/concepts/services-networking/ingress/#types-of-ingress).
  
-The next examples provide Ingress manifests that can be applied using `kubectl apply -f <manifest-yaml>`. Then check that an external IP address (ingress controller external IP) has been assigned to the rule/service and also that the host/external IP is ready for use as it could take a some time for the address to be populated.
+The next examples provide Ingress manifests that can be applied using `kubectl apply -f <manifest-yaml>`. Then check that an external IP address (ingress controller external IP) has been assigned to the rule/service and also that the host/external IP is ready for use because it could take a some time for the address to be populated.
 
 ```
 kubectl get ingress
@@ -582,7 +582,7 @@ spec:
               name: tcp-rest
 ```
 
-External requests shall be targeted to the ingress External-IP at the HTTP port (80) and the specified path.
+External requests must be targeted to the ingress External-IP at the HTTP port (80) and the specified path.
 
 ##### HTTPS with TLS terminate at ingress
 
@@ -612,7 +612,7 @@ spec:
               name: tcp-rest
 ```
 
-External requests shall be targeted to the ingress External-IP through the defined hostname (here `https-example.foo.com`) at the TLS port (443) and the specified path.
+External requests must be targeted to the ingress External-IP through the defined hostname (here `https-example.foo.com`) at the TLS port (443) and the specified path.
 
 
 ##### HTTPS with TLS re-encrypt at ingress
@@ -637,15 +637,15 @@ spec:
 
 ##### General TCP over TLS with passthrough to broker
 
-In this case the ingress does not terminate TLS, only provides routing to the broker Pod based on the hostname provided in the SNI extension of the Client Hello at TLS connection setup. Since it will pass through TLS traffic directly to the broker as opaque data, this enables the use of ingress for any TCP-based protocol using TLS as transport.
+In this case the ingress does not terminate TLS; it only provides routing to the broker Pod based on the hostname provided in the SNI extension of the Client Hello at TLS connection setup. Because it passes TLS traffic directly through to the broker as opaque data, any TCP-based protocol using TLS as transport is enabled for ingress.
 
-The TLS passthrough capability must be explicitly enabled on the NGINX ingress controller, as it is off by default. This can be done by editing the `ingress-nginx-controller` "Deployment" in the `ingress-nginx` namespace.
+The TLS passthrough capability must be explicitly enabled on the NGINX ingress controller, because it is off by default. This can be done by editing the `ingress-nginx-controller` "Deployment" in the `ingress-nginx` namespace.
 1. Open the controller for editing: `kubectl edit deployment ingress-nginx-controller --namespace ingress-nginx`
 2. Search where the `nginx-ingress-controller` arguments are provided, insert `--enable-ssl-passthrough` to the list and save. For more information refer to the [NGINX User Guide](https://kubernetes.github.io/ingress-nginx/user-guide/tls/#ssl-passthrough). Also note the potential performance impact of using SSL Passthrough mentioned here.
 
 The Ingress manifest specifies "passthrough" by adding the `nginx.ingress.kubernetes.io/ssl-passthrough: "true"` annotation.
 
-The deployed PubSub+ broker(s) must have TLS configured with a certificate that includes DNS names in CN and/or SAN, that match the host used. In the example the broker server certificate may specify the host `*.broker1.bar.com`, so multiple services can be exposed from `broker1`, distinguished by the host FQDN.
+The deployed PubSub+ broker(s) must have TLS configured with a certificate that includes DNS names in CN and/or SAN, that match the host used. In the example, the broker server certificate can specify the host `*.broker1.bar.com`, so multiple services can be exposed from `broker1`, distinguished by the host FQDN.
 
 The protocol client must support SNI. It depends on the client if it uses the server certificate CN or SAN for host name validation. Most recent clients use SAN, for example the PubSub+ Java API requires host DNS names in the SAN when using SNI.
 
@@ -672,7 +672,7 @@ spec:
         path: /
         pathType: ImplementationSpecific
 ```
-External requests shall be targeted to the ingress External-IP through the defined hostname (here `smf.broker1.bar.com`) at the TLS port (443) with no path required.
+External requests must be targeted to the ingress External-IP through the defined hostname (here `smf.broker1.bar.com`) at the TLS port (443) with no path required.
 
 ### Broker Pod additional properties
 
@@ -692,14 +692,14 @@ spec:
   extraEnvVarsSecret: "my-env-variables-secret"
   timezone: UTC
 ```
-Additional Pod labels and annotations can be specified through `spec.podLabels` and `spec.podAnnotations`.
+Additional Pod labels and annotations can be specified using `spec.podLabels` and `spec.podAnnotations`.
 
 Additional environment variables can be passed to the broker container in the form of
 * a name-value list of variables, using `spec.extraEnvVars`
 * providing the name of a ConfigMap that contains env variable names and values, using `spec.extraEnvVarsCM`
 * providing the name of a secret that contains env variable names and values, using `spec.extraEnvVarsSecret`
 
-One of the primary use of environment variables is to define [configuration keys](https://docs.solace.com/Software-Broker/Configuration-Keys-Reference.htm) that are consumed and applied at the broker initial deployment. It shall be noted that configuration keys are ignored thereafter so they won't take effect even if updated later.
+One of the primary use of environment variables is to define [configuration keys](https://docs.solace.com/Software-Broker/Configuration-Keys-Reference.htm) that are consumed and applied at the broker initial deployment. It must be noted that configuration keys are ignored thereafter so they won't take effect even if updated later.
 
 Finally, the timezone can be passed to the the event broker container.
 
@@ -709,7 +709,7 @@ The default installation of the Operator is optimized for easy deployment and ge
 
 #### Operator controlled namespaces
 
-The Operator can be configured with which namespaces to watch, so it will pick up all broker specs created in the watched namespaces and create deployments there. However all other namespaces will be ignored.
+The Operator can be configured with a list of namespaces to watch, so it picks up all broker specs created in the watched namespaces and create deployments there. However all other namespaces are ignored.
 
 Watched namespaces can be configured by providing the comma-separated list of namespaces in the `WATCH_NAMESPACE` environment variable defined in the container spec of the [Deployment](#operator) which controls the Operator pod. Assingning an empty string (default) means watching all namespaces.
 
@@ -727,7 +727,7 @@ A broker deployment only needs permission to update pod labels. This is defined 
 
 #### Operator image from private registry
 
-The default deployment of the Operator will pull the Operator image from a public registry. If a Production deployment needs to pull the Operator image from a private registry then the [Deployment](#operator) which controls the Operator pod requires `imagePullSecrets` added for that repo:
+The default deployment of the Operator pulls the Operator image from a public registry. If a Production deployment needs to pull the Operator image from a private registry then the [Deployment](#operator) which controls the Operator pod requires `imagePullSecrets` added for that repo:
 
 ```
 kind: Deployment
@@ -748,7 +748,7 @@ spec:
 
 #### Admin and Monitor Users and Passwords
 
-A management `admin` and a `monitor` user will be created at the broker initial deployment, with [global access level](https://docs.solace.com/Admin/SEMP/SEMP-API-Archit.htm#Role-Bas) "admin" and "read-only", respectively. The passwords will be auto-generated if not provided and will be stored in Operator-generated secrets.
+A management `admin` and a `monitor` user are created at the broker initial deployment, with [global access level](https://docs.solace.com/Admin/SEMP/SEMP-API-Archit.htm#Role-Bas) "admin" and "read-only", respectively. The passwords are auto-generated if not provided and are stored in Operator-generated secrets.
 
 It is also possible to provide pre-existing secrets containing the respective passwords as in the following example:
 ```yaml
@@ -759,7 +759,7 @@ spec:
 
 The secrets must contain following data files: `username_admin_password` and `username_monitor_password` with password contents, respectively.
 
->**Important**: these secrets are used at initial broker deployment to setup passwords. Changing the secret contents later will not result in password updates in the broker. However changing the secret contents at a later point will be service affecting as scripts in the broker container itself are using the passwords stored to access the broker's own management service. To fix a password discrepancy, log into each broker pod and using [CLI password change](https://docs.solace.com/Admin/Configuring-Internal-CLI-User-Accounts.htm#Changing-CLI-User-Passwords) ensure to set the password for the user account to the same as in the secret.
+>**Important**: These secrets are used at initial broker deployment to setup passwords. Changing the secret contents later will not result in password updates in the broker. However changing the secret contents at a later point is service affecting as scripts in the broker container itself are using the passwords stored to access the broker's own management service. To fix a password discrepancy, log into each broker pod and use [CLI password change](https://docs.solace.com/Admin/Configuring-Internal-CLI-User-Accounts.htm#Changing-CLI-User-Passwords) to set the password for the user account to the same as in the secret.
 
 #### Secrets
 
@@ -780,18 +780,18 @@ runAsNonRoot: true
 allowPrivilegeEscalation: false
 ```
 
-Following additional settings are configurable through broker spec parameters:
+Following additional settings are configurable using broker spec parameters:
 ```
 spec:
   securityContext:
     runAsUser: 1000001
     fsGroup: 1000002
 ```
-Above are generally the defaults if not provided. It shall be noted that the Operator will detect if the current Kubernetes environment is OpenShift and in that case, if not provided, the default `runAsUser` and `fsGroup` will be set to unspecified because otherwise they would conflict with the OpenShift "restricted" Security Context Constraint settings for a project.
+Above are generally the defaults if not provided. It must be noted that the Operator detects whether the current Kubernetes environment is OpenShift. In that case, if not provided, the default `runAsUser` and `fsGroup` are set to unspecified because otherwise they would conflict with the OpenShift "restricted" Security Context Constraint settings for a project.
 
 #### Using Network Policies
 
-In a controlled environment it may be necessary to configure a [NetworkPolicy](https://kubernetes.io/docs/concepts/services-networking/network-policies/ ) to enable [required communication](#serving-pod-selection) between the broker nodes as well as between the broker container and the API server to set the Pod label.
+In a controlled environment it might be necessary to configure a [NetworkPolicy](https://kubernetes.io/docs/concepts/services-networking/network-policies/ ) to enable [required communication](#serving-pod-selection) between the broker nodes as well as between the broker container and the API server to set the Pod label.
 
 ##	Exposing Metrics to Prometheus
 
@@ -801,9 +801,9 @@ This section describes how to enable and configure the metrics exporter and the 
 
 ### Enabling and configuring the Broker Metrics Endpoint
 
-To enable monitoring with all defaults, simply add `spec.monitoring.enabled: true` to the broker spec. This will setup a metrics service endpont through a Prometheus Metrics Service which offers a REST API that responds with broker metrics to GET requests.
+To enable monitoring with all defaults, simply add `spec.monitoring.enabled: true` to the broker spec. This sets up a metrics service endpoint through a Prometheus Metrics Service that offers a REST API that responds with broker metrics to GET requests.
 
-The next more advanced example shows a configuration with additional spec of defining the exporter image pulled from a private repo using a pull secret, the service type as Kubernetes internal `ClusterIP` and also TLS enabled for the service with key and certificate contained in Secret `monitoring-tls`. The way to create the Secret is the same as for the [broker TLS configuration](#configuring-tls-for-broker-services).
+The next more advanced example shows a configuration with additional configuration to specify that the exporter image is pulled from a private repo using a pull secret, the service type is set to Kubernetes internal `ClusterIP`, and also TLS is enabled for the service with key and certificate contained in Secret `monitoring-tls`. The way to create the Secret is the same as for the [broker TLS configuration](#configuring-tls-for-broker-services).
 ```yaml
 spec:
   monitoring:
@@ -829,7 +829,7 @@ kubectl describe svc <eventbroker-deployment-name>-pubsubplus-prometheus-metrics
 There are two sets of metrics exposed through two paths:
 * Standard: [http://`<service-ip>`:9628/solace-std]()
 * Additional Details: [http://`<service-ip>`:9628/solace-det]()
->Note: `<service-ip>` is the Kubernetes internal ClusterIP address of the Prometheus Metrics Service.  Use `kubectl port-forward svc/<eventbroker-deployment-name>-pubsubplus-prometheus-metrics 9628` to expose it through your `localhost` for testing.
+>Note: The `<service-ip>` address is the Kubernetes internal ClusterIP address of the Prometheus Metrics Service.  Use `kubectl port-forward svc/<eventbroker-deployment-name>-pubsubplus-prometheus-metrics 9628` to expose it through your `localhost` for testing.
 
 The following table lists the metrics exposed by the paths:
 
@@ -848,47 +848,47 @@ The following table lists the metrics exposed by the paths:
 || Config Sync State (0-Down, 1-Up, 2-Unknown, 3-In-Sync, 4-Reconciling, 5-Blocked, 6-Out-Of-Sync) | solace_configsync_table_syncstate | gauge
 || Config Sync Time in State | solace_configsync_table_timeinstateseconds | counter
 || Config Sync Resource (0-Router, 1-Vpn, 2-Unknown, 3-None, 4-All) | solace_configsync_table_type | gauge
-|| Average compute latency. | solace_system_compute_latency_avg_seconds | gauge
-|| Current compute latency. | solace_system_compute_latency_cur_seconds | gauge
-|| Maximum compute latency. | solace_system_compute_latency_max_seconds | gauge
-|| Minimum compute latency. | solace_system_compute_latency_min_seconds | gauge
-|| Average disk latency. | solace_system_disk_latency_avg_seconds | gauge
-|| Current disk latency. | solace_system_disk_latency_cur_seconds | gauge
-|| Maximum disk latency. | solace_system_disk_latency_max_seconds | gauge
-|| Minimum disk latency. | solace_system_disk_latency_min_seconds | gauge
-|| Average mate link latency. | solace_system_mate_link_latency_avg_seconds | gauge
-|| Current mate link latency. | solace_system_mate_link_latency_cur_seconds | gauge
-|| Maximum mate link latency. | solace_system_mate_link_latency_max_seconds | gauge
-|| Minimum mate link latency. | solace_system_mate_link_latency_min_seconds | gauge
+|| Average compute latency | solace_system_compute_latency_avg_seconds | gauge
+|| Current compute latency | solace_system_compute_latency_cur_seconds | gauge
+|| Maximum compute latency | solace_system_compute_latency_max_seconds | gauge
+|| Minimum compute latency | solace_system_compute_latency_min_seconds | gauge
+|| Average disk latency | solace_system_disk_latency_avg_seconds | gauge
+|| Current disk latency | solace_system_disk_latency_cur_seconds | gauge
+|| Maximum disk latency | solace_system_disk_latency_max_seconds | gauge
+|| Minimum disk latency | solace_system_disk_latency_min_seconds | gauge
+|| Average mate link latency | solace_system_mate_link_latency_avg_seconds | gauge
+|| Current mate link latency | solace_system_mate_link_latency_cur_seconds | gauge
+|| Maximum mate link latency | solace_system_mate_link_latency_max_seconds | gauge
+|| Minimum mate link latency | solace_system_mate_link_latency_min_seconds | gauge
 || Redundancy configuration (0-Disabled, 1-Enabled, 2-Shutdown) | solace_system_redundancy_config | gauge
 || Is local node the active messaging node? (0-not active, 1-active). | solace_system_redundancy_local_active | gauge
 || Redundancy role (0=Backup, 1=Primary, 2=Monitor, 3-Undefined). | solace_system_redundancy_role | gauge
 || Is redundancy up? (0=Down, 1=Up). | solace_system_redundancy_up | gauge
-|| Total disk usage in percent. | solace_system_spool_disk_partition_usage_active_percent | gauge
-|| Total disk usage of mate instance in percent. | solace_system_spool_disk_partition_usage_mate_percent | gauge
-|| Utilization of spool files in percent. | solace_system_spool_files_utilization_percent | gauge
-|| Spool configured max disk usage. | solace_system_spool_quota_bytes | gauge
-|| Spool configured max number of messages. | solace_system_spool_quota_msgs | gauge
-|| Spool total persisted usage. | solace_system_spool_usage_bytes | gauge
-|| Spool total number of persisted messages. | solace_system_spool_usage_msgs | gauge
+|| Total disk usage in percent | solace_system_spool_disk_partition_usage_active_percent | gauge
+|| Total disk usage of mate instance in percent | solace_system_spool_disk_partition_usage_mate_percent | gauge
+|| Utilization of spool files in percent | solace_system_spool_files_utilization_percent | gauge
+|| Spool configured max disk usage | solace_system_spool_quota_bytes | gauge
+|| Spool configured max number of messages | solace_system_spool_quota_msgs | gauge
+|| Spool total persisted usage | solace_system_spool_usage_bytes | gauge
+|| Spool total number of persisted messages | solace_system_spool_usage_msgs | gauge
 || Solace Version as WWWXXXYYYZZZ  | solace_system_version_currentload | gauge
 || Broker uptime in seconds  | solace_system_version_uptime_totalsecs | gauge
-|| Was the last scrape of Solace broker successful. | solace_up | gauge
-|| Number of connections. | solace_vpn_connections | gauge
-|| total number of amq connections | solace_vpn_connections_service_amqp | gauge
-|| total number of smf connections | solace_vpn_connections_service_smf | gauge
+|| Was the last scrape of Solace broker successful? | solace_up | gauge
+|| Number of connections | solace_vpn_connections | gauge
+|| Total number of AMQP connections | solace_vpn_connections_service_amqp | gauge
+|| Total number of SMF connections | solace_vpn_connections_service_smf | gauge
 || VPN is enabled | solace_vpn_enabled | gauge
 || VPN is a management VPN | solace_vpn_is_management_vpn | gauge
 || Local status (0=Down, 1=Up) | solace_vpn_local_status | gauge
 || VPN is locally configured | solace_vpn_locally_configured | gauge
 || VPN is operational | solace_vpn_operational | gauge
-|| Maximum number of connections. | solace_vpn_quota_connections | gauge
+|| Maximum number of connections | solace_vpn_quota_connections | gauge
 || Replication Admin Status (0-shutdown, 1-enabled, 2-n/a) | solace_vpn_replication_admin_state | gauge
 || Replication Config Status (0-standby, 1-active, 2-n/a) | solace_vpn_replication_config_state | gauge
 || Replication Tx Replication Mode (0-async, 1-sync) | solace_vpn_replication_transaction_replication_mode | gauge
-|| Spool configured max disk usage. | solace_vpn_spool_quota_bytes | gauge
-|| Spool total persisted usage. | solace_vpn_spool_usage_bytes | gauge
-|| Spool total number of persisted messages. | solace_vpn_spool_usage_msgs | gauge
+|| Spool configured max disk usage | solace_vpn_spool_quota_bytes | gauge
+|| Spool total persisted usage | solace_vpn_spool_usage_bytes | gauge
+|| Spool total number of persisted messages | solace_vpn_spool_usage_msgs | gauge
 || Total unique local subscriptions count | solace_vpn_total_local_unique_subscriptions | gauge
 || Total unique remote subscriptions count | solace_vpn_total_remote_unique_subscriptions | gauge
 || Total unique subscriptions count | solace_vpn_total_unique_subscriptions | gauge
@@ -932,18 +932,18 @@ The following table lists the metrics exposed by the paths:
 
 With the metrics endpoint of the broker deployment enabled and up, it is matter of configuring Prometheus to add this endpoint to its list of scraped targets. The way to configure Prometheus is highly dependent on how it has been deployed including whether it is inside or outside the Kubernetes cluster.
 
-For reference, this guide will show how to setup a Prometheus deployment, created and managed by the Prometheus Operator. Consult your documentation and adjust the procedure if your Prometheus environment differs.
+For reference, this guide shows how to set up a Prometheus deployment, created and managed by the Prometheus Operator. Consult your documentation and adjust the procedure if your Prometheus environment differs.
 
 #### Reference Prometheus Stack Deployment
 
-This section describes the setup of a reference Prometheus stack that includes Prometheus and Grafana (and also other Prometheus components not used here). We will use the [kube-prometheus project](https://github.com/prometheus-operator/kube-prometheus) which not only includes the Prometheus Operator but also Grafana. There are some adjustments/workarounds needed as described next.
+This section describes the setup of a reference Prometheus stack that includes Prometheus and Grafana (and also other Prometheus components not used here). We use the [kube-prometheus project](https://github.com/prometheus-operator/kube-prometheus) which not only includes the Prometheus Operator, but also Grafana. There are some adjustments/workarounds needed as described below.
 
 Steps:
-1. Git clone the `kube-prometheus` project. These steps were tested with the tagged version, later versions may well work too.
+1. Git clone the `kube-prometheus` project. These steps were tested with the tagged version, later versions might well work too.
 ```
 git clone https://github.com/prometheus-operator/kube-prometheus.git --tag v0.12.0
 ```
-2. Follow `kube-prometheus` Quickstart steps: https://github.com/prometheus-operator/kube-prometheus#quickstart . This will deploy the required operators and create a Prometheus stack in the `monitoring` namespace.
+2. Follow `kube-prometheus` Quickstart steps: https://github.com/prometheus-operator/kube-prometheus#quickstart . These steps deploy the required operators and create a Prometheus stack in the `monitoring` namespace.
 3. Patch the `prometheus-k8s` ClusterRole to enable access to the event broker metrics service. Run `kubectl edit ClusterRole prometheus-k8s` and append following to the `rules` section, then save:
 ```
 - apiGroups:
@@ -962,7 +962,7 @@ git clone https://github.com/prometheus-operator/kube-prometheus.git --tag v0.12
 data:
   datasources.yaml: ewogICAgImFwaVZlcnNpb24iOiAxLAogICAgImRhdGFzb3VyY2VzIjogWwogICAgICAgIHsKICAgICAgICAgICAgImFjY2VzcyI6ICJwcm94eSIsCiAgICAgICAgICAgICJlZGl0YWJsZSI6IGZhbHNlLAogICAgICAgICAgICAibmFtZSI6ICJwcm9tZXRoZXVzIiwKICAgICAgICAgICAgIm9yZ0lkIjogMSwKICAgICAgICAgICAgInR5cGUiOiAicHJvbWV0aGV1cyIsCiAgICAgICAgICAgICJ1cmwiOiAiaHR0cDovL3Byb21ldGhldXMtb3BlcmF0ZWQubW9uaXRvcmluZy5zdmM6OTA5MCIsCiAgICAgICAgICAgICJ2ZXJzaW9uIjogMQogICAgICAgIH0KICAgIF0KfQ==
 ```
->Note: since this is data stored in a Kubernetes secret it is necessary to provide Base64-encoded data. Use an [online Base64 decode tool](https://www.base64decode.org/) to reveal the unencoded content of above data.
+>Note: Because this is data stored in a Kubernetes secret, you must provide Base64-encoded data. Use an [online Base64 decode tool](https://www.base64decode.org/) to reveal the unencoded content of the data above.
 5. Restart the pods in the `monitoring` namespace to pick up the changes:
 ```bash
 kubectl delete pods --all -n monitoring
@@ -970,16 +970,16 @@ kubectl delete pods --all -n monitoring
 kubectl get pods --watch -n monitoring
 ```
 
-Now both Prometheus and Grafana are running. Their Web Management UIs are exposed through the services `prometheus-k8s` at port 9090 and `grafana` at port 3000 in the `monitoring` namespace. Since these services are of type ClusterIP one of the options is to use Kubectl port-forwarding to access:
+Now both Prometheus and Grafana are running. Their Web Management UIs are exposed through the services `prometheus-k8s` at port 9090 and `grafana` at port 3000 in the `monitoring` namespace. Because these services are of type ClusterIP one of the options is to use Kubectl port-forwarding to access them:
 ```
 kubectl port-forward svc/prometheus-k8s 9090 -n monitoring &
 kubectl port-forward svc/grafana 3000 -n monitoring &
 ```
-Point your browser to [localhost:9090](http://localhost:9090) for Prometheus and to [localhost:3000](http://localhost:3000) for Grafana. An initial login may be required using the credentials `admin/admin`.
+Point your browser to [localhost:9090](http://localhost:9090) for Prometheus and to [localhost:3000](http://localhost:3000) for Grafana. An initial login might be required using the credentials `admin/admin`.
 
 #### Creating a ServiceMonitor object
 
-With above adjustments the Prometheus Operator is now watching all namespaces for `ServiceMonitor` custom resource objects. A `ServiceMonitor` defines which metrics services shall be added to the Prometheus targets. It is namespace scoped so it must be added to the namespace where the event broker has been deployed.
+With the adjustments discussed above, the Prometheus Operator is now watching all namespaces for `ServiceMonitor` custom resource objects. A `ServiceMonitor` defines which metrics services must be added to the Prometheus targets. It is namespace scoped so it must be added to the namespace where the event broker has been deployed.
 
 Example:
 ```yaml
@@ -1002,15 +1002,15 @@ spec:
       app.kubernetes.io/component: metricsexporter
       app.kubernetes.io/instance: <eventbroker-deployment-name>
 ```
-This will add the deployment's metrics service (by matching labels) to the Prometheus targets. Refresh the Prometheus Status "Targets" in the Prometheus Web Management UI to see the newly added target.
+This adds the deployment's metrics service (by matching labels) to the Prometheus targets. Refresh the Prometheus Status "Targets" in the Prometheus Web Management UI to see the newly added target.
 
-The ServiceMonitor's selector may be adjusted to match all broker deployments in the namespace by removing `instance` from the matched labels. Also, multiple endpoints may be listed to obtain the combination of metrics from those Exporter paths.
+The ServiceMonitor's selector can be adjusted to match all broker deployments in the namespace by removing `instance` from the matched labels. Also, multiple endpoints can be listed to obtain the combination of metrics from those Exporter paths.
 
-Above `ServiceMonitor` example specifies to scrape three target endpoints to get the combination of all metrics available from the broker deploymeny. The metrics endpoints will be accessed at the port named `tcp-metrics` and at the PubSub+ Exporter path, e.g.: `/solace-std`, will be added to the scrape request REST API calls.
+The `ServiceMonitor` example above specifies that three target endpoints are scraped to get the combination of all metrics available from the broker deployment. The metrics endpoints can be accessed at the port named `tcp-metrics` and at the PubSub+ Exporter path, e.g.: `/solace-std` is added to the scrape request REST API calls.
 
 ### Grafana Visualization of Broker Metrics
 
-In the Grafana Web Management UI, select "Dashboards"->"Import dashboard"->"Upload JSON File". Upload `deploy/grafana_example.json`. This shall open up a sample Grafana dashboard. The following image shows this sample rendered after running some messaging traffic through the broker deployment.
+In the Grafana Web Management UI, select "Dashboards"->"Import dashboard"->"Upload JSON File". Upload `deploy/grafana_example.json`. This opens a sample Grafana dashboard. The following image shows this sample rendered after running some messaging traffic through the broker deployment.
 
 To create or customize your own dashboard refer to the [Grafana documentation](https://grafana.com/docs/grafana/latest/dashboards/build-dashboards/).
 
@@ -1102,7 +1102,7 @@ There are three StatefulSets controlling each broker node in an HA redundancy gr
 
 Generally, all services including management and messaging are accessible through a Load Balancer. In the above example `35.238.219.112` is the Load Balancer's external Public IP to use.
 
-> Note: When using MiniKube, there is no integrated Load Balancer. For a workaround, execute `minikube service XXX-XXX-solace` to expose the services. Services will be accessible directly using mapped ports instead of direct port access, for which the mapping can be obtained from `kubectl describe service XXX-XX-solace`.
+> Note: When using MiniKube, there is no integrated Load Balancer. For a workaround, execute `minikube service XXX-XXX-solace` to expose the services. Services are accessible directly using mapped ports instead of direct port access, for which the mapping can be obtained from `kubectl describe service XXX-XX-solace`.
 
 ### Gaining admin access to the event broker
 
@@ -1110,7 +1110,7 @@ The [PubSub+ Broker Manager](https://docs.solace.com/Admin/Broker-Manager/PubSub
 
 #### Admin Credentials
 
-The default admin username is `admin`. A password may be provided encoded in a Kubernetes secret in the broker spec parameter `spec.adminCredentialsSecret`. If not provided then a random password will be generated at initial deployment and stored in a secret named `<eventbroker-deployment-name>-pubsubplus-admin-creds`.
+The default admin username is `admin`. A password can be provided encoded in a Kubernetes secret in the broker spec parameter `spec.adminCredentialsSecret`. If not provided then a random password is generated at initial deployment and stored in a secret named `<eventbroker-deployment-name>-pubsubplus-admin-creds`.
 
 For example you can create a secret `my-admin-secret` with `MyP@ssword` before deployment then pass its name to the broker spec:
 ```
@@ -1156,11 +1156,11 @@ Operating Mode: Message Routing Node
 ha-example-pubsubplus-p-0>
 ```
 
-This will only enable access to the active Pod's CLI.
+This enables access only to the active Pod's CLI.
 
 #### CLI access to individual event brokers
 
-In an HA deployment CLI access may be needed to any of the brokers, not only the active one.
+In an HA deployment, CLI access might be needed to any of the brokers, not only the active one.
 
 * The simplest option from the Kubernetes command line console is
 ```
@@ -1220,7 +1220,7 @@ kubectl describe pvc <pvc-name>
 
 #### Viewing logs
 
-The Operator, Broker and Prometheus Exporter pods all provide logs that may be useful to understand issues.
+The Operator, Broker, and Prometheus Exporter pods all provide logs that might be useful to understand issues.
 
 Detailed logs from the currently running container in a pod:
 ```sh
@@ -1255,19 +1255,19 @@ If pods stay in pending state and `kubectl describe pods` reveals there are not 
 
 ##### Pods stuck in no storage
 
-Pods may also stay in pending state because [storage requirements](#storage) cannot be met. Check `kubectl get pv,pvc`. PVCs and PVs should be in bound state and if not then use `kubectl describe pvc` for any issues.
+Pods might also stay in pending state because [storage requirements](#storage) cannot be met. Check `kubectl get pv,pvc`. PVCs and PVs should be in bound state and if not then use `kubectl describe pvc` for any issues.
 
 Unless otherwise specified, a default storage class must be available for default PubSub+ deployment configuration.
 ```bash
 kubectl get storageclasses
 ```
 
-##### Pods stuck in CrashLoopBackoff, Failed or Not Ready
+##### Pods stuck in CrashLoopBackoff, Failed, or Not Ready
 
 Pods stuck in CrashLoopBackoff, or Failed, or Running but not Ready "active" state, usually indicate an issue with available Kubernetes node resources or with the container OS or the event broker process start.
 
 * Try to understand the reason following earlier hints in this section.
-* Try to recreate the issue by deleting and then reinstalling the deployment - ensure to remove related PVCs if applicable as they would mount volumes with existing, possibly outdated or incompatible database - and watch the [logs](#viewing-logs) and [events](#viewing-events) from the beginning. Look for ERROR messages preceded by information that may reveal the issue.
+* Try to recreate the issue by deleting and then reinstalling the deployment - ensure to remove related PVCs if applicable because they would mount volumes with existing, possibly outdated or incompatible database - and watch the [logs](#viewing-logs) and [events](#viewing-events) from the beginning. Look for ERROR messages preceded by information that might reveal the issue.
 
 ##### No Pods listed
 
@@ -1278,7 +1278,7 @@ kubectl describe statefulset | grep <broker-deployment-name>
 
 #### Security constraints
 
-Your Kubernetes environment's security constraints may also impact successful deployment. Review the [Security considerations](#security-considerations) section.
+Your Kubernetes environment's security constraints might also impact successful deployment. Review the [Security considerations](#security-considerations) section.
 
 ### Maintenance mode
 
@@ -1299,7 +1299,7 @@ kubectl label eb <broker-deployment-name> solace.com/pauseReconcile-
 
 Modification of the broker deployment (or update) can be initiated by applying an updated broker spec with modified parameter values. Upgrade is a special modification where the broker's `spec.image.repository` and/or `spec.image.tag` has been modified.
 
->Note: there are limitations, some parameters cannot be modified or the updated values will be ignored. See these exceptions in the [Update Limitations](#update-limitations) section.
+>Note: There are limitations; some parameters cannot be modified or the updated values will be ignored. For details on these exceptions, see the [Update Limitations](#update-limitations) section.
 
 Applying a modified manifest example:
 ```sh
@@ -1326,11 +1326,11 @@ kubectl edit eventbroker <broker-deployment-name>
 
 ### Rolling vs. Manual Update
 
-By default an update will trigger restart of the broker pods:
-* In a non-HA deployment the single broker pod will be restarted.
-* In an HA deployment the three broker pods of the HA redundancy group will be restarted in a **rolling** update: first the Monitor Broker pod, then the pod hosting the redundancy Standby Broker, and finally the pod hosting the currently Active Broker. When the currently active broker is terminated for update in the final step, an [automatic redundancy activity switch](https://docs.solace.com/Features/HA-Redundancy/SW-Broker-Redundancy-and-Fault-Tolerance.htm#Failure) will happen where the already updated standby will take activity.
+By default an update triggers the restart of the broker pods:
+* In a non-HA deployment the single broker pod is restarted.
+* In an HA deployment the three broker pods of the HA redundancy group are restarted in a **rolling** update: first the Monitor Broker pod, then the pod hosting the redundancy Standby Broker, and finally the pod hosting the currently Active Broker. When the currently active broker is terminated for update in the final step, an [automatic redundancy activity switch](https://docs.solace.com/Features/HA-Redundancy/SW-Broker-Redundancy-and-Fault-Tolerance.htm#Failure) happens where the already updated standby takes activity.
 
-Users wishing to manually control the pod restarts may activate **manual** update by specifying `spec.updateStrategy: manualPodRestart` in the broker spec. In this case the user is responsible for initiating the termination of the individual pods at their discretion. Removing or setting the value back to `automatedRolling` will revert to the rolling update mode.
+Users wishing to manually control the pod restarts can activate **manual** updates by specifying `spec.updateStrategy: manualPodRestart` in the broker spec. In this case the user is responsible for initiating the termination of the individual pods at their discretion. Removing or setting the value back to `automatedRolling` reverts to the rolling update mode.
 
 ### Update Limitations
 
@@ -1338,35 +1338,35 @@ The following table lists parameters for which update using [Modify Deployment](
 
 | Parameter | Notes |
 | --- | ---
-| `spec.adminCredentialsSecret` | Changing the secret name or contained password will not update the password on the broker but will result in broker pods getting out of readiness. It requires an additional [manual action to update the admin password using CLI](https://docs.solace.com/Admin/Configuring-Internal-CLI-User-Accounts.htm?Highlight=admin%20password#Changing-CLI-User-Passwords) on *each* broker.
+| `spec.adminCredentialsSecret` | Changing the secret name or contained password does not update the password on the broker but does result in broker pods getting out of readiness. It requires an additional [manual action to update the admin password using CLI](https://docs.solace.com/Admin/Configuring-Internal-CLI-User-Accounts.htm?Highlight=admin%20password#Changing-CLI-User-Passwords) on *each* broker.
 | `spec.monitoringCredentialsSecret` | Similarly to the `adminCredentialsSecret`, additional manual action is required to update the password of the `minitor` user on each broker. |
-| `spec.preSharedAuthKeySecret` | Any updates will be ignored, [manual change of key is required using CLI](https://docs.solace.com/Features/HA-Redundancy/Pre-Shared-Keys-SMB.htm?Highlight=pre-shared#How2).|
+| `spec.preSharedAuthKeySecret` | Any updates are ignored, [manual change of key is required using CLI](https://docs.solace.com/Features/HA-Redundancy/Pre-Shared-Keys-SMB.htm?Highlight=pre-shared#How2).|
 | `spec.systemScaling.maxConnections` | Scaling up a broker deployment requires two steps: first, to update the deployment with the desired target `systemScaling` and next, to [manually update scaling using the CLI](https://docs.solace.com/Software-Broker/Set-Scaling-Params-HA.htm#Step_2__Increase_the_Value_of_the_Scaling_Parameter(s)) on each broker. |
-| `spec.systemScaling.maxQueueMessages` | As for `maxConnections` |
-| `spec.systemScaling.maxSpoolUsage` | As for `maxConnections`, but here storage size may need to be increased. Follow the specific instructions of your Kubernetes or storage provider to [manually expand the volume claims](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#expanding-persistent-volumes-claims) for the PVCs used. |
+| `spec.systemScaling.maxQueueMessages` | As for `maxConnections`. |
+| `spec.systemScaling.maxSpoolUsage` | As for `maxConnections`, but here storage size might need to be increased. Follow the specific instructions of your Kubernetes or storage provider to [manually expand the volume claims](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#expanding-persistent-volumes-claims) for the PVCs used. |
 | `spec.redundancy` | Changing a broker deployment from non-HA to HA or HA to non-HA is not supported by simply updating this parameter. |
 
->**Important**: if using ephemeral storage for Monitor nodes, the monitor will pick up any of above updates. However message routing broker nodes will not and it requires a manual fix to bring all broker nodes back in sync after a monitor restart.
+>**Important**: If you are using ephemeral storage for Monitor nodes, the monitor picks up any of the above updates. However, message routing broker nodes do not—you must manually bring all broker nodes back in sync after a monitor restart.
 
-###	Undeploy Broker
+###	Deleting a Deployment
 
-The event broker deployment can be deleted by deleting the EventBroker manifest:
+You can delete event broker deployment by deleting the EventBroker manifest:
 
 ```sh
 kubectl delete eventbroker <broker-deployment-name>
 # Check what has remained from the deployment
 kubectl get statefulsets,services,pods,pvc,pv
-# It may take some time for broker resources to delete
+# It might take some time for broker resources to delete
 ```
-This will initiate deletion the broker deployment. 
+This initiates the deletion of the event broker deployment. 
 
-> Important: PVCs and related PVs associated with the broker's persistent storage will be preserved even after  deleting the EventBroker manifest because they may contain important broker configuration. They shall be deleted manually if required.
+> Important: PVCs and related PVs associated with the broker's persistent storage are preserved even after deleting the EventBroker manifest because they might contain important broker configuration. They must be deleted manually if required.
 
 ###	Re-Install Broker
 
-As described in the previous section, broker persistent storage will not be automatically deleted.
+As described in the previous section, broker persistent storage is not automatically deleted.
 
-In this case the deployment may be reinstalled and continue from the point before the `delete eventbroker` command was executed by [running `kubectl apply` again](#quick-start), using the same deployment name and parameters as the previous run. This includes explicitly providing the same admin password as before.
+In this case the deployment can be reinstalled and continue from the point before the `delete eventbroker` command was executed by [running `kubectl apply` again](#quick-start), using the same deployment name and parameters as the previous run. This includes explicitly providing the same admin password as before.
 
 ##	Operator Deployment Guide
 
@@ -1380,13 +1380,13 @@ There are two recommended options to acquire the PubSub+ Event Broker Operator:
 
 The Operator Lifecycle Manager (OLM) tool can be used to install, update, and manage the lifecycle of community operators available from [OperatorHub](https://operatorhub.io).
 
-Follow the steps from [OperatorHub](https://operatorhub.io/operator/pubsubplus-eventbroker-operator) to setup OLM then to install the PubSub+ Event Broker Operator. Click on the Install button to see the detailed instructions.
+Follow the steps from [OperatorHub](https://operatorhub.io/operator/pubsubplus-eventbroker-operator) to setup OLM and to install the PubSub+ Event Broker Operator. Click on the Install button to see the detailed instructions.
 
 The default namespace is `operators` for operators installed from OperatorHub.
 
-#### From command line
+#### From Command Line
 
-Use the `deploy.yaml` from the [PubSub+ Event Broker Operator GitHub project](https://github.com/SolaceProducts/pubsubplus-kubernetes-operator). It includes a collection of manifests for all the Kubernetes resources that need to be created.
+Use the `deploy.yaml` from the [PubSub+ Event Broker Operator GitHub project](https://github.com/SolaceProducts/pubsubplus-kubernetes-operator). It includes a collection of manifests for all the Kubernetes resources that must be created.
 
 The following example creates a default deployment. Edit the `deploy.yaml` before applying to customize options:
 ```sh
@@ -1407,7 +1407,7 @@ Customization options:
 
 ### Validating the Operator deployment
 
-First, check if the PubSubPlusEventBroker Custom Resource Definition (CRD) is in place. This is a global Kubernetes resource so no namespace is required.
+First, check if the `PubSubPlusEventBroker` Custom Resource Definition (CRD) is in place. This is a global Kubernetes resource so no namespace is required.
 ```sh
 prompt:~$ kubectl get crd pubsubpluseventbrokers.pubsubplus.solace.com
 NAME                                           CREATED AT
@@ -1424,50 +1424,50 @@ pubsubplus-eventbroker-operator   1/1     1            1           3h
 
 ### Troubleshooting the Operator deployment
 
-If the deployment is not ready then inspect if the Operator pod is running at all:
+If the deployment is not ready then check whether the Operator pod is running at all:
 ```
 kubectl get pods -n pubsubplus-operator-system
 ```
 
-Also get the deployment and the operator pod described for any issues:
+Get the description of the deployment and the operator pod and look for any issues:
 ```
 kubectl describe deployment pubsubplus-eventbroker-operator -n pubsubplus-operator-system
 kubectl describe pod pubsubplus-eventbroker-operator-XXX-YYY -n pubsubplus-operator-system
 ```
 
-In the Operator Pod description check the `WATCH_NAMESPACE` environment variable. Default `""` value means all namespaces watched, otherwise the namespaces are listed where the Operator is allowed to create a broker deployment.
+In the Operator Pod description check the `WATCH_NAMESPACE` environment variable. The default `""` value means that all namespaces are watched, otherwise the namespaces are listed where the Operator is allowed to create a broker deployment.
 
-Also verify adequate RBAC permissions for the Operator, review the [Security section](#security-considerations).
+You should also verify that there are adequate RBAC permissions for the Operator; for details, see the [Security section](#security-considerations).
 
 For additional hints refer to the [Broker Troubleshooting](#troubleshooting) section.
 
 ### Upgrade the Operator
 
-A given version of the Operator has a dependency on the PubSubPlusEventBroker Custom Resource Definition (CRD) version it can interpret. The CRD can be viewed as a schema. New version of a CRD may not be compatible with an older Operator version. Therefore it is generally recommended to use the latest possible version of the Operator. Installing a newer CRD can be expected to be backwards compatible for existing EventBroker resources, but requires an Operator upgrade to at least the same version or later.
+A given version of the Operator has a dependency on the PubSubPlusEventBroker Custom Resource Definition (CRD) version it can interpret. The CRD can be viewed as a schema. A new version of a CRD might not be compatible with an older Operator version. Therefore it is generally recommended to use the latest possible version of the Operator. Installing a newer CRD can be expected to be backwards compatible for existing EventBroker resources, but requires an Operator upgrade to at least the same version or later.
 
 ##### Upgrading the Operator only
 
-You can use OLM to manage installing new versions of the Operator as they become available. The default install of the PubSub+ Event Broker Operator is set to automatic updates. This can be changed to `Manual` by editing the broker subscription in the `operators` namespace.
+You can use OLM to manage installing new versions of the Operator as they become available. The default install of the PubSub+ Event Broker Operator is set to perform automatic updates. This can be changed to `Manual` by editing the broker subscription in the `operators` namespace.
 
-If the Operator has been installed directly from the command line then update `deploy.yaml` to the new operator image tag and run `kubectl apply -f <updated-deploy.yaml>` and then validate the updated deployment.
+If the Operator has been installed directly from the command line then update `deploy.yaml` to the new operator image tag, run `kubectl apply -f <updated-deploy.yaml>`, and then validate the updated deployment.
 
 #### Upgrade CRD and Operator
 
 OLM automatically manages the CRD and Operator updates.
 
-Direct install requires taking `deploy.yaml` from the correctly tagged version of the [PubSub+ Event Broker Operator GitHub project](https://github.com/SolaceProducts/pubsubplus-kubernetes-operator), as it includes the corresponding version of the CRD. 
+A direct installation requires taking `deploy.yaml` from the correctly tagged version of the [PubSub+ Event Broker Operator GitHub project](https://github.com/SolaceProducts/pubsubplus-kubernetes-operator), because it includes the corresponding version of the CRD. 
 
->Note: while the goal is to keep the CRD API versions backwards compatible, it may become necessary to introduce a new API version. In that case detailed upgrade instructions will be provided in the Release Notes.
+>Note: Although the goal is to keep the CRD API versions backwards compatible, it might become necessary to introduce a new API version. In that case, detailed upgrade instructions will be provided in the Release Notes.
 
 ##	Migration from Helm-based deployments
 
-Existing deployments that were created using the `pubsubplus` Helm chart may be ported to Operator control. In-service migration is not supported, broker shutdown is required.
+Existing deployments that were created using the `pubsubplus` Helm chart can be ported to Operator control. In-service migration is not supported; broker shutdown is required.
 
-Consider the followings:
-* The key elements holding the broker configuration and messaging data are the PVs and associated PVCs. They will need to be assigned to the new deployment. The broker spec allows to [specify individual PVCs for each broker](#assigning-existing-pvc-persistent-volume-claim) in a deployment.
+Consider the following:
+* The key elements holding the broker configuration and messaging data are the PVs and associated PVCs. They must be assigned to the new deployment. The broker spec allows [specifying individual PVCs for each broker](#assigning-existing-pvc-persistent-volume-claim) in a deployment.
 * The Helm deployment used a single StatefulSet model with HA broker pods named `<deployment>-pubsubplus-0`, `...-1` and `...-2` for Primary, Backup and Monitor broker nodes, respectively. The new Operator deployment model creates a dedicated StatefulSet to each, with pod names `<deployment>-pubsubplus-p-0`, `...-b-0` and `...-m-0`.
 * The already configured admin password must be provided to the new deployment in a secret, refer to the [Users and Passwords section](#admin-and-monitor-users-and-passwords).
-* Naming the Operator-managed broker deployment the same as the Helm-based deployment will help to keep the service name (and hence the DNS name) the same, although the external IP address is expected to change if using LoadBalancer.
+* Naming the Operator-managed broker deployment the same as the Helm-based deployment helps to keep the service name (and hence the DNS name) the same, although the external IP address is expected to change if you're using LoadBalancer.
 * The TLS secret for broker TLS configuration can be reused.
 
 ### Migration process
@@ -1475,9 +1475,9 @@ Consider the followings:
 1. Using the existing Helm-based deployment:
 * Take note of the `admin` user password. 
 * Follow the [documentation](https://docs.solace.com/Admin/Configuring-Internal-CLI-User-Accounts.htm) to create a global read-only `monitor` user and configure a password.
-* Take note of the PVCs used.Their naming scheme is `data-<deplyment-name>-pubsubplus-0`, `...-1` and `...-2` for Primary, Backup and Monitor.
-2. [Create secrets](#admin-and-monitor-users-and-passwords) for the `admin`, `monitoring` users, respectively.
-3. Now shutdown the existing deployment using `helm delete <deployment-name>`. This will delete the broker deployment but not the PV/PVCs.
+* Take note of the PVCs used. Their naming scheme is `data-<deplyment-name>-pubsubplus-0`, `...-1` and `...-2` for Primary, Backup and Monitor.
+2. [Create secrets](#admin-and-monitor-users-and-passwords) for the `admin` and `monitoring` users, respectively.
+3. Shut down the existing deployment using `helm delete <deployment-name>`. This deletes the broker deployment but not the PV/PVCs.
 4. Create a new broker spec. This example shows one for an HA deployment:
 ```yaml
 apiVersion: pubsubplus.solace.com/v1beta1
@@ -1510,13 +1510,13 @@ spec:
           claimName: helm-monitor-pvc-name
   # Add any other parameter from the original deployment as required
 ```
-5. Apply the broker spec. This will create a new deployment using the specified resources:
+5. Apply the broker spec. This creates a new deployment using the specified resources:
 ```
 kubectl apply -f new-broker-spec.yaml
 ```
-No further steps are required for non-HA deployments, wait for the deployment to come up as ready.
+No further steps are required for non-HA deployments. Simply wait for the deployment to come up as ready.
 
-For HA deployments wait for the pods to come up running but they will never become ready. This is because the redundancy group addresses need to be updated as the pods have new names:
+For HA deployments, wait for the pods to come up as running. However, they will never become ready. This is because the redundancy group addresses must be updated because the pods have new names:
 | Old broker pod name | New broker pod name |
 | --- | --- |
 | `<deployment-name>-pubsubplus-0` | `<deployment-name>-pubsubplus-p-0` |
