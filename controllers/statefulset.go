@@ -404,8 +404,6 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(sts *a
 				},
 			},
 			ImagePullSecrets: m.Spec.BrokerImage.ImagePullSecrets,
-			NodeSelector:     getNodeSelectorDetails(m.Spec.BrokerNodeAssignment, nodeType),
-			Affinity:         getNodeAffinityDetails(m.Spec.BrokerNodeAssignment, nodeType),
 			// SchedulerName:                 "",
 			// Tolerations:                   []corev1.Toleration{},
 			// TopologySpreadConstraints:     []corev1.TopologySpreadConstraint{},
@@ -606,6 +604,16 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(sts *a
 		sts.Spec.Template.Spec.Volumes = allVolumes
 	}
 
+	nodeSelectorConfiguration := getNodeSelectorDetails(m.Spec.BrokerNodeAssignment, nodeType)
+	if nodeSelectorConfiguration != nil {
+		sts.Spec.Template.Spec.NodeSelector = nodeSelectorConfiguration
+	}
+
+	affinityConfiguration := getNodeAffinityDetails(m.Spec.BrokerNodeAssignment, nodeType)
+	if affinityConfiguration != nil {
+		sts.Spec.Template.Spec.Affinity = affinityConfiguration
+	}
+
 }
 
 func getBrokerImageDetails(bm *eventbrokerv1beta1.BrokerImage) string {
@@ -635,29 +643,31 @@ func getBrokerMessageNodeStorageSize(st *eventbrokerv1beta1.Storage) string {
 }
 
 func getNodeAffinityDetails(na []eventbrokerv1beta1.NodeAssignment, nodeType string) *corev1.Affinity {
-	affinity := &corev1.Affinity{}
 	for _, nodeAssignment := range na {
 		if strings.Contains(
 			strings.ToLower(nodeType),
 			strings.ToLower(nodeAssignment.Name),
 		) {
-			affinity = &nodeAssignment.Spec.Affinity
+			if (corev1.Affinity{}) != nodeAssignment.Spec.Affinity {
+				return &nodeAssignment.Spec.Affinity
+			}
 		}
 	}
-	return affinity
+	return nil
 }
 
 func getNodeSelectorDetails(na []eventbrokerv1beta1.NodeAssignment, nodeType string) map[string]string {
-	nodeSelector := map[string]string{}
 	for _, nodeAssignment := range na {
 		if strings.Contains(
 			strings.ToLower(nodeType),
 			strings.ToLower(nodeAssignment.Name),
 		) {
-			nodeSelector = nodeAssignment.Spec.NodeSelector
+			if len(nodeAssignment.Spec.NodeSelector) > 0 {
+				return nodeAssignment.Spec.NodeSelector
+			}
 		}
 	}
-	return nodeSelector
+	return nil
 }
 
 func usesEphemeralStorageForMonitoringNode(st *eventbrokerv1beta1.Storage, nodeType string) bool {
