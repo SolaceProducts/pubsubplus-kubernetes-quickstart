@@ -414,6 +414,7 @@ type MonitoringSubStatus struct {
 
 // MonitoringMetricsEndpoint defines parameters to configure Metrics Service Endpoint
 type MonitoringMetricsEndpoint struct {
+	//+optional
 	//+kubebuilder:validation:MaxLength:15
 	//+kubebuilder:validation:Type:=string
 	// Name is a unique name for the port that can be referred to by services.
