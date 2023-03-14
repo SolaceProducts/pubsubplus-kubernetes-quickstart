@@ -20,28 +20,43 @@ spec:
   apiservicedefinitions: {}
   customresourcedefinitions:
     owned:
-    - description: PubSubPlusEventBroker is the Schema for the pubsubpluseventbrokers
-        API
+    - description: PubSub+ Event Broker
       displayName: PubSub+ Event Broker
       kind: PubSubPlusEventBroker
       name: pubsubpluseventbrokers.pubsubplus.solace.com
-      version: v1beta1
       resources:
-      - version: v1
-        kind: Deployment
-      - version: v1
-        kind: Service
-      - version: v1
-        kind: StatefulSet
-      - version: v1
-        kind: Pod
-      - version: v1
-        kind: Secret
-      - version: v1
-        kind: ConfigMap
-      specDescriptors: []
-      statusDescriptors: []
-    required: []
+      - kind: ConfigMap
+        name: ""
+        version: v1
+      - kind: Deployment
+        name: ""
+        version: v1
+      - kind: Pod
+        name: ""
+        version: v1
+      - kind: Secret
+        name: ""
+        version: v1
+      - kind: Service
+        name: ""
+        version: v1
+      - kind: StatefulSet
+        name: ""
+        version: v1
+      specDescriptors:
+      - description: Redundancy true specifies HA deployment, false specifies Non-HA.
+        displayName: Redundancy
+        path: redundancy
+      - description: Developer true specifies a minimum footprint scaled-down deployment,
+          not for production use. If set to true it overrides SystemScaling parameters.
+        displayName: Developer
+        path: developer
+      - description: SystemScaling provides exact fine-grained specification of the
+          event broker scaling parameters and the assigned CPU / memory resources
+          to the Pod.
+        displayName: System Scaling
+        path: systemScaling
+      version: v1beta1
   description: |
     ## The Solace PubSub+ Platform
     Solace [PubSub+ Platform](https://solace.com/products/platform/) is a complete event streaming and management platform

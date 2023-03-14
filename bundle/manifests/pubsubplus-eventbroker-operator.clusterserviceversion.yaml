@@ -20,7 +20,7 @@ metadata:
     certified: "true"
     com.redhat.openshift.versions: v4.10
     containerImage: docker.io/solace/pubsubplus-eventbroker-operator:1.0.0
-    createdAt: "2023-03-10T13:09:31Z"
+    createdAt: "2023-03-14T16:26:06Z"
     description: The Solace PubSub+ Event Broker Operator deploys and manages the
       lifecycle of PubSub+ Event Brokers
     operators.openshift.io/valid-subscription: '[]'
@@ -28,17 +28,48 @@ metadata:
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
     repository: https://github.com/SolaceProducts/pubsubplus-kubernetes-operator
     support: Solace Products
-  name: pubsubplus-eventbroker-operator.v1.0.0-cert
+  name: pubsubplus-eventbroker-operator.v1.0.0-cert2
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
   customresourcedefinitions:
     owned:
-    - description: PubSubPlusEventBroker is the Schema for the pubsubpluseventbrokers
-        API
+    - description: PubSub+ Event Broker
       displayName: PubSub+ Event Broker
       kind: PubSubPlusEventBroker
       name: pubsubpluseventbrokers.pubsubplus.solace.com
+      resources:
+      - kind: ConfigMap
+        name: ""
+        version: v1
+      - kind: Deployment
+        name: ""
+        version: v1
+      - kind: Pod
+        name: ""
+        version: v1
+      - kind: Secret
+        name: ""
+        version: v1
+      - kind: Service
+        name: ""
+        version: v1
+      - kind: StatefulSet
+        name: ""
+        version: v1
+      specDescriptors:
+      - description: Redundancy true specifies HA deployment, false specifies Non-HA.
+        displayName: Redundancy
+        path: redundancy
+      - description: Developer true specifies a minimum footprint scaled-down deployment,
+          not for production use. If set to true it overrides SystemScaling parameters.
+        displayName: Developer
+        path: developer
+      - description: SystemScaling provides exact fine-grained specification of the
+          event broker scaling parameters and the assigned CPU / memory resources
+          to the Pod.
+        displayName: System Scaling
+        path: systemScaling
       version: v1beta1
   description: |
     ## The Solace PubSub+ Platform
@@ -365,11 +396,11 @@ spec:
   - name: Solace Community
     url: https://solace.community/
   maintainers:
-  - email: info@solace.com
+  - email: support@solace.com
     name: Solace R&D
   maturity: stable
   minKubeVersion: 1.23.0
   provider:
     name: Solace Corporation
     url: www.solace.com
-  version: 1.0.0-cert
+  version: 1.0.0-cert2
