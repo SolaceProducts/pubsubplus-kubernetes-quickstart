@@ -176,6 +176,8 @@ EventBrokerSpec defines the desired state of PubSubPlusEventBroker
         <td>string</td>
         <td>
           PreSharedAuthKeySecret defines the PreSharedAuthKey Secret for PubSubPlusEventBroker. Random one will be generated if not provided. When provided, ensure the secret key name is `preshared_auth_key`.<br/>
+            <br/>
+             Note: Pre-shared authentication keys are 32 to 256 bytes of binary data encoded in Base64. For more info : <a target="_blank" href="https://docs.solace.com/Features/HA-Redundancy/Pre-Shared-Keys-SMB.htm?Highlight=pre%20shared">https://docs.solace.com/Features/HA-Redundancy/Pre-Shared-Keys-SMB.htm?Highlight=pre%20shared</a>   
         </td>
         <td>false</td>
       </tr><tr>
