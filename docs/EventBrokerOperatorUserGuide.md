@@ -165,6 +165,8 @@ The Operator ensures that all above objects are in place, with the exception of 
 
 A non-HA deployment differs from HA in that: (1) there is only one StatefulSet managing one Pod that hosts the single broker; (2) there is no Discovery Service for internal communication; and (3) there is no pre-shared AuthenticationKey to secure internal communication.
 
+Note: Each event broker deployment conforms to the guidelines for naming objects in Kubernetes. For example you can not have multiple event brokers with the same name in the same namespace, port names must be at least one character and no more than 15 characters long. For more info on other guidelines : [https://kubernetes.io/docs/concepts/overview/working-with-objects/names/](https://kubernetes.io/docs/concepts/overview/working-with-objects/names/)    
+
 ### Prometheus Monitoring Support
 
 Support can be enabled for exposing broker metrics to [Prometheus Monitoring](https://prometheus.io/docs/introduction/overview/). Prometheus requires an exporter running that pulls requested metrics from the monitored application - the broker in this case.

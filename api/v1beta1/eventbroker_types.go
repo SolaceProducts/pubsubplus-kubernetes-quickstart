@@ -40,19 +40,19 @@ type EventBrokerSpec struct {
 	//+nullable
 	//+kubebuilder:validation:Type:=string
 	// Defines the password for PubSubPlusEventBroker if provided. Random one will be generated if not provided.
-	// When provided, ensure the secret key name is `username_admin_password`.
+	// When provided, ensure the secret key name is `username_admin_password`. For valid values refer to the Solace documentation https://docs.solace.com/Admin/Configuring-Internal-CLI-User-Accounts.htm.
 	AdminCredentialsSecret string `json:"adminCredentialsSecret,omitempty"`
 	//+optional
 	//+nullable
 	//+kubebuilder:validation:Type:=string
 	// Defines the password for PubSubPlusEventBroker to be used by the Exporter for monitoring.
-	// When provided, ensure the secret key name is `username_monitor_password`.
+	// When provided, ensure the secret key name is `username_monitor_password`. For valid values refer to the Solace documentation https://docs.solace.com/Admin/Configuring-Internal-CLI-User-Accounts.htm.
 	MonitoringCredentialsSecret string `json:"monitoringCredentialsSecret,omitempty"`
 	//+optional
 	//+nullable
 	//+kubebuilder:validation:Type:=string
 	// PreSharedAuthKeySecret defines the PreSharedAuthKey Secret for PubSubPlusEventBroker. Random one will be generated if not provided.
-	// When provided, ensure the secret key name is `preshared_auth_key`.
+	// When provided, ensure the secret key name is `preshared_auth_key`. For valid values refer to the Solace documentation https://docs.solace.com/Features/HA-Redundancy/Pre-Shared-Keys-SMB.htm?Highlight=pre%20shared.
 	PreSharedAuthKeySecret string `json:"preSharedAuthKeySecret,omitempty"`
 	//+optional
 	//+kubebuilder:validation:Type:=array
@@ -414,6 +414,7 @@ type MonitoringSubStatus struct {
 
 // MonitoringMetricsEndpoint defines parameters to configure Metrics Service Endpoint
 type MonitoringMetricsEndpoint struct {
+	//+optional
 	//+kubebuilder:validation:MaxLength:15
 	//+kubebuilder:validation:Type:=string
 	// Name is a unique name for the port that can be referred to by services.
