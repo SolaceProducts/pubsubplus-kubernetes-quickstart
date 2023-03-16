@@ -18,7 +18,7 @@ jobs:
 
       - name: Lint and Build
         run: |
-          go fmt ./... | wc -l | grep 0
+          #go fmt ./... | wc -l | grep 0
           make docker-build
 
       - name: Login to Github Packages

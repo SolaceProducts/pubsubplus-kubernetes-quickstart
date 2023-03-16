@@ -18,6 +18,7 @@ metadata:
     capabilities: Seamless Upgrades
     categories: Streaming & Messaging
     certified: "true"
+    com.redhat.delivery.operator.bundle: "true"
     com.redhat.openshift.versions: v4.10
     containerImage: docker.io/solace/pubsubplus-eventbroker-operator:1.0.0
     createdAt: "2023-03-14T16:26:06Z"
@@ -28,7 +29,7 @@ metadata:
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
     repository: https://github.com/SolaceProducts/pubsubplus-kubernetes-operator
     support: Solace Products
-  name: pubsubplus-eventbroker-operator.v1.0.0-cert2
+  name: pubsubplus-eventbroker-operator.v1.0.0-dev
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -288,7 +289,7 @@ spec:
                   valueFrom:
                     fieldRef:
                       fieldPath: metadata.annotations['olm.targetNamespaces']
-                image: ghcr.io/solacedev/pubsubplus-eventbroker-operator:v1.0.0-cert
+                image: ghcr.io/solacedev/pubsubplus-eventbroker-operator:v1.0.0-dev
                 imagePullPolicy: Always
                 livenessProbe:
                   httpGet:
@@ -403,4 +404,4 @@ spec:
   provider:
     name: Solace Corporation
     url: www.solace.com
-  version: 1.0.0-cert2
+  version: 1.0.0-dev
