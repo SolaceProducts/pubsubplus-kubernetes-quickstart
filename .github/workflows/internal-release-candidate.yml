@@ -29,7 +29,7 @@ jobs:
       - name: Build and publish
         run: |
           export VERSION='${{ github.event.inputs.release_tag }}'
-          make generate manifest
+          make generate manifests
           make docker-build docker push
           make bundle
           make bundle-build bundle-push
