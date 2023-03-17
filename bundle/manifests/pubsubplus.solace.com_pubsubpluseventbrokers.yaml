@@ -20,8 +20,7 @@ spec:
   - name: v1beta1
     schema:
       openAPIV3Schema:
-        description: PubSubPlusEventBroker is the Schema for the pubsubpluseventbrokers
-          API
+        description: PubSub+ Event Broker
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -41,7 +40,8 @@ spec:
               adminCredentialsSecret:
                 description: Defines the password for PubSubPlusEventBroker if provided.
                   Random one will be generated if not provided. When provided, ensure
-                  the secret key name is `username_admin_password`.
+                  the secret key name is `username_admin_password`. For valid values
+                  refer to the Solace documentation https://docs.solace.com/Admin/Configuring-Internal-CLI-User-Accounts.htm.
                 nullable: true
                 type: string
               developer:
@@ -105,7 +105,6 @@ spec:
                       x-kubernetes-map-type: atomic
                     type: array
                   repository:
-                    default: solace/solace-pubsub-standard
                     description: Defines the container image repo where the event
                       broker image is pulled from
                     type: string
@@ -150,7 +149,6 @@ spec:
                           x-kubernetes-map-type: atomic
                         type: array
                       repository:
-                        default: ghcr.io/solacedev/solace_prometheus_exporter
                         description: Defines the container image repo where the Prometheus
                           Exporter image is pulled from
                         type: string
@@ -216,8 +214,6 @@ spec:
                         description: Defines the service type for the Metrics Service
                           Endpoint
                         type: string
-                    required:
-                    - name
                     type: object
                   sslVerify:
                     default: false
@@ -232,7 +228,8 @@ spec:
               monitoringCredentialsSecret:
                 description: Defines the password for PubSubPlusEventBroker to be
                   used by the Exporter for monitoring. When provided, ensure the secret
-                  key name is `username_monitor_password`.
+                  key name is `username_monitor_password`. For valid values refer
+                  to the Solace documentation https://docs.solace.com/Admin/Configuring-Internal-CLI-User-Accounts.htm.
                 nullable: true
                 type: string
               nodeAssignment:
@@ -1219,6 +1216,7 @@ spec:
                 description: PreSharedAuthKeySecret defines the PreSharedAuthKey Secret
                   for PubSubPlusEventBroker. Random one will be generated if not provided.
                   When provided, ensure the secret key name is `preshared_auth_key`.
+                  For valid values refer to the Solace documentation https://docs.solace.com/Features/HA-Redundancy/Pre-Shared-Keys-SMB.htm?Highlight=pre%20shared.
                 nullable: true
                 type: string
               redundancy:

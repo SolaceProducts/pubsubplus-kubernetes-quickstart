@@ -28,14 +28,22 @@ type EventBrokerSpec struct {
 	//+optional
 	//+kubebuilder:validation:Type:=boolean
 	//+kubebuilder:default:=false
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
 	// Redundancy true specifies HA deployment, false specifies Non-HA.
 	Redundancy bool `json:"redundancy"`
 	//+optional
 	//+kubebuilder:validation:Type:=boolean
 	//+kubebuilder:default:=false
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2
 	// Developer true specifies a minimum footprint scaled-down deployment, not for production use.
 	// If set to true it overrides SystemScaling parameters.
 	Developer bool `json:"developer"`
+	//+optional
+	//+kubebuilder:validation:Type:=object
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3
+	// SystemScaling provides exact fine-grained specification of the event broker scaling parameters
+	// and the assigned CPU / memory resources to the Pod.
+	SystemScaling *SystemScaling `json:"systemScaling,omitempty"`
 	//+optional
 	//+nullable
 	//+kubebuilder:validation:Type:=string
@@ -83,11 +91,6 @@ type EventBrokerSpec struct {
 	//+kubebuilder:default:="UTC"
 	// Defines the timezone for the event broker container, if undefined default is UTC. Valid values are tz database time zone names.
 	Timezone string `json:"timezone"`
-	//+optional
-	//+kubebuilder:validation:Type:=object
-	// SystemScaling provides exact fine-grained specification of the event broker scaling parameters
-	// and the assigned CPU / memory resources to the Pod.
-	SystemScaling *SystemScaling `json:"systemScaling,omitempty"`
 	//+optional
 	//+kubebuilder:validation:Type:=object
 	//+kubebuilder:default:={}
@@ -271,7 +274,6 @@ type ExtraEnvVar struct {
 type BrokerImage struct {
 	//+optional
 	//+kubebuilder:validation:Type:=string
-	//+kubebuilder:default:="solace/solace-pubsub-standard"
 	// Defines the container image repo where the event broker image is pulled from
 	Repository string `json:"repository"`
 	//+optional
@@ -331,7 +333,6 @@ type SecurityContext struct {
 // MonitoringImage defines Image details and pulling configurations for the Prometheus Exporter for Monitoring
 type MonitoringImage struct {
 	//+kubebuilder:validation:Type:=string
-	//+kubebuilder:default:=ghcr.io/solacedev/solace_prometheus_exporter
 	// Defines the container image repo where the Prometheus Exporter image is pulled from
 	Repository string `json:"repository,omitempty"`
 	//+kubebuilder:validation:Type:=string
@@ -462,8 +463,8 @@ type MonitoringMetricsEndpoint struct {
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 //+kubebuilder:resource:path=pubsubpluseventbrokers,shortName=eb;eventbroker
-
-// PubSubPlusEventBroker is the Schema for the pubsubpluseventbrokers API
+//+operator-sdk:csv:customresourcedefinitions:displayName="PubSub+ Event Broker",resources={{StatefulSet,v1},{Pod,v1},{Service,v1},{Secret,v1},{ConfigMap,v1},{Deployment,v1}}
+// PubSub+ Event Broker
 type PubSubPlusEventBroker struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

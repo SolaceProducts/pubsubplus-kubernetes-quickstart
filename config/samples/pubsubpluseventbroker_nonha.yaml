@@ -3,4 +3,4 @@ kind: PubSubPlusEventBroker
 metadata:
   name: non-ha-standalone-example
 spec:
-  redundancy: false
+  redundancy: false   # example how to set redundancy; optional, default is false

@@ -193,7 +193,7 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(sts *a
 			Containers: []corev1.Container{
 				{
 					Name:            "pubsubplus",
-					Image:           getBrokerImageDetails(&m.Spec.BrokerImage),
+					Image:           r.getBrokerImageDetails(&m.Spec.BrokerImage),
 					ImagePullPolicy: m.Spec.BrokerImage.ImagePullPolicy,
 					Resources: corev1.ResourceRequirements{
 						Limits: map[corev1.ResourceName]resource.Quantity{
@@ -616,14 +616,14 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(sts *a
 
 }
 
-func getBrokerImageDetails(bm *eventbrokerv1beta1.BrokerImage) string {
+func (r *PubSubPlusEventBrokerReconciler) getBrokerImageDetails(bm *eventbrokerv1beta1.BrokerImage) string {
 	imageRepo := bm.Repository
 	imageTag := bm.Tag
 	if len(strings.TrimSpace(bm.Repository)) == 0 {
-		imageRepo = "solace/solace-pubsub-standard"
+		imageRepo = (map[bool]string{true: DefaultBrokerImageRepoOpenShift, false: DefaultBrokerImageRepoK8s})[r.IsOpenShift]
 	}
 	if len(strings.TrimSpace(bm.Tag)) == 0 {
-		imageTag = "latest"
+		imageTag = (map[bool]string{true: DefaultBrokerImageTagOpenShift, false: DefaultBrokerImageTagK8s})[r.IsOpenShift]
 	}
 	return imageRepo + ":" + imageTag
 }
