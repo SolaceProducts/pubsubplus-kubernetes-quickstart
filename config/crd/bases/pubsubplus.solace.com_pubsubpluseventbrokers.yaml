@@ -106,7 +106,6 @@ spec:
                       x-kubernetes-map-type: atomic
                     type: array
                   repository:
-                    default: solace/solace-pubsub-standard
                     description: Defines the container image repo where the event
                       broker image is pulled from
                     type: string
@@ -151,7 +150,6 @@ spec:
                           x-kubernetes-map-type: atomic
                         type: array
                       repository:
-                        default: ghcr.io/solacedev/solace_prometheus_exporter
                         description: Defines the container image repo where the Prometheus
                           Exporter image is pulled from
                         type: string

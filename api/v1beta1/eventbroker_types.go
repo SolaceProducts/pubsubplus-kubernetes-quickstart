@@ -274,7 +274,6 @@ type ExtraEnvVar struct {
 type BrokerImage struct {
 	//+optional
 	//+kubebuilder:validation:Type:=string
-	//+kubebuilder:default:="solace/solace-pubsub-standard"
 	// Defines the container image repo where the event broker image is pulled from
 	Repository string `json:"repository"`
 	//+optional
@@ -334,7 +333,6 @@ type SecurityContext struct {
 // MonitoringImage defines Image details and pulling configurations for the Prometheus Exporter for Monitoring
 type MonitoringImage struct {
 	//+kubebuilder:validation:Type:=string
-	//+kubebuilder:default:=ghcr.io/solacedev/solace_prometheus_exporter
 	// Defines the container image repo where the Prometheus Exporter image is pulled from
 	Repository string `json:"repository,omitempty"`
 	//+kubebuilder:validation:Type:=string

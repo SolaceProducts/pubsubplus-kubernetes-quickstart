@@ -48,7 +48,7 @@ func (r *PubSubPlusEventBrokerReconciler) newDeploymentForPrometheusExporter(nam
 					Containers: []corev1.Container{
 						{
 							Name:            "exporter",
-							Image:           getExporterImageDetails(m.Spec.Monitoring.MonitoringImage),
+							Image:           r.getExporterImageDetails(m.Spec.Monitoring.MonitoringImage),
 							ImagePullPolicy: getExporterImagePullPolicy(m.Spec.Monitoring.MonitoringImage),
 							Ports: []corev1.ContainerPort{{
 								Name:          getExporterHttpProtocolType(&m.Spec.Monitoring),
@@ -264,9 +264,9 @@ func getExporterTLSConfiguration(m *eventbrokerv1beta1.Monitoring) string {
 	return strconv.FormatBool(m.MonitoringMetricsEndpoint.ListenTLS)
 }
 
-func getExporterImageDetails(bm *eventbrokerv1beta1.MonitoringImage) string {
-	imageRepo := "ghcr.io/solacedev/solace_prometheus_exporter"
-	imageTag := "latest"
+func (r *PubSubPlusEventBrokerReconciler) getExporterImageDetails(bm *eventbrokerv1beta1.MonitoringImage) string {
+	imageRepo := (map[bool]string{true: DefaultExporterImageRepoOpenShift, false: DefaultExporterImageRepoK8s})[r.IsOpenShift]
+	imageTag := (map[bool]string{true: DefaultExporterImageTagOpenShift, false: DefaultExporterImageTagK8s})[r.IsOpenShift]
 
 	if bm != nil && len(strings.TrimSpace(bm.Repository)) > 0 {
 		imageRepo = bm.Repository
