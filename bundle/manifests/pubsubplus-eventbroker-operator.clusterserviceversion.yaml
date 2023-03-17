@@ -20,8 +20,8 @@ metadata:
     certified: "true"
     com.redhat.delivery.operator.bundle: "true"
     com.redhat.openshift.versions: v4.10
-    containerImage: docker.io/solace/pubsubplus-eventbroker-operator:1.0.0
-    createdAt: "2023-03-14T16:26:06Z"
+    containerImage: docker.io/solace/pubsubplus-eventbroker-operator:v1.0.0
+    createdAt: "2023-03-17T13:00:52Z"
     description: The Solace PubSub+ Event Broker Operator deploys and manages the
       lifecycle of PubSub+ Event Brokers
     operators.openshift.io/valid-subscription: '[]'
@@ -81,8 +81,15 @@ spec:
     It can be installed into a variety of public and private clouds, PaaS, and on-premises environments.
     Event brokers in multiple locations can be linked together in an [Event Mesh](https://solace.com/what-is-an-event-mesh/)
     to dynamically share events across the distributed enterprise.
+
     ## The Solace PubSub+ Event Broker Operator
-    The operator can deploy and manage PubSub+ Software Event Brokers on Kubernetes and OpenShift.
+    This operator automatically deploys and manages PubSub+ Software Event Brokers on Kubernetes and OpenShift.
+
+    Features include:
+    * Initial deployment configuration: Production-ready HA, non-HA or for developers
+    * Rolling update for configuration changes or broker upgrades
+    * Prometheus monitoring support
+
     ## Getting started
     Refer to the [Solace PubSub+ Event Broker Operator Quick Start](https://github.com/SolaceDev/pubsubplus-kubernetes-operator/blob/v1.0.0/README.md)
   displayName: Solace PubSub+ Event Broker Operator
