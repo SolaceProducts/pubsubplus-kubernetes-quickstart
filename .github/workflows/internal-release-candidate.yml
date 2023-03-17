@@ -30,7 +30,16 @@ jobs:
         run: |
           export VERSION='${{ github.event.inputs.release_tag }}'
           make generate manifests
-          make docker-build docker push
+          make docker-build docker-push
+          make create-deploy-yaml
           make bundle
           make bundle-build bundle-push
           make catalog-build catalog-push
+
+      - name: Commit changes
+        uses: EndBug/add-and-commit@v9
+        with:
+          committer_name: GitHub Actions
+          committer_email: actions@github.com
+          message: 'Updating the deploy yaml'
+          add: '*.yaml'
