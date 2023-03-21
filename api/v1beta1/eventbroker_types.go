@@ -64,12 +64,12 @@ type EventBrokerSpec struct {
 	PreSharedAuthKeySecret string `json:"preSharedAuthKeySecret,omitempty"`
 	//+optional
 	//+kubebuilder:validation:Type:=array
-	// List of extra environment variables to be added to the PubSubPlusEventBroker container.
+	// List of extra environment variables to be added to the PubSubPlusEventBroker container. Note: Do not configure Timezone or SystemScaling parameters here as it could cause unintended consequences.
 	// A primary use case is to specify configuration keys, although the variables defined here will not override the ones defined in ConfigMap
 	ExtraEnvVars []*ExtraEnvVar `json:"extraEnvVars"`
 	//+optional
 	//+kubebuilder:validation:Type:=string
-	// List of extra environment variables to be added to the PubSubPlusEventBroker container from an existing ConfigMap
+	// List of extra environment variables to be added to the PubSubPlusEventBroker container from an existing ConfigMap. Note: Do not configure Timezone or SystemScaling parameters here as it could cause unintended consequences.
 	ExtraEnvVarsCM string `json:"extraEnvVarsCM,omitempty"`
 	//+optional
 	//+kubebuilder:validation:Type:=string
@@ -460,10 +460,10 @@ type MonitoringMetricsEndpoint struct {
 	ServiceType corev1.ServiceType `json:"serviceType,omitempty"`
 }
 
-//+kubebuilder:object:root=true
-//+kubebuilder:subresource:status
-//+kubebuilder:resource:path=pubsubpluseventbrokers,shortName=eb;eventbroker
-//+operator-sdk:csv:customresourcedefinitions:displayName="PubSub+ Event Broker",resources={{StatefulSet,v1},{Pod,v1},{Service,v1},{Secret,v1},{ConfigMap,v1},{Deployment,v1}}
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
+// +kubebuilder:resource:path=pubsubpluseventbrokers,shortName=eb;eventbroker
+// +operator-sdk:csv:customresourcedefinitions:displayName="PubSub+ Event Broker",resources={{StatefulSet,v1},{Pod,v1},{Service,v1},{Secret,v1},{ConfigMap,v1},{Deployment,v1}}
 // PubSub+ Event Broker
 type PubSubPlusEventBroker struct {
 	metav1.TypeMeta   `json:",inline"`
