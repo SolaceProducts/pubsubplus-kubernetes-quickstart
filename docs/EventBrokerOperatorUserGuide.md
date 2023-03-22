@@ -421,6 +421,8 @@ spec:
           claimName: my-monitor-pvc-name
 ```
 
+Note: Whenever existing PVC is reused, the deployment should maintain the same name to keep DNS configurations in sync. An out of sync DNS configuration will produce unintended consequences.
+
 #### Storage solutions and providers
 
 The PubSub+ Software Event Broker has been tested to work with Portworx, Ceph, Cinder (Openstack) and vSphere storage for Kubernetes as documented [here](https://docs.solace.com/Cloud/Deployment-Considerations/resource-requirements-k8s.htm#supported-storage-solutions).
