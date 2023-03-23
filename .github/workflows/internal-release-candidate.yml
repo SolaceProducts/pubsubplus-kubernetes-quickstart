@@ -51,4 +51,4 @@ jobs:
           committer_name: GitHub Actions
           committer_email: actions@github.com
           message: 'Updating the deploy yaml'
-          add: '*.yaml'
+          add: 'deploy/*.yaml bundle/manifests/*.yaml' 
