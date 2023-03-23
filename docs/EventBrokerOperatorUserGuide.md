@@ -1487,7 +1487,7 @@ Consider the following:
 apiVersion: pubsubplus.solace.com/v1beta1
 kind: PubSubPlusEventBroker
 metadata:
-  name: <deployment-name>
+  name: <deployment-name> # ensure this is matching the original to keep dns configurations in sync
 spec:
   redundancy: true  # "false" for non-HA
   image:
