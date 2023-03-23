@@ -3,7 +3,8 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.9.2
-  creationTimestamp: null
+  labels:
+    app.kubernetes.io/version: v1.0.0-test2
   name: pubsubpluseventbrokers.pubsubplus.solace.com
 spec:
   group: pubsubplus.solace.com
