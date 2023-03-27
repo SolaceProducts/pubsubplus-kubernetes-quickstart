@@ -38,10 +38,10 @@ jobs:
           curl -LO ${OPERATOR_SDK_DL_URL}/operator-sdk_${OS}_${ARCH}
           chmod +x operator-sdk_${OS}_${ARCH} && sudo mv operator-sdk_${OS}_${ARCH} /usr/local/bin/operator-sdk
 
-      - name: Update code
-        run: |
-          make generate manifests
-          make fmt
+      # - name: Update code
+      #   run: |
+      #     make generate manifests
+      #     make fmt
 
       - name: Get generator and update params ref doc
         run: |
