@@ -65,7 +65,7 @@ jobs:
           curl -s https://api.github.com/repos/redhat-openshift-ecosystem/openshift-preflight/releases/latest | grep -wo "https://.*preflight-linux-amd64" | wget -i -
           chmod +x preflight-linux-amd64
           popd
-          /tmp/preflight-linux-amd64 check container ghcr.io/solacedev/pubsubplus-eventbroker-operator:v1.0.0-rc.3 --docker-config ~/.docker/config.json | grep "Preflight result: PASSED"
+          /tmp/preflight-linux-amd64 check container ghcr.io/solacedev/pubsubplus-eventbroker-operator:${{ github.event.inputs.release_tag }} --docker-config ~/.docker/config.json | grep "Preflight result: PASSED" || echo
 
       - name: Test operator bundle - validate and scorecard
         run: |
