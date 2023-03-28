@@ -121,7 +121,11 @@ func (r *PubSubPlusEventBrokerReconciler) newDeploymentForPrometheusExporter(nam
 	// Only set it if not on OpenShift or using the "default" namespace
 	// otherwise leave it undefined
 	if !r.IsOpenShift || m.Namespace == corev1.NamespaceDefault {
-		dep.Spec.Template.Spec.Containers[0].SecurityContext.RunAsUser = &[]int64{10001}[0]
+		dep.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
+			RunAsUser:  &[]int64{10001}[0],
+			RunAsGroup: &[]int64{10001}[0],
+			FSGroup:    &[]int64{10001}[0],
+		}
 	}
 
 	//Set TLS configuration
@@ -204,6 +208,9 @@ func (r *PubSubPlusEventBrokerReconciler) newServiceForPrometheusExporter(export
 }
 func getPubSubPlusEventBrokerPort(m *eventbrokerv1beta1.Service, b *eventbrokerv1beta1.BrokerTLS) int32 {
 	if len(m.Ports) == 0 {
+		if b.Enabled {
+			return 1943
+		}
 		return 8080
 	}
 	for i := range m.Ports {
