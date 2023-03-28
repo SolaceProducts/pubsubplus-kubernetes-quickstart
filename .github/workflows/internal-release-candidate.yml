@@ -40,7 +40,6 @@ jobs:
 
       - name: Update code
         run: |
-          go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.11.3
           make generate manifests
           make fmt
 
@@ -61,12 +60,12 @@ jobs:
 
       - name: Test operator image
         run: |
-          export VERSION='${{ github.event.inputs.release_tag }}'
           pushd /tmp
           curl -s https://api.github.com/repos/redhat-openshift-ecosystem/openshift-preflight/releases/latest | grep -wo "https://.*preflight-linux-amd64" | wget -i -
           chmod +x preflight-linux-amd64
           popd
-          /tmp/preflight-linux-amd64 check container ghcr.io/solacedev/pubsubplus-eventbroker-operator:$VERSION --docker-config ~/.docker/config.json | grep "Preflight result: PASSED" || echo
+          export CONTAINER_TO_TEST="ghcr.io/solacedev/pubsubplus-eventbroker-operator:${{ github.event.inputs.release_tag }}"
+          /tmp/preflight-linux-amd64 check container $CONTAINER_TO_TEST --docker-config ~/.docker/config.json | grep "Preflight result: PASSED" || echo
 
       - name: Test operator bundle - validate and scorecard
         run: |
@@ -87,4 +86,4 @@ jobs:
           committer_name: GitHub Actions
           committer_email: actions@github.com
           message: 'Updating the deploy yaml'
-          add: 'deploy/*.yaml bundle/manifests/*.yaml'
+          add: 'deploy/*.yaml bundle/manifests/*.yaml docs/EventBrokerOperatorParametersReference.md'
