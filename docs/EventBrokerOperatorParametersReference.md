@@ -1,4 +1,4 @@
-# PubSub+ Event Broker Operator API Parameters Reference
+# API Reference
 
 Packages:
 
@@ -21,7 +21,7 @@ Resource Types:
 
 
 
-PubSubPlusEventBroker is the Schema for the pubsubpluseventbrokers API
+PubSub+ Event Broker
 
 <table>
     <thead>
@@ -87,7 +87,7 @@ EventBrokerSpec defines the desired state of PubSubPlusEventBroker
         <td><b>adminCredentialsSecret</b></td>
         <td>string</td>
         <td>
-          Defines the password for PubSubPlusEventBroker if provided. Random one will be generated if not provided. When provided, ensure the secret key name is `username_admin_password`.<br/>
+          Defines the password for PubSubPlusEventBroker if provided. Random one will be generated if not provided. When provided, ensure the secret key name is `username_admin_password`. For valid values refer to the Solace documentation https://docs.solace.com/Admin/Configuring-Internal-CLI-User-Accounts.htm.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -138,7 +138,7 @@ EventBrokerSpec defines the desired state of PubSubPlusEventBroker
         <td><b>monitoringCredentialsSecret</b></td>
         <td>string</td>
         <td>
-          Defines the password for PubSubPlusEventBroker to be used by the Exporter for monitoring. When provided, ensure the secret key name is `username_monitor_password`.<br/>
+          Defines the password for PubSubPlusEventBroker to be used by the Exporter for monitoring. When provided, ensure the secret key name is `username_monitor_password`. For valid values refer to the Solace documentation https://docs.solace.com/Admin/Configuring-Internal-CLI-User-Accounts.htm.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -175,9 +175,7 @@ EventBrokerSpec defines the desired state of PubSubPlusEventBroker
         <td><b>preSharedAuthKeySecret</b></td>
         <td>string</td>
         <td>
-          PreSharedAuthKeySecret defines the PreSharedAuthKey Secret for PubSubPlusEventBroker. Random one will be generated if not provided. When provided, ensure the secret key name is `preshared_auth_key`.<br/>
-            <br/>
-             Note: Pre-shared authentication keys are 32 to 256 bytes of binary data encoded in Base64. For more info : <a target="_blank" href="https://docs.solace.com/Features/HA-Redundancy/Pre-Shared-Keys-SMB.htm?Highlight=pre%20shared">https://docs.solace.com/Features/HA-Redundancy/Pre-Shared-Keys-SMB.htm?Highlight=pre%20shared</a>   
+          PreSharedAuthKeySecret defines the PreSharedAuthKey Secret for PubSubPlusEventBroker. Random one will be generated if not provided. When provided, ensure the secret key name is `preshared_auth_key`. For valid values refer to the Solace documentation https://docs.solace.com/Features/HA-Redundancy/Pre-Shared-Keys-SMB.htm?Highlight=pre%20shared.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -325,8 +323,6 @@ Image defines container image parameters for the event broker.
         <td>string</td>
         <td>
           Defines the container image repo where the event broker image is pulled from<br/>
-          <br/>
-            <i>Default</i>: solace/solace-pubsub-standard<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -477,8 +473,6 @@ Image defines container image parameters for the Prometheus Exporter.
         <td>string</td>
         <td>
           Defines the container image repo where the Prometheus Exporter image is pulled from<br/>
-          <br/>
-            <i>Default</i>: ghcr.io/solacedev/solace_prometheus_exporter<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -538,13 +532,6 @@ MetricsEndpoint defines parameters to configure monitoring for the Prometheus Ex
         </tr>
     </thead>
     <tbody><tr>
-        <td><b>name</b></td>
-        <td>string</td>
-        <td>
-          Name is a unique name for the port that can be referred to by services.<br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
         <td><b>containerPort</b></td>
         <td>number</td>
         <td>
@@ -586,6 +573,13 @@ MetricsEndpoint defines parameters to configure monitoring for the Prometheus Ex
           Defines if Metrics Service Endpoint uses TLS configuration<br/>
           <br/>
             <i>Default</i>: false<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name is a unique name for the port that can be referred to by services.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -652,7 +646,7 @@ NodeAssignment defines labels to constrain PubSubPlusEventBroker nodes to specif
         <td>
           If provided defines the labels to constrain the PubSubPlusEventBroker node to specific nodes<br/>
         </td>
-        <td>false</td>
+        <td>true</td>
       </tr></tbody>
 </table>
 

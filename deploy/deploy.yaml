@@ -1878,7 +1878,7 @@ spec:
         env:
         - name: WATCH_NAMESPACE
           value: ""
-        image: ghcr.io/solacedev/pubsubplus-eventbroker-operator:v1.0.0-test4
+        image: ghcr.io/solacedev/pubsubplus-eventbroker-operator:v1.0.0-test5
         imagePullPolicy: Always
         livenessProbe:
           httpGet:
