@@ -1,4 +1,4 @@
-# API Reference
+# PubSub+ Event Broker Operator API Parameters Reference
 
 Packages:
 
