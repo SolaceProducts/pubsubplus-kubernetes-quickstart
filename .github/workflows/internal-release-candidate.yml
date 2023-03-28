@@ -49,7 +49,7 @@ jobs:
           curl -s https://api.github.com/repos/fybrik/crdoc/releases/latest | grep -wo "https://.*crdoc.*Linux_x86.*gz" | wget -i -
           tar -xvf crdoc*.gz
           popd
-          /tmp/crdoc --resources config/crd/bases/pubsubplus.solace.com_pubsubpluseventbrokers.yaml --output docs/EventBrokerOperatorParametersReference.md
+          /tmp/crdoc --resources config/crd/bases/pubsubplus.solace.com_pubsubpluseventbrokers.yaml --output docs/EventBrokerOperatorParametersReference.md --template config\crdoc\markdown.tmpl
 
       - name: Build bundle
         run: |
@@ -79,6 +79,14 @@ jobs:
           export VERSION='${{ github.event.inputs.release_tag }}'
           make bundle-build bundle-push
           make catalog-build catalog-push
+          # tag each as latest1
+          PUSHED_IMAGES=`docker images | grep $VERSION`
+          BUNDLE=`echo "$PUSHED_IMAGES" | grep bundle` ; echo "$BUNDLE"   # Format: Imagepath Tag Sha
+          docker tag `echo $BUNDLE | awk '{print $3}'` `echo $BUNDLE | awk '{print $1}'`:latest1
+          docker push `echo $BUNDLE | awk '{print $1}'`:latest1
+          CATALOG=`echo "$PUSHED_IMAGES" | grep catalog` ; echo "$CATALOG" # Format: Imagepath Tag Sha
+          docker tag `echo $CATALOG | awk '{print $3}'` `echo $CATALOG | awk '{print $1}'`:latest1
+          docker push `echo $CATALOG | awk '{print $1}'`:latest1
 
       - name: Commit changes
         uses: EndBug/add-and-commit@v9
