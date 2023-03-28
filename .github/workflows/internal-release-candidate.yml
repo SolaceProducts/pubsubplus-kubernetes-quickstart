@@ -49,7 +49,7 @@ jobs:
           curl -s https://api.github.com/repos/fybrik/crdoc/releases/latest | grep -wo "https://.*crdoc.*Linux_x86.*gz" | wget -i -
           tar -xvf crdoc*.gz
           popd
-          /tmp/crdoc --resources config/crd/bases/pubsubplus.solace.com_pubsubpluseventbrokers.yaml --output docs/EventBrokerOperatorParametersReference.md --template config\crdoc\markdown.tmpl
+          /tmp/crdoc --resources config/crd/bases/pubsubplus.solace.com_pubsubpluseventbrokers.yaml --output docs/EventBrokerOperatorParametersReference.md --template config/crdoc/markdown.tmpl
 
       - name: Build bundle
         run: |
