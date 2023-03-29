@@ -124,7 +124,7 @@ func (r *PubSubPlusEventBrokerReconciler) newDeploymentForPrometheusExporter(nam
 		dep.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
 			RunAsUser:  &[]int64{10001}[0],
 			RunAsGroup: &[]int64{10001}[0],
-			FSGroup:    &[]int64{10001}[0],
+			FSGroup:    &[]int64{10002}[0],
 		}
 	}
 
