@@ -13,6 +13,7 @@ boolean FINAL_CUT = params.FINAL_CUT
 String gitSha = params.GIT_SHA
 String gitShaShort = ""
 String kubernetesBranch = params.KUBERNETES_BRANCH
+String internalRegistry = 'apps-jenkins:18888/kubernetes-operator'
 
 if (gitSha == "") {
     if (kubernetesBranch == "") {
@@ -91,5 +92,18 @@ node(label: "centos7_fast_devserver") {
             sh "mv pubsubplus-eventbroker-operator_${version}-${uniqueVersion}.tar.gz /home/public/RND/loads/pubsubplus-eventbroker-operator/${version}"
         }
 
+        stage ('Upload image to internal registry') {
+        // Login again
+        withCredentials([
+            string(credentialsId: 'nexus-robot2-passwd', variable: 'DOCKER_PASSWORD')]) {
+            sh 'docker login apps-jenkins:18888 -u solace -p solace1'
+        }
+        // Copy
+        sh """
+            docker tag apps-jenkins:18888/pubsubplus-eventbroker-operator:${version}-${uniqueVersion} ${internalRegistry}
+            docker push ${internalRegistry}
+            docker rmi apps-jenkins:18888/pubsubplus-eventbroker-operator:${version}-${uniqueVersion} ${internalRegistry}
+        """
+    }
     }
 }
