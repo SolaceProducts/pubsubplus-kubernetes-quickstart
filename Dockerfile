@@ -29,7 +29,7 @@ LABEL summary="Solace PubSub+ Event Broker Kubernetes Operator"
 LABEL description="The Solace PubSub+ Event Broker Kubernetes Operator deploys and manages the lifecycle of PubSub+ Event Brokers"
 
 WORKDIR /
-COPY THIRD-PARTY-LICENSES /licenses/THIRD-PARTY-LICENSES
+COPY THIRD-PARTY-LICENSES.md /licenses/THIRD-PARTY-LICENSES.md
 COPY LICENSE /licenses/LICENSE
 COPY --from=builder /workspace/manager .
 USER 65532:65532
