@@ -59,17 +59,17 @@ spec:
         path: systemScaling
       version: v1beta1
   description: |
-    ## The Solace PubSub+ Platform
+    ## Solace PubSub+ Platform
     Solace [PubSub+ Platform](https://solace.com/products/platform/) is a complete event streaming and management platform
-    for the real-time enterprise. The [PubSub+ Software Event Broker](https://solace.com/products/event-broker/software/) efficiently streams
+    for real-time enterprises. The [PubSub+ Software Event Broker](https://solace.com/products/event-broker/software/) efficiently streams
     event-driven information between applications, IoT devices, and user interfaces running in the cloud, on-premises,
     and in hybrid environments using open APIs and protocols like AMQP, JMS, MQTT, REST and WebSocket.
     It can be installed into a variety of public and private clouds, PaaS, and on-premises environments.
     Event brokers in multiple locations can be linked together in an [Event Mesh](https://solace.com/what-is-an-event-mesh/)
     to dynamically share events across the distributed enterprise.
 
-    ## The Solace PubSub+ Event Broker Operator
-    This operator automatically deploys and manages PubSub+ Software Event Brokers on Kubernetes and OpenShift.
+    ## Solace PubSub+ Event Broker Operator
+    Solace Pubsub+ Event Broker Operator automatically deploys and manages PubSub+ Software Event Brokers on Kubernetes and OpenShift environments.
 
     Features include:
     * Initial deployment configuration: Production-ready HA, non-HA or for developers
