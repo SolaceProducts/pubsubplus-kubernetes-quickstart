@@ -81,6 +81,7 @@ __Contents:__
       - [General Kubernetes troubleshooting hints](#general-kubernetes-troubleshooting-hints)
       - [Checking the reason for failed resources](#checking-the-reason-for-failed-resources)
       - [Viewing logs](#viewing-logs)
+      - [Updating log levels](#updating-log-levels)
       - [Viewing events](#viewing-events)
       - [Pods issues](#pods-issues)
         - [Pods stuck in not enough resources](#pods-stuck-in-not-enough-resources)
@@ -1240,6 +1241,33 @@ Filtering on bringup logs (helps with initial troubleshooting):
 ```sh
 kubectl logs <pod-name> | grep [.]sh
 ```
+
+#### Updating log levels
+
+The Operator uses a [zap-based](https://pkg.go.dev/go.uber.org/zap) logger. This means when
+deploying the operator to a cluster you can set additional flags using an args array in your
+operator’s container spec.
+One such flags allows the log level to be updated.
+
+One can extract the current log level with:
+
+```sh
+kubectl get deployment <deployment-name>  --namespace <namespace> -o=json | jq '.spec.template.spec.containers[0].args' 
+```
+
+The log levels available are: `--zap-log-level=debug`, `--zap-log-level=info`
+and `--zap-log-level=error`.
+
+Other configurations to note which can be added to the args array in the operator’s container spec
+are:
+
+`--zap-encoder`: To set log encoding. Options are `json` or `console`.
+`--zap-stacktrace-level` : To set level at and above which stacktraces are captured. Options
+are `info` or `error.
+
+Note that for OLM deployments however, a manual update to the Deployment will be reverted since OLM
+automatically manages the CRD. This has to be done with the approved means of patching OLM
+deployments.
 
 #### Viewing events
 
