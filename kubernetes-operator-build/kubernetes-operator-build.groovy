@@ -14,6 +14,7 @@ String gitSha = params.GIT_SHA
 String gitShaShort = ""
 String kubernetesBranch = params.KUBERNETES_BRANCH
 String internalRegistry = 'apps-jenkins:18888/kubernetes-operator'
+String version = ""
 
 if (gitSha == "") {
     if (kubernetesBranch == "") {
@@ -75,7 +76,7 @@ node(label: "centos7_fast_devserver") {
         stage("Version and Save Docker Image") {
             //get version path from version.go: version ex:1.0.0
             sh "cd /opt/cvsdirs/loadbuild/jenkins/slave/workspace/kubernetes-operator-build"
-            String version = sh(returnStdout:true, script:"cat version.go | grep \"const version\" | sed 's/const version = \"\\(.*\\)\"/\\1/'").trim()
+            version = sh(returnStdout:true, script:"cat version.go | grep \"const version\" | sed 's/const version = \"\\(.*\\)\"/\\1/'").trim()
 
             String uniqueVersion = gitShaShort
 
@@ -100,9 +101,9 @@ node(label: "centos7_fast_devserver") {
         }
         // Copy
         sh """
-            docker tag apps-jenkins:18888/pubsubplus-eventbroker-operator:${version}-${uniqueVersion} ${internalRegistry}
+            docker tag apps-jenkins:18888/pubsubplus-eventbroker-operator:${version}-${gitShaShort} ${internalRegistry}
             docker push ${internalRegistry}
-            docker rmi apps-jenkins:18888/pubsubplus-eventbroker-operator:${version}-${uniqueVersion} ${internalRegistry}
+            docker rmi apps-jenkins:18888/pubsubplus-eventbroker-operator:${version}-${gitShaShort} ${internalRegistry}
         """
     }
     }
