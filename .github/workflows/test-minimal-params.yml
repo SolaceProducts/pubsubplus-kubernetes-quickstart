@@ -1,4 +1,4 @@
-name: Build and Test for Minimal Deployment
+name: Integration Test for Non HA Minimal Deployment
 
 on: workflow_call
 

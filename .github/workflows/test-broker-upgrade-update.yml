@@ -1,4 +1,4 @@
-name: Build and Test for Helm to Operator Upgrade
+name: Integration Test for Operator Upgrade
 
 on: workflow_call
 
