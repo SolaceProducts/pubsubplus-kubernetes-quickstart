@@ -101,9 +101,9 @@ node(label: "centos7_fast_devserver") {
         }
         // Copy
         sh """
-            docker tag apps-jenkins:18888/pubsubplus-eventbroker-operator:${version}-${gitShaShort} ${internalRegistry}
-            docker push ${internalRegistry}
-            docker rmi apps-jenkins:18888/pubsubplus-eventbroker-operator:${version}-${gitShaShort} ${internalRegistry}
+            docker tag apps-jenkins:18888/pubsubplus-eventbroker-operator:${version}-${gitShaShort} ${internalRegistry}:${version}-${gitShaShort}
+            docker push ${internalRegistry}:${version}-${gitShaShort}
+            docker rmi apps-jenkins:18888/pubsubplus-eventbroker-operator:${version}-${gitShaShort} ${internalRegistry}:${version}-${gitShaShort}
         """
     }
     }
