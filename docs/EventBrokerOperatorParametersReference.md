@@ -103,14 +103,14 @@ EventBrokerSpec defines the desired state of PubSubPlusEventBroker
         <td><b><a href="#pubsubpluseventbrokerspecextraenvvarsindex">extraEnvVars</a></b></td>
         <td>[]object</td>
         <td>
-          List of extra environment variables to be added to the PubSubPlusEventBroker container. A primary use case is to specify configuration keys, although the variables defined here will not override the ones defined in ConfigMap<br/>
+          List of extra environment variables to be added to the PubSubPlusEventBroker container. Note: Do not configure Timezone or SystemScaling parameters here as it could cause unintended consequences. A primary use case is to specify configuration keys, although the variables defined here will not override the ones defined in ConfigMap<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>extraEnvVarsCM</b></td>
         <td>string</td>
         <td>
-          List of extra environment variables to be added to the PubSubPlusEventBroker container from an existing ConfigMap<br/>
+          List of extra environment variables to be added to the PubSubPlusEventBroker container from an existing ConfigMap. Note: Do not configure Timezone or SystemScaling parameters here as it could cause unintended consequences.<br/>
         </td>
         <td>false</td>
       </tr><tr>
