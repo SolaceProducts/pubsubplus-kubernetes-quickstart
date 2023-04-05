@@ -84,14 +84,14 @@ jobs:
           export VERSION='${{ github.event.inputs.release_tag }}'
           make bundle-build bundle-push
           make catalog-build catalog-push
-          # tag each as latest1
+          # tag each as latest
           PUSHED_IMAGES=`docker images | grep $VERSION`
           BUNDLE=`echo "$PUSHED_IMAGES" | grep bundle` ; echo "$BUNDLE"   # Format: Imagepath Tag Sha
-          docker tag `echo $BUNDLE | awk '{print $3}'` `echo $BUNDLE | awk '{print $1}'`:latest1
-          docker push `echo $BUNDLE | awk '{print $1}'`:latest1
+          docker tag `echo $BUNDLE | awk '{print $3}'` `echo $BUNDLE | awk '{print $1}'`:latest
+          docker push `echo $BUNDLE | awk '{print $1}'`:latest
           CATALOG=`echo "$PUSHED_IMAGES" | grep catalog` ; echo "$CATALOG" # Format: Imagepath Tag Sha
-          docker tag `echo $CATALOG | awk '{print $3}'` `echo $CATALOG | awk '{print $1}'`:latest1
-          docker push `echo $CATALOG | awk '{print $1}'`:latest1
+          docker tag `echo $CATALOG | awk '{print $3}'` `echo $CATALOG | awk '{print $1}'`:latest
+          docker push `echo $CATALOG | awk '{print $1}'`:latest
 
       - name: Run Whitesource Action
         uses: mercari/Whitesource-Scan-Action@v1.0.0
