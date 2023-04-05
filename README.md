@@ -5,7 +5,7 @@ The Solace PubSub+ Event Broker Operator (or simply the Operator) is a Kubernete
 [PubSub+ Platform](https://solace.com/products/platform/) is a complete event streaming and management platform for the real-time enterprise. The [PubSub+ Software Event Broker](https://solace.com/products/event-broker/software/) efficiently streams event-driven information between applications, IoT devices, and user interfaces running in the cloud, on-premises, and in hybrid environments using open APIs and protocols like AMQP, JMS, MQTT, REST and WebSocket. It can be installed into a variety of public and private clouds, PaaS, and on-premises environments. Event brokers in multiple locations can be linked together in an [Event Mesh](https://solace.com/what-is-an-event-mesh/) to dynamically share events across the distributed enterprise.
 
 __Contents:__
-- [PubSub+ Event Broker Operator Quick Start](#pubsub-event-broker-operator-quick-start)
+- [Solace PubSub+ Event Broker Operator Quick Start](#solace-pubsub-event-broker-operator-quick-start)
   - [Overview](#overview)
     - [Additional Documentation](#additional-documentation)
   - [How to deploy the PubSub+ Software Event Broker onto Kubernetes using the Operator](#how-to-deploy-the-pubsub-software-event-broker-onto-kubernetes-using-the-operator)
@@ -27,17 +27,17 @@ __Contents:__
 
 ## Overview
 
-This project is a best practice template intended for development and demo purposes. The tested and recommended PubSub+ Software Event Broker version is 10.2.
+This project is a best practice template intended for development and demo purposes. The tested and recommended PubSub+ Software Event Broker version is 10.3.
 
 This document provides a quick getting started guide to install a software event broker in various configurations onto a [Kubernetes](https://kubernetes.io/docs/home/) cluster using the PubSub+ Event Broker Operator. Note that a [Helm-based deployment](https://github.com/SolaceProducts/pubsubplus-kubernetes-helm-quickstart) of the broker is also supported but out of scope for this document.
 
-These instructions apply to any platform supporting Kubernetes, and include specific hints for setting up a simple [MiniKube](https://kubernetes.io/docs/tasks/tools/#minikube) or [Kind](https://kubernetes.io/docs/tasks/tools/#kind) deployment on a Linux-based machine. Examples for other Kubernetes platforms are available as follows:
+These instructions apply to any platform supporting Kubernetes, and include specific hints for setting up a simple [MiniKube](https://kubernetes.io/docs/tasks/tools/#minikube) or [Kind](https://kubernetes.io/docs/tasks/tools/#kind) deployment on a Linux-based machine.
 
-- EKS—To deploy an HA group of software event brokers in Amazon Elastic Container Service for Kubernetes (EKS), follow the [Amazon documentation](https://docs.aws.amazon.com/eks/latest/userguide/getting-started.html ) to configure EKS, then use this guide to deploy your software brokers.
-- AKS—To deploy an HA group of software event brokers in Azure Kubernetes Service (AKS), follow the [Azure documentation](https://docs.microsoft.com/en-us/azure/aks/ ) to configure AKS, then use this guide to deploy your software brokers.
-- GKE—See [Deploying a PubSub+ Software Event Broker HA group onto a Google Kubernetes Engine Cluster](https://github.com/SolaceProducts/solace-gke-quickstart )
-- OpenShift—See [Deploying a PubSub+ Software Event Broker HA Group onto an OpenShift 4 Platform](https://github.com/SolaceProducts/solace-openshift-quickstart )
-- Tanzu—See [Install a PubSub+ Software Event Broker onto a Tanzu Kubernetes Cluster](https://github.com/SolaceProducts/solace-pks )
+The following Kubernetes platforms have been tested:
+
+- Google Kubernetes Engine (GKE)
+- OpenShift 4 Platform on AWS
+
 
 ### Additional Documentation
 
