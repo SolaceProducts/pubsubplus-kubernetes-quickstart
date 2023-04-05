@@ -21,11 +21,11 @@ package controllers
 const (
 	DefaultBrokerImageRepoK8s   = "solace/solace-pubsub-standard"
 	DefaultBrokerImageTagK8s    = "latest"
-	DefaultExporterImageRepoK8s = "ghcr.io/solacedev/solace_prometheus_exporter" // TODO: update once published to public
+	DefaultExporterImageRepoK8s = "solace/pubsubplus-prometheus-exporter"
 	DefaultExporterImageTagK8s  = "latest"
 
 	DefaultBrokerImageRepoOpenShift   = "registry.connect.redhat.com/solace/pubsubplus-standard"
 	DefaultBrokerImageTagOpenShift    = "latest"
-	DefaultExporterImageRepoOpenShift = "ghcr.io/solacedev/solace_prometheus_exporter" // TODO: update once published to public
+	DefaultExporterImageRepoOpenShift = "registry.connect.redhat.com/solace/pubsubplus-prometheus-exporter" // TODO: update once published to public
 	DefaultExporterImageTagOpenShift  = "latest"
 )
