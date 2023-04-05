@@ -1262,8 +1262,9 @@ Other configurations to note which can be added to the args array in the operato
 are:
 
 `--zap-encoder`: To set log encoding. Options are `json` or `console`.
+
 `--zap-stacktrace-level` : To set level at and above which stacktraces are captured. Options
-are `info` or `error.
+are `info` or `error`.
 
 Note that for OLM deployments however, a manual update to the Deployment will be reverted since OLM
 automatically manages the CRD. This has to be done with the approved means of patching OLM
