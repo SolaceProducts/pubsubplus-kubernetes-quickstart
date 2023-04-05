@@ -268,3 +268,9 @@ catalog-push: ## Push a catalog image.
 .PHONY: kind-catalog-push
 kind-catalog-push: ## Push a catalog image to local Kind cluster.
 	$(MAKE) kind-docker-push IMG=$(CATALOG_IMG)
+
+# Generate third party license
+.PHONY:
+generate-license: ## Generate third party license
+	go install github.com/google/go-licenses@latest
+	go-licenses report . --template ci/whitesource/license-template.tpl > THIRD-PARTY-LICENSES.md

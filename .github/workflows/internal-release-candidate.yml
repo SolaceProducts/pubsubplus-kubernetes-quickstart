@@ -23,9 +23,6 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Create k8s Kind Cluster
-        uses: helm/kind-action@v1.3.0
-
       - name: Checkout the code
         uses: actions/checkout@v2
 
@@ -43,22 +40,30 @@ jobs:
           make generate manifests
           make fmt
 
-      - name: Get generator and update params ref doc
+      - name: Get params ref generator and update params ref doc
         run: |
+          # crdoc
           pushd /tmp
           curl -s https://api.github.com/repos/fybrik/crdoc/releases/latest | grep -wo "https://.*crdoc.*Linux_x86.*gz" | wget -i -
           tar -xvf crdoc*.gz
           popd
           /tmp/crdoc --resources config/crd/bases/pubsubplus.solace.com_pubsubpluseventbrokers.yaml --output docs/EventBrokerOperatorParametersReference.md --template config/crdoc/markdown.tmpl
 
-      - name: Build bundle
+      - name: Generate Third Party License
+        run: |
+          make generate-license
+
+      - name: Build bundle - will use the generated license file
         run: |
           export VERSION='${{ github.event.inputs.release_tag }}'
           make docker-build docker-push
           make create-deploy-yaml
           make bundle
 
-      - name: Test operator image
+      - name: Prep for testing - create K8s Kind Cluster
+        uses: helm/kind-action@v1.3.0
+
+      - name: Test operator image using preflight tool
         run: |
           pushd /tmp
           curl -s https://api.github.com/repos/redhat-openshift-ecosystem/openshift-preflight/releases/latest | grep -wo "https://.*preflight-linux-amd64" | wget -i -
@@ -74,7 +79,7 @@ jobs:
           operator-sdk bundle validate ./bundle --select-optional name=good-practices
           operator-sdk scorecard ./bundle  --kubeconfig ~/.kube/config
 
-      - name: Build and publish
+      - name: Build and publish Operator bundle and catalog
         run: |
           export VERSION='${{ github.event.inputs.release_tag }}'
           make bundle-build bundle-push
@@ -88,10 +93,20 @@ jobs:
           docker tag `echo $CATALOG | awk '{print $3}'` `echo $CATALOG | awk '{print $1}'`:latest1
           docker push `echo $CATALOG | awk '{print $1}'`:latest1
 
+      - name: Run Whitesource Action
+        uses: mercari/Whitesource-Scan-Action@v1.0.0
+        with:
+          wssURL: https://saas.whitesourcesoftware.com/agent
+          apiKey: ${{ secrets.WSS_API_KEY }}
+          productName: 'pubsubplus-kubernetes-operator'
+          projectName: 'pubsubplus-kubernetes-operator'
+          configFile: 'ci/whitesource/whitesource-agent.config'
+
       - name: Commit changes
         uses: EndBug/add-and-commit@v9
         with:
           committer_name: GitHub Actions
           committer_email: actions@github.com
-          message: 'Updating the deploy yaml'
-          add: 'deploy/*.yaml bundle/manifests/*.yaml docs/EventBrokerOperatorParametersReference.md'
+          message: 'Updating the deploy yaml, bundle, params doc and licenses'
+          add: 'deploy/*.yaml bundle/manifests/*.yaml docs/EventBrokerOperatorParametersReference.md THIRD-PARTY-LICENSES.md'
+

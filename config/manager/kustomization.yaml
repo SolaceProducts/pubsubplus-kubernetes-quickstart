@@ -11,4 +11,4 @@ kind: Kustomization
 images:
 - name: controller
   newName: ghcr.io/solacedev/pubsubplus-eventbroker-operator
-  newTag: v1.0.0-dev
+  newTag: v1.0.0-rc.3
