@@ -182,7 +182,7 @@ ENVTEST ?= $(LOCALBIN)/setup-envtest
 
 ## Tool Versions
 KUSTOMIZE_VERSION ?= v4.5.7
-CONTROLLER_TOOLS_VERSION ?= v0.9.2
+CONTROLLER_TOOLS_VERSION ?= v0.11.3
 
 KUSTOMIZE_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"
 .PHONY: kustomize
@@ -205,6 +205,8 @@ bundle: manifests kustomize ## Generate bundle manifests and metadata, then vali
 	operator-sdk generate kustomize manifests -q
 	cd config/manager && $(KUSTOMIZE) edit set image controller=$(IMG)
 	$(KUSTOMIZE) build config/manifests | operator-sdk generate bundle $(BUNDLE_GEN_FLAGS)
+	sed -i "s%containerImage:.*$$%containerImage: $$(cat bundle/manifests/pubsubplus-eventbroker-operator.clusterserviceversion.yaml | grep "image:" | awk '{print $$2}')%g" bundle/manifests/pubsubplus-eventbroker-operator.clusterserviceversion.yaml
+	sed -i 's%creationTimestamp:.*$$%labels:\n    app.kubernetes.io/version: v$(VERSION)%g' bundle/manifests/pubsubplus.solace.com_pubsubpluseventbrokers.yaml
 	operator-sdk bundle validate ./bundle
 
 .PHONY: bundle-build

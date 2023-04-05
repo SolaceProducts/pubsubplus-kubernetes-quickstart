@@ -26,30 +26,72 @@ jobs:
       - name: Checkout the code
         uses: actions/checkout@v2
 
+      - name: Setup tools
+        run: |
+          # Operator SDK
+          export ARCH=$(case $(uname -m) in x86_64) echo -n amd64 ;; aarch64) echo -n arm64 ;; *) echo -n $(uname -m) ;; esac)
+          export OS=$(uname | awk '{print tolower($0)}')
+          export OPERATOR_SDK_DL_URL=https://github.com/operator-framework/operator-sdk/releases/download/v1.27.0
+          curl -LO ${OPERATOR_SDK_DL_URL}/operator-sdk_${OS}_${ARCH}
+          chmod +x operator-sdk_${OS}_${ARCH} && sudo mv operator-sdk_${OS}_${ARCH} /usr/local/bin/operator-sdk
+
+      - name: Update code
+        run: |
+          make generate manifests
+          make fmt
+
+      - name: Get params ref generator and update params ref doc
+        run: |
+          # crdoc
+          pushd /tmp
+          curl -s https://api.github.com/repos/fybrik/crdoc/releases/latest | grep -wo "https://.*crdoc.*Linux_x86.*gz" | wget -i -
+          tar -xvf crdoc*.gz
+          popd
+          /tmp/crdoc --resources config/crd/bases/pubsubplus.solace.com_pubsubpluseventbrokers.yaml --output docs/EventBrokerOperatorParametersReference.md --template config/crdoc/markdown.tmpl
+
       - name: Generate Third Party License
         run: |
           make generate-license
 
-      - name: Verify Changed files
-        uses: tj-actions/verify-changed-files@v12
-        id: verify-changed-files
-        with:
-          files: THIRD-PARTY-LICENSES.md
-
-      - name: Commit changes
-        if: steps.verify-changed-files.outputs.files_changed == 'true'
+      - name: Build bundle - will use the generated license file
         run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add THIRD-PARTY-LICENSES.md
-          git commit -m "chore: Updated third party license."
+          export VERSION='${{ github.event.inputs.release_tag }}'
+          make docker-build docker-push
+          make create-deploy-yaml
+          make bundle
 
-      - name: Push changes
-        if: steps.verify-changed-files.outputs.files_changed == 'true'
-        uses: ad-m/github-push-action@master
-        with:
-          github_token: ${{ github.token }}
-          branch: ${{ github.ref }}
+      - name: Prep for testing - create K8s Kind Cluster
+        uses: helm/kind-action@v1.3.0
+
+      - name: Test operator image using preflight tool
+        run: |
+          pushd /tmp
+          curl -s https://api.github.com/repos/redhat-openshift-ecosystem/openshift-preflight/releases/latest | grep -wo "https://.*preflight-linux-amd64" | wget -i -
+          chmod +x preflight-linux-amd64
+          popd
+          export CONTAINER_TO_TEST="ghcr.io/solacedev/pubsubplus-eventbroker-operator:v${{ github.event.inputs.release_tag }}"
+          /tmp/preflight-linux-amd64 check container $CONTAINER_TO_TEST --docker-config ~/.docker/config.json | grep "Preflight result: PASSED" || echo
+
+      - name: Test operator bundle - validate and scorecard
+        run: |
+          operator-sdk bundle validate ./bundle --select-optional suite=operatorframework
+          operator-sdk bundle validate ./bundle --select-optional name=operatorhub
+          operator-sdk bundle validate ./bundle --select-optional name=good-practices
+          operator-sdk scorecard ./bundle  --kubeconfig ~/.kube/config
+
+      - name: Build and publish Operator bundle and catalog
+        run: |
+          export VERSION='${{ github.event.inputs.release_tag }}'
+          make bundle-build bundle-push
+          make catalog-build catalog-push
+          # tag each as latest1
+          PUSHED_IMAGES=`docker images | grep $VERSION`
+          BUNDLE=`echo "$PUSHED_IMAGES" | grep bundle` ; echo "$BUNDLE"   # Format: Imagepath Tag Sha
+          docker tag `echo $BUNDLE | awk '{print $3}'` `echo $BUNDLE | awk '{print $1}'`:latest1
+          docker push `echo $BUNDLE | awk '{print $1}'`:latest1
+          CATALOG=`echo "$PUSHED_IMAGES" | grep catalog` ; echo "$CATALOG" # Format: Imagepath Tag Sha
+          docker tag `echo $CATALOG | awk '{print $3}'` `echo $CATALOG | awk '{print $1}'`:latest1
+          docker push `echo $CATALOG | awk '{print $1}'`:latest1
 
       - name: Run Whitesource Action
         uses: mercari/Whitesource-Scan-Action@v1.0.0
@@ -60,11 +102,11 @@ jobs:
           projectName: 'pubsubplus-kubernetes-operator'
           configFile: 'ci/whitesource/whitesource-agent.config'
 
-      - name: Build and publish
-        run: |
-          export VERSION='${{ github.event.inputs.release_tag }}'
-          make generate manifest
-          make docker-build docker push
-          make bundle
-          make bundle-build bundle-push
-          make catalog-build catalog-push
+      - name: Commit changes
+        uses: EndBug/add-and-commit@v9
+        with:
+          committer_name: GitHub Actions
+          committer_email: actions@github.com
+          message: 'Updating the deploy yaml, bundle, params doc and licenses'
+          add: 'deploy/*.yaml bundle/manifests/*.yaml docs/EventBrokerOperatorParametersReference.md THIRD-PARTY-LICENSES.md'
+
