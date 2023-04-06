@@ -112,6 +112,8 @@ jobs:
           new_branch: 'ReleaseCandidate-${{ github.event.inputs.release_tag }}'
 
       - name: Create pull request
-        run: gh pr create -B ${GITHUB_REF##*/} -H 'ReleaseCandidate-${{ github.event.inputs.release_tag }}' --title 'Merge release prep updates into ${GITHUB_REF##*/}' --body 'Created by Github action'
+        run: |
+          CURRENT_BRANCH=${GITHUB_REF##*/}
+          gh pr create -B ${CURRENT_BRANCH} -H 'ReleaseCandidate-${{ github.event.inputs.release_tag }}' --title "Merge release prep updates into ${CURRENT_BRANCH}" --body 'Created by Github action'
         env:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
