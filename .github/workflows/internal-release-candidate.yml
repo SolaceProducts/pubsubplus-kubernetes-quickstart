@@ -107,6 +107,11 @@ jobs:
         with:
           committer_name: GitHub Actions
           committer_email: actions@github.com
-          message: 'Updating the deploy yaml, bundle, params doc and licenses'
+          message: 'Prepared deploy yaml, bundle with latest relase info and updated params doc and licenses [skip ci]'
           add: 'deploy/*.yaml bundle/manifests/*.yaml docs/EventBrokerOperatorParametersReference.md THIRD-PARTY-LICENSES.md'
+          new_branch: 'ReleaseCandidate-${{ github.event.inputs.release_tag }}'
 
+      - name: Create pull request
+        run: gh pr create -B ${GITHUB_REF##*/} -H 'ReleaseCandidate-${{ github.event.inputs.release_tag }}' --title 'Merge release prep updates into ${GITHUB_REF##*/}' --body 'Created by Github action'
+        env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
