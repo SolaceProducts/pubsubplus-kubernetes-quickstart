@@ -73,24 +73,23 @@ node(label: "centos7_fast_devserver") {
         //      Release pattern currently matches: 1.0.0
         String releasePattern = /[0-9].[0-9].[0-9]$/
         boolean isReleaseBranch = false
-        String imageTag =''
-        String uniqueVersion = gitShaShort
-        if (kubernetesBranch == "v1.0.0"){
-            if (FINAL_CUT){
-                imageTag = "1.0.0"
-            } else {
-                imageTag = "1.0.0-${uniqueVersion}"
-            }
-        } else {
-            imageTag = "${version}-${kubernetesBranch}-${uniqueVersion}"
-        }
+    
         stage("Version and Save Docker Image") {
             //get version path from version.go: version ex:1.0.0
             sh "cd /opt/cvsdirs/loadbuild/jenkins/slave/workspace/kubernetes-operator-build"
             version = sh(returnStdout:true, script:"cat version.go | grep \"const version\" | sed 's/const version = \"\\(.*\\)\"/\\1/'").trim()
 
-            
-
+            String imageTag =''
+            String uniqueVersion = gitShaShort
+            if (kubernetesBranch == "v1.0.0"){
+                if (FINAL_CUT){
+                    imageTag = "1.0.0"
+                } else {
+                    imageTag = "1.0.0-${uniqueVersion}"
+                }
+            } else {
+                imageTag = "${version}-${kubernetesBranch}-${uniqueVersion}"
+            }
             //build docker image of pubsubplus-kubernetes-operator project
             sh "docker build -t apps-jenkins:18888/pubsubplus-eventbroker-operator:${imageTag} ."
 
