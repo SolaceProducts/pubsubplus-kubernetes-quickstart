@@ -74,6 +74,7 @@ node(label: "centos7_fast_devserver") {
         String releasePattern = /[0-9].[0-9].[0-9]$/
         boolean isReleaseBranch = false
         String imageTag =''
+        String uniqueVersion = gitShaShort
         if (kubernetesBranch == "v1.0.0"){
             if (FINAL_CUT){
                 imageTag = "1.0.0"
@@ -88,7 +89,7 @@ node(label: "centos7_fast_devserver") {
             sh "cd /opt/cvsdirs/loadbuild/jenkins/slave/workspace/kubernetes-operator-build"
             version = sh(returnStdout:true, script:"cat version.go | grep \"const version\" | sed 's/const version = \"\\(.*\\)\"/\\1/'").trim()
 
-            String uniqueVersion = gitShaShort
+            
 
             //build docker image of pubsubplus-kubernetes-operator project
             sh "docker build -t apps-jenkins:18888/pubsubplus-eventbroker-operator:${imageTag} ."
