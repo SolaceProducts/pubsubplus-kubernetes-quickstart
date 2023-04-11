@@ -6,7 +6,7 @@ The following additional set of documentation is also available:
 
 * For a hands-on quick start, refer to the [Quick Start guide](/README.md).
 * For the `PubSubPlusEventBroker` custom resource (deployment configuration, or "broker spec") parameter options, refer to the [PubSub+ Event Broker Operator Parameters Reference](/docs/EventBrokerOperatorParametersReference.md).
-* For version-specific information, refer to the [Operator Release Notes](/releases)
+* For version-specific information, refer to the [Operator Release Notes](https://github.com/SolaceProducts/pubsubplus-kubernetes-operator/releases)
 
 This guide is focused on deploying the event broker using the Operator, which is the preferred way to deploy. Note that a [Helm-based deployment](https://github.com/SolaceProducts/pubsubplus-kubernetes-helm-quickstart) is also supported but out of scope for this document.
 
@@ -86,7 +86,7 @@ __Contents:__
       - [Pods issues](#pods-issues)
         - [Pods stuck in not enough resources](#pods-stuck-in-not-enough-resources)
         - [Pods stuck in no storage](#pods-stuck-in-no-storage)
-        - [Pods stuck in CrashLoopBackoff, Failed or Not Ready](#pods-stuck-in-crashloopbackoff-failed-or-not-ready)
+        - [Pods stuck in CrashLoopBackoff, Failed, or Not Ready](#pods-stuck-in-crashloopbackoff-failed-or-not-ready)
         - [No Pods listed](#no-pods-listed)
       - [Security constraints](#security-constraints)
     - [Maintenance mode](#maintenance-mode)
@@ -98,7 +98,7 @@ __Contents:__
   - [Operator Deployment Guide](#operator-deployment-guide)
     - [Install Operator](#install-operator)
       - [From Operator Lifecycle Manager](#from-operator-lifecycle-manager)
-      - [From command line](#from-command-line)
+      - [From Command Line](#from-command-line)
     - [Validating the Operator deployment](#validating-the-operator-deployment)
     - [Troubleshooting the Operator deployment](#troubleshooting-the-operator-deployment)
     - [Upgrade the Operator](#upgrade-the-operator)
@@ -145,9 +145,9 @@ The PubSub+ Operator is following the [Kubernetes Operator Pattern](https://kube
 * Creating a `PubSubPlusEventBroker` Custom Resource (CR) in a watched namespace triggers the creation of a new PubSub+ Event Broker deployment that meets the properties specified in the CR manifest (also referred to as "broker spec").
 * Deviation of the deployment from the desired state or a change in the CR spec also triggers the operator to reconcile, that is to adjust the deployment towards the desired state.
 * The operator runs reconcile in loops, making one adjustment at a time, until the desired state has been reached.
-* Note that RBAC settings are required to permit the operator create Kubernetes objects, especially in other namespaces. Refer to the [Security]() section for further details.
+* Note that RBAC settings are required to permit the operator create Kubernetes objects, especially in other namespaces. Refer to the [Security](#broker-deployment-rbac) section for further details.
 
-The activity of the Operator can be followed from its Pod logs as described in the [troubleshooting]() section.
+The activity of the Operator can be followed from its Pod logs as described in the [troubleshooting](#troubleshooting) section.
 
 ### Event Broker Deployment
 
@@ -214,7 +214,6 @@ There are two containers used in the deployment with following specifications:
 The Image Repository and Tag parameters combined specify the image to be used for the deployment. They can either point to an image in a public or a private container registry. Pull Policy and Pull Secrets can be specified the [standard Kubernetes way](https://kubernetes.io/docs/concepts/containers/images/).
 
 Example:
-[Refer to github examples]()
 ```yaml
   image:
     repository: solace/solace-pubsub-standard
@@ -226,7 +225,7 @@ Example:
 
 #### Using a public registry
 
-For the broker image, default values are `solace/solace-pubsub-standard/` and `latest`, which is the free PubSub+ Software Event Broker Standard Edition from the [public Solace Docker Hub repo](//hub.docker.com/r/solace/solace-pubsub-standard/). It is generally recommended to set the image tag to a specific build for traceability purposes.
+For the broker image, default values are `solace/solace-pubsub-standard/` and `latest`, which is the free PubSub+ Software Event Broker Standard Edition from the [public Solace Docker Hub repo](https://hub.docker.com/r/solace/solace-pubsub-standard/). It is generally recommended to set the image tag to a specific build for traceability purposes.
 
 Similarly, the default exporter image values are `solace/solace-pubsub-prometheus-exporter` and `latest`.
 
@@ -371,7 +370,7 @@ parameters:
   fsType: xsf
 ```
 
-If using NFS, or generally if allocating from a defined Kubernetes [Persistent Volume](//kubernetes.io/docs/concepts/storage/persistent-volumes/#persistent-volumes), specify a `storageClassName` in the PV manifest as in this NFS example, then set the `spec.storage.useStorageClass` parameter to the same:
+If using NFS, or generally if allocating from a defined Kubernetes [Persistent Volume](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#persistent-volumes), specify a `storageClassName` in the PV manifest as in this NFS example, then set the `spec.storage.useStorageClass` parameter to the same:
 ```yaml
 # Persistent Volume example
 apiVersion: v1
@@ -437,7 +436,7 @@ Broker services (messaging, management) are available through the service ports 
 Clients can access the service ports directly through a configured [standard Kubernetes service type](https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types). Alternatively, services can be mapped to Kubernetes [Ingress](https://kubernetes.io/docs/concepts/services-networking/ingress). These options are discussed in details in the upcoming [Using Service Type](#using-a-service-type) and [Using Ingress](#using-ingress) sections.
 >Note: An OpenShift-specific alternative of exposing services through Routes is described in the [PubSub+ Openshift Deployment Guide](https://github.com/SolaceProducts/pubsubplus-openshift-quickstart/blob/master/docs/PubSubPlusOpenShiftDeployment.md).
 
-Enabling TLS for services is recommended. For details, see [Configuring TLS for Services](#configuring-tls-for-services).
+Enabling TLS for services is recommended. For details, see [Configuring TLS for Services](#configuring-tls-for-broker-services).
 
 Regardless the way to access services, the Service object is always used and it determines when and which broker Pod provides the actual service as explained in the next section.
 
@@ -450,7 +449,7 @@ The second, additional criteria is the pod label set to `active=true`.
 Both pod readiness and label are updated periodically (every 5 seconds), triggered by the pod readiness probe. This probe invokes the `readiness_check.sh` script which is mounted on the broker container.
 
 The requirements for a broker pod to satisfy both criteria are:
-* The broker must be in Guaranteed Active service state, that is providing [Guaranteed Messaging Quality-of-Service (QoS) level of event messages persistence](https://docs.solace.com/PubSub-Basics/Guaranteed-Messages.htm). If service level is degraded even to [Direct Messages QoS](//docs.solace.com/PubSub-Basics/Direct-Messages.htm) this is no longer sufficient.
+* The broker must be in Guaranteed Active service state, that is providing [Guaranteed Messaging Quality-of-Service (QoS) level of event messages persistence](https://docs.solace.com/PubSub-Basics/Guaranteed-Messages.htm). If service level is degraded even to [Direct Messages QoS](https://docs.solace.com/PubSub-Basics/Direct-Messages.htm) this is no longer sufficient.
 * Management service must be up at the broker container level at port 8080.
 * In an HA deployment, networking must enable the broker pods to communicate with each-other at the internal ports using the Service-Discovery service.
 * The Kubernetes service account associated with the deployment must have sufficient rights to patch the pod's label when the active event broker is service ready
@@ -463,13 +462,13 @@ kubectl get pods --show-labels
 
 #### Using a Service Type
 
-[PubSub+ services](//docs.solace.com/Configuring-and-Managing/Default-Port-Numbers.htm#Software) can be exposed using one of the following [Kubernetes service types](//kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types) by specifying the `spec.service.type` parameter:
+[PubSub+ services](https://docs.solace.com/Configuring-and-Managing/Default-Port-Numbers.htm#Software) can be exposed using one of the following [Kubernetes service types](https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types) by specifying the `spec.service.type` parameter:
 
 * LoadBalancer (default) - a load balancer, typically externally accessible depending on the K8s provider.
 * NodePort - maps PubSub+ services to a port on a Kubernetes node; external access depends on access to the Kubernetes node.
 * ClusterIP - internal access only from within K8s.
 
-To support [Internal load balancers](//kubernetes.io/docs/concepts/services-networking/service/#internal-load-balancer), a provider-specific service annotation can be added by defining the `spec.service.annotations` parameter.
+To support [Internal load balancers](https://kubernetes.io/docs/concepts/services-networking/service/#internal-load-balancer), a provider-specific service annotation can be added by defining the `spec.service.annotations` parameter.
 
 The `spec.service.ports` parameter defines the broker ports/services exposed. It specifies the event broker `containerPort` that provides the service and the mapping to the `servicePort` where the service can be accessed when using LoadBalancer or ClusterIP - however there is no control over the port number mapping when using NodePort. By default most broker service ports are exposed, refer to the ["pubsubpluseventbrokers" Custom Resource definition](/config/crd/bases/pubsubplus.solace.com_pubsubpluseventbrokers.yaml).
 
@@ -515,7 +514,7 @@ spec:
 
 > Note: Ensure that all filenames match those reported when you run `kubectl describe secret <my-tls-secret>`.
 
-Important: It is not possible to update an existing deployment (created without TLS) to enable TLS using the [update deployment]() procedure. In this case, for the first time, certificates must be [manually loaded and set up](//docs.solace.com/Configuring-and-Managing/Managing-Server-Certs.htm) on each broker node. After that it is possible to use update with a secret specified.
+Important: It is not possible to update an existing deployment (created without TLS) to enable TLS using the [update deployment](#modifying-a-broker-deployment-including-broker-upgrade) procedure. In this case, for the first time, certificates must be [manually loaded and set up](https://docs.solace.com/Configuring-and-Managing/Managing-Server-Certs.htm) on each broker node. After that it is possible to use update with a secret specified.
 
 ##### Rotating the TLS certificate
 
@@ -566,7 +565,7 @@ example.address                   nginx   frontend.host
 
 ##### HTTP, no TLS
 
-The following example configures ingress to [access PubSub+ REST service](https://docs.solace.com/RESTMessagingPrtl/Solace-REST-Example.htm#cURL). Replace `<my-pubsubplus-service>` with the name of the service of your deployment (hint: the service name is similar to your pod names). The port name must match the `service.ports` name in the PubSub+ `values.yaml` file.
+The following example configures ingress to [access PubSub+ REST service](https://docs.solace.com/Services/Configuring-EventBroker-for-REST.htm). Replace `<my-pubsubplus-service>` with the name of the service of your deployment (hint: the service name is similar to your pod names). The port name must match the `service.ports` name in the broker spec file.
 
 ```yaml
 apiVersion: networking.k8s.io/v1
@@ -716,7 +715,7 @@ The default installation of the Operator is optimized for easy deployment and ge
 
 The Operator can be configured with a list of namespaces to watch, so it picks up all broker specs created in the watched namespaces and create deployments there. However all other namespaces are ignored.
 
-Watched namespaces can be configured by providing the comma-separated list of namespaces in the `WATCH_NAMESPACE` environment variable defined in the container spec of the [Deployment](#operator) which controls the Operator pod. Assingning an empty string (default) means watching all namespaces.
+Watched namespaces can be configured by providing the comma-separated list of namespaces in the `WATCH_NAMESPACE` environment variable defined in the container spec of the [Deployment](#operator) which controls the Operator pod. Assigning an empty string (default) means watching all namespaces.
 
 It is recommended to restrict the watched namespaces for Production use. It is generally also recommended to not include the Operator's own namespace in the list because it is easier to separate RBAC settings for the operator from the broker's deployment - see next section.
 
@@ -1214,7 +1213,7 @@ Use the external Public IP to access the deployment at the port required for the
 ### Troubleshooting
 
 #### General Kubernetes troubleshooting hints
-https://kubernetes.io/docs/tasks/debug-application-cluster/debug-application/
+https://kubernetes.io/docs/tasks/debug/
 
 #### Checking the reason for failed resources
 
@@ -1272,7 +1271,7 @@ deployments.
 
 #### Viewing events
 
-Kubernetes collects [all events for a cluster in one pool](https://kubernetes.io/docs/tasks/debug-application-cluster/events-stackdriver ). This includes events related to the PubSub+ deployment.
+Kubernetes collects [all events for a cluster in one pool](https://pwittrock.github.io/docs/tasks/debug-application-cluster/events-stackdriver). This includes events related to the PubSub+ deployment.
 
 It is recommended to watch events when creating or upgrading a Solace deployment. Events clear after about an hour. You can query all available events:
 
@@ -1284,7 +1283,7 @@ kubectl get events -w # use -w to watch live
 
 ##### Pods stuck in not enough resources
 
-If pods stay in pending state and `kubectl describe pods` reveals there are not enough memory or CPU resources, check the [resource requirements of the targeted scaling tier](#cpu-and-memory-requirements) of your deployment and ensure adequate node resources are available.
+If pods stay in pending state and `kubectl describe pods` reveals there are not enough memory or CPU resources, check the [resource requirements of the targeted scaling tier](#broker-scaling) of your deployment and ensure adequate node resources are available.
 
 ##### Pods stuck in no storage
 
@@ -1436,7 +1435,7 @@ Customization options:
 * Operator namespace: replace the default `pubsubplus-operator-system`
 * Operator image: replace the default `solace/solace-pubsub-eventbroker-operator:latest`
 * Allowed namespaces for broker deployment: replace default `""` value for `WATCH_NAMESPACE` env variable. Default `""` means all namespaces. Provide the name of a single namespace or a comma-separated list of namespaces.
-* ImagePullSecret used when pulling the operator image fom a private repo: use or replace the name `regcred`. In this case the Operator namespace must exist with the ImagePullSecret created there before applying `deploy.yaml`.
+* ImagePullSecret used when pulling the operator image from a private repo: use or replace the name `regcred`. In this case the Operator namespace must exist with the ImagePullSecret created there before applying `deploy.yaml`.
 
 ### Validating the Operator deployment
 

@@ -79,33 +79,6 @@ After you complete any of the following install options with the default setting
 
 Follow the steps from [OperatorHub](https://operatorhub.io/operator/pubsubplus-eventbroker-operator) to first setup OLM, then to install the PubSub+ Event Broker Operator. Click on the Install button to see the detailed instructions.
 
-```bash
-# BEGIN: For internal use only, DELETE when publishing
-# These are the same steps as installing from real OperatorHub after publish
-# Prerequisite: Docker login into the private registry that hosts the Operator image
-# Run: docker login ghcr.io/solacedev, test locally to ensure it works: docker pull ghcr.io/solacedev/pubsubplus-eventbroker-operator:test
-
-# Install OLM and verify it
-curl -sL https://github.com/operator-framework/operator-lifecycle-manager/releases/download/v0.23.1/install.sh | bash -s v0.23.1
-kubectl get pods -n olm
-
-# Create CatalogSource. First need to create pullsecret, then apply manifest.
-kubectl create secret generic regcred --from-file=.dockerconfigjson=${HOME}/.docker/config.json --type=kubernetes.io/dockerconfigjson -n olm
-kubectl apply -f https://raw.githubusercontent.com/SolaceDev/pubsubplus-kubernetes-operator/v1.0.0/deploy/solace-catalog-source.yaml
-# Wait about a minute. Test if PackageManifest has been created
-kubectl get packagemanifest -n olm | grep pubsubplus
-
-# Now create subscription on "operators" namespace. Also need to create pullsecret here, then apply.
-kubectl create secret generic regcred --from-file=.dockerconfigjson=${HOME}/.docker/config.json --type=kubernetes.io/dockerconfigjson -n operators
-kubectl apply -f https://raw.githubusercontent.com/SolaceDev/pubsubplus-kubernetes-operator/v1.0.0/deploy/solace-pubsubpluseventbroker-sub.yaml
-# Wait a few minutes then check status of the InstallPlan
-kubectl get ip -n operators
-# Check if operator pod is starting in operators namespace
-kubectl get pods -n operators --watch
-
-# END: internal use
-```
-
 By default this method installs the Operator in the `operators` namespace.
 
 #### b) Direct Option
@@ -113,17 +86,8 @@ By default this method installs the Operator in the `operators` namespace.
 The following commands directly install the Operator:
 
 ```bash
-# BEGIN: For internal use only, DELETE when publishing
-# Pre-requisite: Docker login into the private registry that hosts the Operator image
-# Run: docker login ghcr.io/solacedev
-kubectl create ns pubsubplus-operator-system --save-config
-kubectl create secret generic regcred \
-  --from-file=.dockerconfigjson=${HOME}/.docker/config.json \
-  --type=kubernetes.io/dockerconfigjson \
-  -n pubsubplus-operator-system
-# END: internal use
 # Download manifest for possible edit
-wget https://raw.githubusercontent.com/SolaceDev/pubsubplus-kubernetes-operator/v1.0.0/deploy/deploy.yaml
+wget https://raw.githubusercontent.com/SolaceProducts/pubsubplus-kubernetes-operator/main/deploy/deploy.yaml
 # Manifest creates a namespace and all K8s resources for the Operator deployment
 kubectl apply -f deploy.yaml
 # Wait for deployment to complete
@@ -280,7 +244,7 @@ Refer to the detailed PubSub+ Event Broker Operator documentation for:
 * [Validating the deployment](docs/EventBrokerOperatorUserGuide.md#validating-the-deployment)
 * [Troubleshooting](docs/EventBrokerOperatorUserGuide.md#troubleshooting)
 * [Modifying or Upgrading](docs/EventBrokerOperatorUserGuide.md#modifying-a-broker-deployment-including-broker-upgrade)
-* [Deleting the deployment](docs/EventBrokerOperatorUserGuide.md#undeploy-broker)
+* [Deleting the deployment](docs/EventBrokerOperatorUserGuide.md#deleting-a-deployment)
 
 ## Contributing
 
@@ -288,7 +252,7 @@ Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduc
 
 ## Authors
 
-See the list of [contributors](https://github.com/SolaceProducts/pubsubplus-kubernetes-quickstart/graphs/contributors) who participated in this project.
+See the list of [contributors](https://github.com/SolaceProducts/pubsubplus-kubernetes-operator/graphs/contributors ) who participated in this project.
 
 ## License
 
@@ -300,4 +264,4 @@ For more information about Solace technology in general please visit these resou
 
 - The Solace Developer Portal website at: [solace.dev](https://solace.dev/)
 - Understanding [Solace technology](https://solace.com/products/platform/)
-- Ask the [Solace community](https://dev.solace.com/community/).
+- Ask the [Solace community](https://solace.community/).
