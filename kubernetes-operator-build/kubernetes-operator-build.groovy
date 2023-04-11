@@ -73,6 +73,16 @@ node(label: "centos7_fast_devserver") {
         //      Release pattern currently matches: 1.0.0
         String releasePattern = /[0-9].[0-9].[0-9]$/
         boolean isReleaseBranch = false
+        String imagePath =''
+        if (kubernetesBranch == "v1.0.0"){
+            if (FINAL_CUT){
+                imageTag = "1.0.0"
+            } else {
+                imageTag = "1.0.0-${uniqueVersion}"
+            }
+        } else {
+            imageTag = "${version}-${kubernetesBranch}-${uniqueVersion}"
+        }
         stage("Version and Save Docker Image") {
             //get version path from version.go: version ex:1.0.0
             sh "cd /opt/cvsdirs/loadbuild/jenkins/slave/workspace/kubernetes-operator-build"
@@ -81,16 +91,16 @@ node(label: "centos7_fast_devserver") {
             String uniqueVersion = gitShaShort
 
             //build docker image of pubsubplus-kubernetes-operator project
-            sh "docker build -t apps-jenkins:18888/pubsubplus-eventbroker-operator:${version}-${uniqueVersion} ."
+            sh "docker build -t apps-jenkins:18888/pubsubplus-eventbroker-operator:${imageTag} ."
 
             //save docker image as tar file
-            sh "docker save apps-jenkins:18888/pubsubplus-eventbroker-operator:${version}-${uniqueVersion} | gzip > ./pubsubplus-eventbroker-operator_${version}-${uniqueVersion}.tar.gz"
+            sh "docker save apps-jenkins:18888/pubsubplus-eventbroker-operator:${imageTag} | gzip > ./pubsubplus-eventbroker-operator_${imageTag}.tar.gz"
 
             //make a new directory to store the tar file
-            sh "mkdir -p /home/public/RND/loads/pubsubplus-eventbroker-operator/${version}"
+            sh "mkdir -p /home/public/RND/loads/pubsubplus-eventbroker-operator/${kubernetesBranch}/${imageTag} "
 
             //move the tar file to the new directory
-            sh "mv pubsubplus-eventbroker-operator_${version}-${uniqueVersion}.tar.gz /home/public/RND/loads/pubsubplus-eventbroker-operator/${version}"
+            sh "mv pubsubplus-eventbroker-operator_${imageTag}.tar.gz /home/public/RND/loads/pubsubplus-eventbroker-operator/${kubernetesBranch}/${imageTag}"
         }
 
         stage ('Upload image to internal registry') {
@@ -101,9 +111,9 @@ node(label: "centos7_fast_devserver") {
         }
         // Copy
         sh """
-            docker tag apps-jenkins:18888/pubsubplus-eventbroker-operator:${version}-${gitShaShort} ${internalRegistry}:${version}-${gitShaShort}
-            docker push ${internalRegistry}:${version}-${gitShaShort}
-            docker rmi apps-jenkins:18888/pubsubplus-eventbroker-operator:${version}-${gitShaShort} ${internalRegistry}:${version}-${gitShaShort}
+            docker tag apps-jenkins:18888/pubsubplus-eventbroker-operator:${imageTag} ${internalRegistry}:${imageTag}
+            docker push ${internalRegistry}:${imageTag}
+            docker rmi apps-jenkins:18888/pubsubplus-eventbroker-operator:${imageTag} ${internalRegistry}:${imageTag}
         """
     }
     }
