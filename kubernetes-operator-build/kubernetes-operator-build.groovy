@@ -73,7 +73,7 @@ node(label: "centos7_fast_devserver") {
         //      Release pattern currently matches: 1.0.0
         String releasePattern = /[0-9].[0-9].[0-9]$/
         boolean isReleaseBranch = false
-        String imagePath =''
+        String imageTag =''
         if (kubernetesBranch == "v1.0.0"){
             if (FINAL_CUT){
                 imageTag = "1.0.0"
