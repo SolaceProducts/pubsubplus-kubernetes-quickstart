@@ -107,7 +107,7 @@ node(label: "centos7_fast_devserver") {
         // Login again
         withCredentials([
             string(credentialsId: 'nexus-robot2-passwd', variable: 'DOCKER_PASSWORD')]) {
-            sh 'docker login apps-jenkins:18888 -u solace -p "$DOCKER_PASSWORD"'
+            sh 'docker login apps-jenkins:18888 -u solace -p solace1'
         }
         // Copy
         sh """
