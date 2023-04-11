@@ -15,6 +15,7 @@ String gitShaShort = ""
 String kubernetesBranch = params.KUBERNETES_BRANCH
 String internalRegistry = 'apps-jenkins:18888/kubernetes-operator'
 String version = ""
+String imageTag =''
 
 if (gitSha == "") {
     if (kubernetesBranch == "") {
@@ -79,7 +80,6 @@ node(label: "centos7_fast_devserver") {
             sh "cd /opt/cvsdirs/loadbuild/jenkins/slave/workspace/kubernetes-operator-build"
             version = sh(returnStdout:true, script:"cat version.go | grep \"const version\" | sed 's/const version = \"\\(.*\\)\"/\\1/'").trim()
 
-            String imageTag =''
             String uniqueVersion = gitShaShort
             if (kubernetesBranch == "v1.0.0"){
                 if (FINAL_CUT){
