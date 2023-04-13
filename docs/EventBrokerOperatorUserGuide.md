@@ -813,8 +813,8 @@ spec:
   monitoring:
     enabled: true
     image:
-      repository: ghcr.io/solacedev/solace_prometheus_exporter
-      tag: sol-76199
+      repository: solace/pubsubplus-prometheus-exporter
+      tag: latest
       pullSecrets:
       - name: regcred
     metricsEndpoint:
@@ -1106,7 +1106,7 @@ There are three StatefulSets controlling each broker node in an HA redundancy gr
 
 Generally, all services including management and messaging are accessible through a Load Balancer. In the above example `35.238.219.112` is the Load Balancer's external Public IP to use.
 
-> Note: When using MiniKube, there is no integrated Load Balancer. For a workaround, execute `minikube service XXX-XXX-solace` to expose the services. Services are accessible directly using mapped ports instead of direct port access, for which the mapping can be obtained from `kubectl describe service XXX-XX-solace`.
+> Note: When using MiniKube or other minimal Kubernetes provider, there may be no integrated Load Balancer available, which is the default service type. For a workaround, either refer to the [MiniKube documentation for LoadBalancer access](https://minikube.sigs.k8s.io/docs/handbook/accessing/#loadbalancer-access) or use [local port forwarding to the service port](https://kubernetes.io/docs/tasks/access-application-cluster/port-forward-access-application-cluster/#forward-a-local-port-to-a-port-on-the-pod): `kubectl port-forward service/$BROKER_SERVICE_NAME <target-port-on-localhost>:<service-port-on-load-balancer> &`. Then access the service at `localhost:<target-port-on-localhost>`
 
 ### Gaining admin access to the event broker
 

@@ -221,7 +221,7 @@ BROKER_SERVICE_NAME=$(kubectl get eventbroker dev-example -o jsonpath='{.status.
 kubectl get svc $BROKER_SERVICE_NAME -o jsonpath='{.status.loadBalancer.ingress}'
 ```
 
-> Note: When using MiniKube, there is no integrated Load Balancer, which is the default service type. Therefore, the IP address in the example above will not return anything. For a workaround, run the command `minikube service list` to expose the services. The output of this command provides a table with services mapped to a local IP address and ephemeral Node ports.
+> Note: When using MiniKube or other minimal Kubernetes provider, there may be no integrated Load Balancer available, which is the default service type. For a workaround, either refer to the [MiniKube documentation for LoadBalancer access](https://minikube.sigs.k8s.io/docs/handbook/accessing/#loadbalancer-access) or use [local port forwarding to the service port](https://kubernetes.io/docs/tasks/access-application-cluster/port-forward-access-application-cluster/#forward-a-local-port-to-a-port-on-the-pod): `kubectl port-forward service/$BROKER_SERVICE_NAME <target-port-on-localhost>:<service-port-on-load-balancer> &`. Then access the service at `localhost:<target-port-on-localhost>`
 
 * Access the PubSub+ Broker Manager
 
@@ -231,11 +231,11 @@ http://<ip-address>:8080
 ```
  Login as user `admin` with the management admin password you obtained.
 
-> Minikube users must use the `tcp-semp/8080` URL from the `minikube service list` output table.
+> If required use above Load Balancer access workaround for service port `8080`.
 
 * Use the Broker Manager [built-in Try-Me](https://docs.solace.com/Admin/Broker-Manager/PubSub-Manager-Overview.htm?Highlight=manager#Test-Messages) tool to test messaging.
 
-> Note: MiniKube users must use the `tcp-web/8008` URL port from the `minikube service list` output table instead of the default `8008` Broker URL port in the Try-Me Publisher's Establish Connection section.
+> If required use above Load Balancer access workaround for service port `8008`.
 
 
 ### Additional information
