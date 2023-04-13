@@ -813,8 +813,8 @@ spec:
   monitoring:
     enabled: true
     image:
-      repository: ghcr.io/solacedev/solace_prometheus_exporter
-      tag: sol-76199
+      repository: solace/pubsubplus-prometheus-exporter
+      tag: latest
       pullSecrets:
       - name: regcred
     metricsEndpoint:
