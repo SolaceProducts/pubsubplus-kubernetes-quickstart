@@ -129,7 +129,7 @@ run: manifests generate fmt vet ## Run a controller from your host.
 	go run ./main.go
 
 .PHONY: docker-build
-docker-build: test ## Build docker image with the manager.
+docker-build: ## Build docker image with the manager.
 	docker build -t ${IMG} .
 
 .PHONY: docker-push
@@ -268,6 +268,21 @@ catalog-push: ## Push a catalog image.
 .PHONY: kind-catalog-push
 kind-catalog-push: ## Push a catalog image to local Kind cluster.
 	$(MAKE) kind-docker-push IMG=$(CATALOG_IMG)
+
+
+install-tools: manifests generate fmt vet envtest
+	go mod vendor
+	grep _ tools/tools.go | awk -F '"' '{print $$2}' | xargs -t go install
+
+.PHONY: unit-tests
+unit-tests: $(KUBEBUILDER_ASSETS) install-tools
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" ginkgo -r --randomize-all controllers/
+
+.PHONY:
+test-coverage: $(KUBEBUILDER_ASSETS) install-tools ## Run tests with coverage
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" NAMESPACE="default" go test -short -coverprofile  reports/cover.out  $(shell go list ./... | grep -v /vendor/)
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" NAMESPACE="default" go tool cover -func=reports/cover.out -o=reports/coverage.out
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" NAMESPACE="default" go tool cover -html reports/cover.out -o reports/cover.html
 
 # Generate third party license
 .PHONY:

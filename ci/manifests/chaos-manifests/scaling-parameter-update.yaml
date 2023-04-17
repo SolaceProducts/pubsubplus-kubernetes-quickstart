@@ -4,6 +4,12 @@ kind: PubSubPlusEventBroker
 metadata:
   name: test-ha
 spec:
+  systemScaling:
+    messagingNodeMemory: "8025Mi"
+    messagingNodeCpu: "2"
+    maxSpoolUsage: 500
+    maxQueueMessages: 150
+    maxConnections: 150
   redundancy: true
   developer: true
   timezone: UTC
@@ -14,7 +20,7 @@ spec:
   extraEnvVarsSecret: ""
   podDisruptionBudgetForHA: true
   preSharedAuthKeySecret: preshared-auth-secret
-  image: {}
+  image: { }
   podLabels:
     "DeploymentType": "HA"
     "DeploymentTestMode": "GithubAction"
@@ -22,7 +28,7 @@ spec:
     "DeploymentType": "HA"
     "DeploymentTestMode": "GithubAction"
   updateStrategy: manualPodRestart
-  securityContext: {}
+  securityContext: { }
   tls:
     enabled: true
     serverTlsConfigSecret: test-tls
@@ -102,17 +108,8 @@ spec:
   monitoring:
     enabled: true
     image:
-      repository: ghcr.io/solacedev/pubsubplus-prometheus-exporter
-      tag: latest
+      repository: ghcr.io/solacedev/solace_prometheus_exporter
+      tag: sol-76199
       pullPolicy: Always
       pullSecrets:
-      - name: regcred
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: preshared-auth-secret
-type: Opaque
-data:
-  preshared_auth_key: Z2ZwWHRyM0VaeUdMbTBOdndDY2F1WmtRZEg1RXQ4QWFZQXdSVW8x
----
+        - name: regcred

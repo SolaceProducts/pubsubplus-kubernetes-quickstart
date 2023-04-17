@@ -1,4 +1,4 @@
-name: Integration Test for HA Minimal Deployment
+name: Integration Test for FULL HA Deployment
 
 on: workflow_call
 
@@ -16,7 +16,7 @@ jobs:
     steps:
       - name: Set env and tools
         run: |
-          echo "TESTNAMESPACE=op-test-min-$(date +%s)" >> $GITHUB_ENV
+          echo "TESTNAMESPACE=op-test-full-$(date +%s)" >> $GITHUB_ENV
 
       - name: Check out code
         uses: actions/checkout@v3
@@ -54,21 +54,26 @@ jobs:
           kubectl rollout status deployment pubsubplus-eventbroker-operator -n pubsubplus-operator-system --timeout=240s
           kubectl get crd | grep eventbrokers
 
-      - name: Testing the Operator - HA Minimal
+      - name: Testing the Operator - HA
         run: |
           kubectl create ns $TESTNAMESPACE; kubectl config set-context --current --namespace=$TESTNAMESPACE
-          kubectl apply -f ci/manifests/eventbroker-ha-minimal.yaml | grep "test-ha-minimal created"
+          openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout tls.key -out tls.crt -subj "/CN=*"
+          kubectl create secret tls test-tls --key="tls.key" --cert="tls.crt"
+          openssl x509 -in tls.crt -out tls.public.pem
+          openssl rsa -in tls.key -text > tls.private.pem
+          kubectl create secret tls monitoring-tls --key="tls.private.pem" --cert="tls.public.pem"
+          kubectl apply -f ci/manifests/eventbroker-ha.yaml | grep "test-ha created"
           sleep 10 ; kubectl get all
-          kubectl wait pods --selector app.kubernetes.io/instance=test-ha-minimal --for condition=Ready --timeout=300s
-          kubectl get po --show-labels -n $TESTNAMESPACE | grep test-ha-minimal | grep "1/1"
-          kubectl get po --show-labels -n $TESTNAMESPACE | grep test-ha-minimal | grep active=true
-          kubectl get sts -n $TESTNAMESPACE | grep test-ha-minimal
-          kubectl port-forward svc/test-ha-minimal-pubsubplus -n $TESTNAMESPACE 55555:55555 &
+          kubectl wait pods --selector app.kubernetes.io/instance=test-ha --for condition=Ready --timeout=300s
+          kubectl get po --show-labels -n $TESTNAMESPACE | grep test-ha | grep "1/1"
+          kubectl get po --show-labels -n $TESTNAMESPACE | grep test-ha | grep active=true
+          kubectl get sts -n $TESTNAMESPACE | grep test-ha
+          kubectl port-forward svc/test-ha-pubsubplus -n $TESTNAMESPACE 55555:55555 &
           sleep 5
           curl -O https://sftp.solace.com/download/SDKPERF_C_LINUX64
           tar -xvf SDKPERF_C_LINUX64
           pubSubTools/sdkperf_c -cip=tcp://localhost:55555 -mn=1000 -mr=0 -ptl=t1 -stl=t1 | grep "Total Messages"
-          kubectl delete eventbroker test-ha-minimal -n $TESTNAMESPACE | grep deleted
+          kubectl delete eventbroker test-ha -n $TESTNAMESPACE | grep deleted
 
       - name: Cleanup
         if: ${{ always() }}

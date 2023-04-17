@@ -1,4 +1,5 @@
 # Solace PubSub+ Event Broker Operator Quick Start
+![Coverage](https://img.shields.io/badge/Coverage-76.7%25-brightgreen)
 
 The Solace PubSub+ Event Broker Operator (or simply the Operator) is a Kubernetes-native method to install and manage a Solace PubSub+ Software Event Broker on a Kubernetes cluster.
 
