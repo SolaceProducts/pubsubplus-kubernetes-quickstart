@@ -5,6 +5,16 @@ on:
         description: 'Release tag'
         required: true
         default: '1.0.0-dev'
+      prep_internal_release:
+        # Need to distinguish between internal and external releases
+        # Internal release: Will use default internal location for created images (ghcr.io) and will tag and push operator candidate there
+        # External release: Assumes tagged image operator already pushed to docker.io/solace.
+        #                   The purpose of running this script is to update final release tags and getting ready for PR to Operator Hub
+        type: boolean
+        description: 'Internal release (True to prep an internal release including image push. False to prep an external release)'
+        required: true
+        default: true
+
 
 jobs:
   build_web:
@@ -56,6 +66,17 @@ jobs:
       - name: Build bundle - will use the generated license file
         run: |
           export VERSION='${{ github.event.inputs.release_tag }}'
+          if [ ${{ github.event.inputs.prep_internal_release }} == 'true' ] ; then
+            echo Internal release
+            echo "CONTROLLER_CONTAINER_REPO=ghcr.io/solacedev" >> $GITHUB_ENV
+            make docker-build docker-push
+          else
+            echo External release
+            export CONTROLLER_CONTAINER_REPO=docker.io/solace
+            echo "CONTROLLER_CONTAINER_REPO=$CONTROLLER_CONTAINER_REPO" >> $GITHUB_ENV
+            make docker-build
+            # skip docker-push
+          fi
           make docker-build docker-push
           make create-deploy-yaml
           make bundle
@@ -69,7 +90,7 @@ jobs:
           curl -s https://api.github.com/repos/redhat-openshift-ecosystem/openshift-preflight/releases/latest | grep -wo "https://.*preflight-linux-amd64" | wget -i -
           chmod +x preflight-linux-amd64
           popd
-          export CONTAINER_TO_TEST="ghcr.io/solacedev/pubsubplus-eventbroker-operator:v${{ github.event.inputs.release_tag }}"
+          export CONTAINER_TO_TEST="$CONTROLLER_CONTAINER_REPO/pubsubplus-eventbroker-operator:v${{ github.event.inputs.release_tag }}"
           /tmp/preflight-linux-amd64 check container $CONTAINER_TO_TEST --docker-config ~/.docker/config.json | grep "Preflight result: PASSED" || echo
 
       - name: Test operator bundle - validate and scorecard
