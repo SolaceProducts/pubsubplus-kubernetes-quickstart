@@ -11,7 +11,7 @@ on:
         # External release: Assumes tagged image operator already pushed to docker.io/solace.
         #                   The purpose of running this script is to update final release tags and getting ready for PR to Operator Hub
         type: boolean
-        description: 'Internal release (True to prep an internal release including image push. False to prep an external release)'
+        description: 'Internal release (Check to prep an internal release including image push. Uncheck to prep an external release)'
         required: true
         default: true
 
