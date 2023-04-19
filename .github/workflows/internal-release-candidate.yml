@@ -66,7 +66,7 @@ jobs:
       - name: Build bundle - will use the generated license file
         run: |
           export VERSION='${{ github.event.inputs.release_tag }}'
-          if [ ${{ github.event.inputs.prep_internal_release }} == 'true' ] ; then
+          if [ "${{ github.event.inputs.prep_internal_release }}" == "true" ] ; then
             echo Internal release
             echo "CONTROLLER_CONTAINER_REPO=ghcr.io/solacedev" >> $GITHUB_ENV
             make docker-build docker-push
@@ -77,7 +77,6 @@ jobs:
             make docker-build
             # skip docker-push
           fi
-          make docker-build docker-push
           make create-deploy-yaml
           make bundle
 
