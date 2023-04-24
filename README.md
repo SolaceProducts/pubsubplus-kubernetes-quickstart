@@ -1,5 +1,5 @@
 # Solace PubSub+ Event Broker Operator Quick Start
-[![Actions Status](https://github.com/SolaceDev/pubsubplus-kubernetes-operator/workflows/build/badge.svg?branch=v1.0.0)](https://github.com/SolaceDev/pubsubplus-kubernetes-operator/actions?query=workflow%3Abuild+branch%3Av1.0.0)
+[![Actions Status](https://github.com/SolaceDev/pubsubplus-kubernetes-operator/actions/workflows/build-test-main.yml/badge.svg?branch=v1.0.0)](https://github.com/SolaceDev/pubsubplus-kubernetes-operator/actions?query=workflow%3Abuild+branch%3Av1.0.0)
 
 ![Coverage](https://img.shields.io/badge/Coverage-76.3%25-brightgreen)
 
