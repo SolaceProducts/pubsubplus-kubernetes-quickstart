@@ -1,6 +1,6 @@
 # Solace PubSub+ Event Broker Operator Quick Start
-[![Actions Status](https://github.com/SolaceDev/pubsubplus-kubernetes-operator/actions/workflows/build-test-main.yml/badge.svg?branch=v1.0.0)](https://github.com/SolaceDev/pubsubplus-kubernetes-operator/actions?query=workflow%3Abuild+branch%3Av1.0.0)
-[![Go Report Card](https://goreportcard.com/badge/github.com/solacedev/pubsubplus-kubernetes-operator)](https://goreportcard.com/report/github.com/solacedev/pubsubplus-kubernetes-operator)
+[![Actions Status](https://github.com/SolaceProducts/pubsubplus-kubernetes-operator/actions/workflows/build-test-main.yml/badge.svg?branch=main)](https://github.com/SolaceProducts/pubsubplus-kubernetes-operator/actions?query=workflow%3Abuild+branch%3Amain)
+[![Go Report Card](https://goreportcard.com/badge/github.com/solaceproducts/pubsubplus-kubernetes-operator)](https://goreportcard.com/report/github.com/solaceproducts/pubsubplus-kubernetes-operator)
 
 The Solace PubSub+ Event Broker Operator (or simply the Operator) is a Kubernetes-native method to install and manage a Solace PubSub+ Software Event Broker on a Kubernetes cluster.
 
