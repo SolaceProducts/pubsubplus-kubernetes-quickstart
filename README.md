@@ -1,4 +1,5 @@
 # Solace PubSub+ Event Broker Operator Quick Start
+![Coverage](https://img.shields.io/badge/Coverage-76.3%25-brightgreen)
 [![Actions Status](https://github.com/SolaceDev/pubsubplus-kubernetes-operator/actions/workflows/build-test-main.yml/badge.svg?branch=v1.0.0)](https://github.com/SolaceDev/pubsubplus-kubernetes-operator/actions?query=workflow%3Abuild+branch%3Av1.0.0)
 [![Go Report Card](https://goreportcard.com/badge/github.com/solacedev/pubsubplus-kubernetes-operator)](https://goreportcard.com/report/github.com/solacedev/pubsubplus-kubernetes-operator)
 
