@@ -85,8 +85,8 @@ var _ = Describe("Monitoring Exporter Test", func() {
 						Monitoring: pubsubplus.Monitoring{
 							Enabled: true,
 							MonitoringImage: &pubsubplus.MonitoringImage{
-								Repository: "ghcr.io/solacedev/solace_prometheus_exporter",
-								Tag:        "1.0.0-dev",
+								Repository: "ghcr.io/solacedev/pubsubplus-prometheus-exporter",
+								Tag:        "latest",
 								ImagePullSecrets: []corev1.LocalObjectReference{
 									{
 										Name: "regcred",
