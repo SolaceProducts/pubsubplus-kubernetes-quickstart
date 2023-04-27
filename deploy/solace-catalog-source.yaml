@@ -1,0 +1,17 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: CatalogSource
+metadata:
+  name: solace-catalog
+  namespace: olm
+spec:
+  sourceType: grpc
+  image: ghcr.io/solacedev/pubsubplus-eventbroker-operator-v1beta1-catalog:latest
+  grpcPodConfig:
+    securityContextConfig: restricted
+  secrets:
+  - regcred
+  displayName: Solace Catalog
+  publisher: Solace
+  updateStrategy:
+    registryPoll:
+      interval: 10m

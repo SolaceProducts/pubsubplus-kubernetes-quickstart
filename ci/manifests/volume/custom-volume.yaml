@@ -1,0 +1,25 @@
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: primary-pv
+spec:
+  storageClassName: standard
+  capacity:
+    storage: 7Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/var/lib/solace"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: primary-pvc
+spec:
+  storageClassName: standard
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 7Gi

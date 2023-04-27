@@ -1,0 +1,19 @@
+domain: solace.com
+layout:
+- go.kubebuilder.io/v3
+plugins:
+  manifests.sdk.operatorframework.io/v2: {}
+  scorecard.sdk.operatorframework.io/v2: {}
+projectName: pubsubplus-eventbroker-operator
+repo: github.com/SolaceProducts/pubsubplus-eventbroker-operator
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: solace.com
+  group: pubsubplus
+  kind: PubSubPlusEventBroker
+  path: github.com/SolaceProducts/pubsubplus-eventbroker-operator/api/v1beta1
+  version: v1beta1
+version: "3"

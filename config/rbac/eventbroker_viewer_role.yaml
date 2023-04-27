@@ -1,0 +1,20 @@
+# permissions for end users to view eventbrokers.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: pubsubpluseventbroker-viewer-role
+rules:
+- apiGroups:
+  - pubsubplus.solace.com
+  resources:
+  - eventbrokers
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - pubsubplus.solace.com
+  resources:
+  - eventbrokers/status
+  verbs:
+  - get

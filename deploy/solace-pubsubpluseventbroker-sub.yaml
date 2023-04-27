@@ -1,0 +1,11 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: sub-to-pubsubplus-eventbroker-operator
+  namespace: operators
+spec:
+  channel: stable
+  name: pubsubplus-eventbroker-operator
+  source: solace-catalog
+  sourceNamespace: olm
+  installPlanApproval: Automatic

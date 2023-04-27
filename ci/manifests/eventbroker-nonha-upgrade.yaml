@@ -1,0 +1,62 @@
+---
+apiVersion: pubsubplus.solace.com/v1beta1
+kind: PubSubPlusEventBroker
+metadata:
+  name: test-nonha
+spec:
+  redundancy: false
+  developer: true
+  timezone: UTC
+  adminCredentialsSecret: broker-secret
+  extraEnvVars:
+    - name: TestType
+      value: "GithubAction"
+  extraEnvVarsCM: ""
+  extraEnvVarsSecret: ""
+  podDisruptionBudgetForHA: false
+  image: {}
+  podLabels:
+    "DeploymentType": "NonHAUpgrade"
+    "DeploymentTestMode": "GithubAction"
+  podAnnotations:
+    "DeploymentType": "NonHAUpgrade"
+    "DeploymentTestMode": "GithubAction"
+  nodeAssignment:
+    - name: Primary
+      spec:
+        affinity:
+          podAffinity: {}
+          podAntiAffinity: {}
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+              - matchExpressions:
+                - key: kubernetes.io/os
+                  operator: In
+                  values:
+                  - linux
+                  - ubuntu
+        nodeSelector:
+          kubernetes.io/os: linux
+  securityContext:
+    fsGroup: 0
+    runAsUser: 0
+  tls:
+    enabled: true
+    serverTlsConfigSecret: test-tls
+  service: {}
+  storage:
+    slow: true
+    customVolumeMount:
+      - name: Primary
+        persistentVolumeClaim:
+          claimName: data-my-release-pubsubplus-dev-0
+    useStorageClass: standard
+  monitoring:
+    enabled: true
+    image:
+      repository: ghcr.io/solacedev/pubsubplus-prometheus-exporter
+      tag: latest
+      pullPolicy: Always
+      pullSecrets:
+      - name: regcred

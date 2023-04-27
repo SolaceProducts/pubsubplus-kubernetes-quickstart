@@ -1,0 +1,173 @@
+name: Integration Test for HA Deployment with Chaos Litmus Test
+
+on: workflow_call
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+
+    # Add "id-token" with the intended permissions.
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+      packages: 'read'
+
+    steps:
+      - name: Set env and tools
+        run: |
+          echo "TESTNAMESPACE=op-test-chaos-$(date +%s)" >> $GITHUB_ENV
+
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      - id: 'auth'
+        name: 'Authenticate to Google Cloud'
+        uses: 'google-github-actions/auth@v1.0.0'
+        with:
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          access_token_lifetime: 600s
+
+      - name: Use the GKE Autopilot test cluster
+        uses: 'google-github-actions/get-gke-credentials@v1.0.0'
+        with:
+          cluster_name: 'dev-integrationtesting'
+          location: 'us-central1'
+
+      - name: Login to Github Packages
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setting up kubeconfig ENV for Github Chaos Action
+        run: echo ::set-env name=KUBE_CONFIG_DATA::$(base64 -w 0 ~/.kube/config)
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: true
+
+      - name: Testing operator deployment
+        run: |
+          kubectl cluster-info
+          kubectl get pods -n kube-system
+          echo "current-context:" $(kubectl config current-context)
+          echo "environment-kubeconfig:" ${KUBECONFIG}
+          kubectl create ns pubsubplus-operator-system --save-config --dry-run=client -o yaml | kubectl apply -f -
+          kubectl create secret generic regcred --from-file=.dockerconfigjson=${HOME}/.docker/config.json --type=kubernetes.io/dockerconfigjson -n pubsubplus-operator-system --dry-run=client -o yaml | kubectl apply -f -
+          make deploy | grep 'created \| configured'
+          kubectl rollout status deployment pubsubplus-eventbroker-operator -n pubsubplus-operator-system --timeout=240s
+          kubectl get crd | grep eventbrokers
+
+      - name: Testing the Operator - HA - Chaos
+        run: |
+          kubectl create ns $TESTNAMESPACE; kubectl config set-context --current --namespace=$TESTNAMESPACE
+          openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout tls.key -out tls.crt -subj "/CN=*"
+          kubectl create secret tls test-tls --key="tls.key" --cert="tls.crt"
+          openssl x509 -in tls.crt -out tls.public.pem
+          openssl rsa -in tls.key -text > tls.private.pem
+          kubectl create secret tls monitoring-tls --key="tls.private.pem" --cert="tls.public.pem"
+          kubectl apply -f ci/manifests/eventbroker-ha.yaml | grep "test-ha created"
+          sleep 10 ; kubectl get all
+          kubectl wait pods --selector app.kubernetes.io/instance=test-ha --for condition=Ready --timeout=300s
+          kubectl get po --show-labels -n $TESTNAMESPACE | grep test-ha | grep "1/1"
+          kubectl get po --show-labels -n $TESTNAMESPACE | grep test-ha | grep active=true
+          kubectl get sts -n $TESTNAMESPACE | grep test-ha
+          kubectl port-forward svc/test-ha-pubsubplus -n $TESTNAMESPACE 55555:55555 &
+          sleep 5
+          curl -O https://sftp.solace.com/download/SDKPERF_C_LINUX64
+          tar -xvf SDKPERF_C_LINUX64
+          pubSubTools/sdkperf_c -cip=tcp://localhost:55555 -mn=1000 -mr=0 -ptl=t1 -stl=t1 | grep "Total Messages"
+          echo "Running perfectly... starting chaos test"
+
+      - name: Testing the Operator - HA - Chaos Scenario 1 - Kill primary messaging node and confirm recovery for message delivery
+        run: |
+          kubectl get all
+          kubectl get pods -n $TESTNAMESPACE --selector node-type=message-routing-primary | grep Running | awk '{print $1}' | xargs kubectl delete pod
+          kubectl get all
+          kubectl get pods -n $TESTNAMESPACE --selector node-type=message-routing-primary | grep -v Running
+          kubectl port-forward svc/test-ha-pubsubplus -n $TESTNAMESPACE 55551:55555 &
+          sleep 5
+          pubSubTools/sdkperf_c -cip=tcp://localhost:55551 -mn=1000 -mr=0 -ptl=t1 -stl=t1 | grep "Total Messages"
+          echo "Test Case 1 Completed"
+
+
+      - name: Testing the Operator - HA - Chaos Scenario 2 - Update TLS Secret and confirm recovery for message delivery
+        run: |
+          openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout tlsupdated.key -out tlsupdated.crt -subj "/CN=*"
+          kubectl create secret tls test-tlsupdated --key="tlsupdated.key" --cert="tlsupdated.crt"
+          kubectl wait pods --selector node-type=message-routing-primary --for condition=Ready --timeout=300s
+          kubectl get all        
+          kubectl apply -f ci/manifests/chaos-manifests/admin-secret-update.yaml | grep "configured"
+          kubectl get all
+          kubectl wait pods --selector node-type=message-routing-primary --for condition=Ready --timeout=300s
+          kubectl get all
+          kubectl port-forward svc/test-ha-pubsubplus -n $TESTNAMESPACE 55557:55555 &
+          sleep 5
+          pubSubTools/sdkperf_c -cip=tcp://localhost:55557 -mn=1000 -mr=0 -ptl=t1 -stl=t1 | grep "Total Messages"
+          kubectl apply -f ci/manifests/eventbroker-ha.yaml | grep "configured"
+          echo "Test Case 2 Completed"
+
+      - name: Testing the Operator - HA - Chaos Scenario 3 - Update Scaling Parameters and confirm recovery for message delivery
+        run: |
+          kubectl wait pods --selector node-type=message-routing-primary --for condition=Ready --timeout=300s
+          kubectl get all
+          kubectl apply -f ci/manifests/chaos-manifests/scaling-parameter-update.yaml | grep "configured"
+          kubectl get all
+          kubectl wait pods --selector node-type=message-routing-primary --for condition=Ready --timeout=300s
+          kubectl get all
+          kubectl port-forward svc/test-ha-pubsubplus -n $TESTNAMESPACE 55558:55555 &
+          sleep 5
+          pubSubTools/sdkperf_c -cip=tcp://localhost:55558 -mn=1000 -mr=0 -ptl=t1 -stl=t1 | grep "Total Messages"
+          kubectl apply -f ci/manifests/eventbroker-ha.yaml | grep "configured"
+          echo "Test Case 3 Completed"
+
+      - name: Testing the Operator - HA - Chaos Scenario 4 - Kill 2 Nodes and confirm recovery for message delivery
+        run: |
+          kubectl wait pods --selector node-type=message-routing-primary --for condition=Ready --timeout=300s
+          kubectl get all
+          kubectl get pods -n $TESTNAMESPACE --selector node-type=message-routing-primary | grep Running | awk '{print $1}' | xargs kubectl delete pod
+          kubectl get pods -n $TESTNAMESPACE --selector node-type=message-routing-backup | grep Running | awk '{print $1}' | xargs kubectl delete pod
+          kubectl get all
+          kubectl wait pods --selector node-type=message-routing-primary --for condition=Ready --timeout=300s
+          kubectl get all
+          kubectl port-forward svc/test-ha-pubsubplus -n $TESTNAMESPACE 55560:55555 &
+          sleep 5
+          pubSubTools/sdkperf_c -cip=tcp://localhost:55560 -mn=1000 -mr=0 -ptl=t1 -stl=t1 | grep "Total Messages"
+          echo "Test Case 4 Completed"
+
+      - name: Testing the Operator - HA - Chaos Scenario 5 - Delete statefulsets and confirm recovery for message delivery
+        run: |
+          kubectl get sts -n $TESTNAMESPACE  | grep 1/1 | awk '{print $1}' | xargs kubectl delete sts
+          kubectl get all
+          kubectl wait pods --selector node-type=message-routing-primary --for condition=Ready --timeout=300s
+          sleep 120          
+          kubectl get all
+          kubectl port-forward svc/test-ha-pubsubplus -n $TESTNAMESPACE 55552:55555 &
+          sleep 5
+          pubSubTools/sdkperf_c -cip=tcp://localhost:55552 -mn=1000 -mr=0 -ptl=t1 -stl=t1 | grep "Total Messages"
+          echo "Test Case 5 Completed"
+
+      - name: Testing the Operator - HA - Chaos Scenario 6 - Update CPU and Memory and confirm recovery for message delivery
+        run: |
+          kubectl wait pods --selector node-type=message-routing-primary --for condition=Ready --timeout=300s
+          kubectl get all
+          kubectl apply -f ci/manifests/chaos-manifests/cpu-memory-update.yaml | grep "created"
+          kubectl get all
+          kubectl wait pods --selector node-type=message-routing-primary --for condition=Ready --timeout=300s
+          kubectl get all
+          kubectl port-forward svc/test-ha-pubsubplus -n $TESTNAMESPACE 55556:55555 &
+          sleep 5
+          pubSubTools/sdkperf_c -cip=tcp://localhost:55556 -mn=1000 -mr=0 -ptl=t1 -stl=t1 | grep "Total Messages"
+          kubectl delete -f ci/manifests/chaos-manifests/cpu-memory-update.yaml | grep "deleted"
+          echo "Test Case 6 Completed"
+      
+
+      - name: Cleanup
+        if: ${{ always() }}
+        run: |
+          kubectl delete eventbroker test-ha -n $TESTNAMESPACE | grep deleted
+          kubectl delete ns pubsubplus-operator-system --ignore-not-found
+          kubectl delete crd pubsubpluseventbrokers.pubsubplus.solace.com --ignore-not-found
+          kubectl delete pvc -n $TESTNAMESPACE --all --ignore-not-found
+          kubectl delete ns $TESTNAMESPACE --ignore-not-found
