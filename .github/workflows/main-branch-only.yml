@@ -3,7 +3,7 @@ name: Test when pushing to main branch
 on:
   push:
     branches:
-      - main
+      - RenamePackageFix
 
 jobs:
   test:
@@ -22,7 +22,7 @@ jobs:
           kubectl get pods -n kube-system
           echo "current-context:" $(kubectl config current-context)
           echo "environment-kubeconfig:" ${KUBECONFIG}
-          kubectl apply -f https://raw.githubusercontent.com/SolaceProducts/pubsubplus-kubernetes-quickstart/main/deploy/deploy.yaml
+          kubectl apply -f deploy/deploy.yaml
           kubectl rollout status deployment pubsubplus-eventbroker-operator -n pubsubplus-operator-system --timeout=30s
           kubectl get crd | grep eventbrokers
 

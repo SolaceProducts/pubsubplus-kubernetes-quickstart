@@ -89,7 +89,7 @@ The following commands directly install the Operator:
 
 ```bash
 # Download manifest for possible edit
-wget https://raw.githubusercontent.com/SolaceProducts/pubsubplus-kubernetes-operator/main/deploy/deploy.yaml
+wget https://raw.githubusercontent.com/SolaceProducts/pubsubplus-kubernetes-quickstart/main/deploy/deploy.yaml
 # Manifest creates a namespace and all K8s resources for the Operator deployment
 kubectl apply -f deploy.yaml
 # Wait for deployment to complete
