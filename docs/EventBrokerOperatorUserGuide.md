@@ -6,7 +6,7 @@ The following additional set of documentation is also available:
 
 * For a hands-on quick start, refer to the [Quick Start guide](/README.md).
 * For the `PubSubPlusEventBroker` custom resource (deployment configuration, or "broker spec") parameter options, refer to the [PubSub+ Event Broker Operator Parameters Reference](/docs/EventBrokerOperatorParametersReference.md).
-* For version-specific information, refer to the [Operator Release Notes](https://github.com/SolaceProducts/pubsubplus-kubernetes-operator/releases)
+* For version-specific information, refer to the [Operator Release Notes](https://github.com/SolaceProducts/pubsubplus-kubernetes-quickstart/releases)
 
 This guide is focused on deploying the event broker using the Operator, which is the preferred way to deploy. Note that a [Helm-based deployment](https://github.com/SolaceProducts/pubsubplus-kubernetes-helm-quickstart) is also supported but out of scope for this document.
 
@@ -1418,12 +1418,12 @@ The default namespace is `operators` for operators installed from OperatorHub.
 
 #### From Command Line
 
-Use the `deploy.yaml` from the [PubSub+ Event Broker Operator GitHub project](https://github.com/SolaceProducts/pubsubplus-kubernetes-operator). It includes a collection of manifests for all the Kubernetes resources that must be created.
+Use the `deploy.yaml` from the [PubSub+ Event Broker Operator GitHub project](https://github.com/SolaceProducts/pubsubplus-kubernetes-quickstart). It includes a collection of manifests for all the Kubernetes resources that must be created.
 
 The following example creates a default deployment. Edit the `deploy.yaml` before applying to customize options:
 ```sh
 # Download manifest for possible edit
-wget https://github.com/SolaceProducts/pubsubplus-kubernetes-operator/blob/main/deploy/deploy.yaml
+wget https://github.com/SolaceProducts/pubsubplus-kubernetes-quickstart/blob/main/deploy/deploy.yaml
 # Edit manifest as required
 # Manifest creates a namespace and all K8s resources for the Operator deployment
 kubectl apply -f deploy.yaml
@@ -1487,7 +1487,7 @@ If the Operator has been installed directly from the command line then update `d
 
 OLM automatically manages the CRD and Operator updates.
 
-A direct installation requires taking `deploy.yaml` from the correctly tagged version of the [PubSub+ Event Broker Operator GitHub project](https://github.com/SolaceProducts/pubsubplus-kubernetes-operator), because it includes the corresponding version of the CRD. 
+A direct installation requires taking `deploy.yaml` from the correctly tagged version of the [PubSub+ Event Broker Operator GitHub project](https://github.com/SolaceProducts/pubsubplus-kubernetes-quickstart), because it includes the corresponding version of the CRD. 
 
 >Note: Although the goal is to keep the CRD API versions backwards compatible, it might become necessary to introduce a new API version. In that case, detailed upgrade instructions will be provided in the Release Notes.
 
