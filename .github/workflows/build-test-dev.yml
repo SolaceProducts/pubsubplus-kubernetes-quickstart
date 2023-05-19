@@ -1,7 +1,9 @@
-name: Build and Test
+name: Build and Test in Development phase
 
 on:
   push:
+    branches-ignore:
+      - main
 
 jobs:
   build:
