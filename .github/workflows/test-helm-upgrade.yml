@@ -38,7 +38,7 @@ jobs:
           tar -xvf SDKPERF_C_LINUX64
           openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout tls.key -out tls.crt -subj "/CN=*"
           kubectl create secret tls test-tls --key="tls.key" --cert="tls.crt"
-          helm repo add solacecharts https://solaceproducts.github.io/pubsubplus-kubernetes-quickstart/helm-charts
+          helm repo add solacecharts https://solaceproducts.github.io/pubsubplus-kubernetes-helm-quickstart/helm-charts
           helm install my-release solacecharts/pubsubplus-dev --set solace.size=dev,solace.redundancy=false,solace.podModifierEnabled=true,tls.enabled=true,tls.serverCertificatesSecret=test-tls,solace.usernameAdminPassword=admin
           echo "Waiting for broker to become active"
           until kubectl get pods --show-labels | grep pubsubplus-dev-0 | grep -m 1 -E '1/1'; do sleep 10; done
