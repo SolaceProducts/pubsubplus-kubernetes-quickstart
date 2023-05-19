@@ -3,11 +3,11 @@ name: Test when pushing to main branch
 on:
   push:
     branches:
-      - RenamePackageFix
+      - main
 
 jobs:
   test:
-    name: Deploy Operator the deploy broker
+    name: Deploy Operator then deploy broker
     runs-on: ubuntu-latest
     steps:
       - name: Check out code
@@ -26,7 +26,7 @@ jobs:
           kubectl rollout status deployment pubsubplus-eventbroker-operator -n pubsubplus-operator-system --timeout=30s
           kubectl get crd | grep eventbrokers
 
-      - name: Deploy broker - nonHA Minimal
+      - name: Deploy  and test broker - nonHA Minimal
         run: |
           echo "
           apiVersion: pubsubplus.solace.com/v1beta1
