@@ -1,4 +1,4 @@
-name: Test when pushing to main branch
+name: Test deploy
 
 on:
   push:
