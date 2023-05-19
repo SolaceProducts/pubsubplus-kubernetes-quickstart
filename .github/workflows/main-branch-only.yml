@@ -3,7 +3,7 @@ name: Test when pushing to main branch
 on:
   push:
     branches:
-      - RenamePackageFix
+      - main
 
 jobs:
   test:
