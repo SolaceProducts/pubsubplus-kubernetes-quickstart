@@ -1,0 +1,53 @@
+name: Test when pushing to main branch
+
+on:
+  push:
+    branches:
+      - RenamePackageFix
+
+jobs:
+  test:
+    name: Deploy Operator the deploy broker
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v1
+
+      - name: Create k8s Kind Cluster
+        uses: helm/kind-action@v1.3.0
+
+      - name: Testing operator deployment
+        run: |
+          kubectl cluster-info
+          kubectl get pods -n kube-system
+          echo "current-context:" $(kubectl config current-context)
+          echo "environment-kubeconfig:" ${KUBECONFIG}
+          kubectl apply -f https://raw.githubusercontent.com/SolaceProducts/pubsubplus-kubernetes-quickstart/main/deploy/deploy.yaml
+          kubectl rollout status deployment pubsubplus-eventbroker-operator -n pubsubplus-operator-system --timeout=30s
+          kubectl get crd | grep eventbrokers
+
+      - name: Deploy broker - nonHA Minimal
+        run: |
+          echo "
+          apiVersion: pubsubplus.solace.com/v1beta1
+          kind: PubSubPlusEventBroker
+          metadata:
+            name: test-broker
+          spec:
+            developer: true" > developer.yaml
+          # Then apply it
+          kubectl apply -f developer.yaml | grep "test-broker created"
+          sleep 5 ; kubectl get all
+          kubectl wait pods --selector app.kubernetes.io/instance=test-broker --for condition=Ready --timeout=120s
+          kubectl get po --show-labels | grep test-broker | grep "1/1"
+          kubectl get po --show-labels | grep test-broker | grep active=true
+          kubectl get sts | grep test-broker
+          kubectl port-forward svc/test-broker-pubsubplus 55555:55555 &
+          sleep 5
+          curl -O https://sftp.solace.com/download/SDKPERF_C_LINUX64
+          tar -xvf SDKPERF_C_LINUX64
+          pubSubTools/sdkperf_c -cip=tcp://localhost:55555 -mn=1000 -mr=0 -ptl=t1 -stl=t1 | grep "Total Messages"
+
+      - name: Delete broker
+        run: |
+          kubectl delete eventbroker test-broker | grep deleted
