@@ -29,8 +29,6 @@ __Contents:__
 
 ## Overview
 
-This project is a best practice template intended for development and demo purposes. The tested and recommended PubSub+ Software Event Broker version is 10.3.
-
 This document provides a quick getting started guide to install a software event broker in various configurations onto a [Kubernetes](https://kubernetes.io/docs/home/) cluster using the PubSub+ Event Broker Operator. Note that a [Helm-based deployment](https://github.com/SolaceProducts/pubsubplus-kubernetes-helm-quickstart) of the broker is also supported but out of scope for this document.
 
 These instructions apply to any platform supporting Kubernetes, and include specific hints for setting up a simple [MiniKube](https://kubernetes.io/docs/tasks/tools/#minikube) or [Kind](https://kubernetes.io/docs/tasks/tools/#kind) deployment on a Linux-based machine.
@@ -40,6 +38,7 @@ The following Kubernetes platforms have been tested:
 - Google Kubernetes Engine (GKE)
 - OpenShift 4 Platform on AWS
 
+The tested and recommended PubSub+ Software Event Broker version is 10.3.
 
 ### Additional Documentation
 
