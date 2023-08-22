@@ -58,10 +58,11 @@ get_router_remote_config_state() {
 if [ "${BROKER_REDUNDANCY}" = "true" ]; then
   # HA config
   IFS='-' read -ra host_array <<< $(hostname)
-  node_ordinal=${host_array[-1]}
-  password=$(cat /mnt/disks/secrets/username_admin_password)
+  is_monitor=$([ ${host_array[-2]} = "m" ] && echo 1 || echo 0)
+  is_backup=$([ ${host_array[-2]} = "b" ] && echo 1 || echo 0)
+  password=$(cat /mnt/disks/secrets/admin/username_admin_password)
   # For monitor node just check for redundancy; active label will never be set
-  if [ "${node_ordinal}" = "2" ]; then
+  if [ "${is_monitor}" = "1" ]; then
     # Check redundancy
     results=$(/mnt/disks/solace/semp_query.sh -n admin -p ${password} -u http://localhost:8080 \
             -q "<rpc><show><redundancy/></show></rpc>" \
@@ -106,7 +107,7 @@ if [ "${BROKER_REDUNDANCY}" = "true" ]; then
       rm -f ${FINAL_ACTIVITY_LOGGED_TRACKING_FILE}; exit 1
   esac
   # At this point analyzing readiness after health check returned 503 - checking if Event Broker is Standby
-  case "${node_ordinal}" in
+  case "${is_backup}" in
     "0")
       config_role="primary"
       ;;
