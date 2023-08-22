@@ -7,12 +7,13 @@ echo "$(date) INFO: ${APP}-PubSub+ broker node starting. HA flags: HA_configured
 echo "$(date) INFO: ${APP}-Waiting for management API to become available"
 password=$(cat /mnt/disks/secrets/admin/username_admin_password)
 INITIAL_STARTUP_FILE=/var/lib/solace/var/k8s_initial_startup_marker
-loop_guard=120
+loop_guard=60
 pause=10
 count=0
-while [ ${count} -lt ${loop_guard} ]; do
+# Wait for Solace Management API
+while [ ${count} -lt ${loop_guard} ]; do 
   if /mnt/disks/solace/semp_query.sh -n admin -p ${password} -u http://localhost:8080 -t ; then
-  break
+    break
   fi
   run_time=$((${count} * ${pause}))
   ((count++))
@@ -26,16 +27,25 @@ fi
 if [ "${BROKER_TLS_ENABLED}" = "true" ]; then
   rm /dev/shm/server.cert # remove as soon as possible
   cert_results=$(curl --write-out '%{http_code}' --silent --output /dev/null -k -X PATCH -u admin:${password} https://localhost:1943/SEMP/v2/config/ \
-  -H "content-type: application/json" \
-  -d "{\"tlsServerCertContent\":\"$(cat /mnt/disks/certs/server/${BROKER_CERT_FILENAME} /mnt/disks/certs/server/${BROKER_CERTKEY_FILENAME} | awk '{printf "%s\\n", $0}')\"}")
+    -H "content-type: application/json" \
+    -d "{\"tlsServerCertContent\":\"$(cat /mnt/disks/certs/server/${BROKER_CERT_FILENAME} /mnt/disks/certs/server/${BROKER_CERTKEY_FILENAME} | awk '{printf "%s\\n", $0}')\"}")
   if [ "${cert_results}" != "200" ]; then
-  echo "$(date) ERROR: ${APP}-Unable to set the server certificate, exiting"  >&2
-  exit 1
+    echo "$(date) ERROR: ${APP}-Unable to set the server certificate, exiting"  >&2
+    exit 1
   fi
   echo "$(date) INFO: ${APP}-Server certificate has been configured"
   # Future improvement: enable CA configuration from secret ca.crt
 fi
 if [ "${BROKER_REDUNDANCY}" = "true" ]; then
+  # Function to get remote sync state
+  get_router_remote_config_state() {
+    # Params: $1 is property of config to return for router
+    routerresults=$(/mnt/disks/solace/semp_query.sh -n admin -p ${password} -u http://localhost:8080 \
+              -q "<rpc><show><config-sync><database/><router/><remote/></config-sync></show></rpc>" \
+              -v "/rpc-reply/rpc/show/config-sync/database/remote/tables/table[1]/source-router/${1}")
+    routerremotesync_result=$(echo ${routerresults} | xmllint -xpath "string(returnInfo/valueSearchResult)" -)
+    echo $routerremotesync_result
+  }
   # for non-monitor nodes setup redundancy and config-sync
   if [ "${is_monitor}" = "0" ]; then
   resync_step_required=""

@@ -39,7 +39,7 @@ if [[ ${url} = "" || ${username} = "" || ${password} = "" ]]; then
   echo  '<returnInfo><errorInfo>missing parameter</errorInfo></returnInfo>'
   exit 1
 fi
-if [ "$(curl --write-out '%{http_code}' --silent --output /dev/null -u ${username}:${password} ${url}/SEMP)" != "200" ] ; then
+if [ "$(curl --write-out '%{http_code}' --silent --output /dev/null -u ${username}:${password} ${url}/SEMP -d '<rpc><show><version/></show></rpc>')" != "200" ] ; then
   echo  "<returnInfo><errorInfo>management host is not responding</errorInfo></returnInfo>"
   exit 1
 fi
