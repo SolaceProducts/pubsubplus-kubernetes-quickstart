@@ -34,7 +34,6 @@ if [ "${BROKER_TLS_ENABLED}" = "true" ]; then
     exit 1
   fi
   echo "$(date) INFO: ${APP}-Server certificate has been configured"
-  # Future improvement: enable CA configuration from secret ca.crt
 fi
 if [ "${BROKER_REDUNDANCY}" = "true" ]; then
   # Function to get remote sync state

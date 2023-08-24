@@ -37,18 +37,18 @@ if [ "${BROKER_REDUNDANCY}" = "true" ]; then
 
   # Non Monitor Nodes
   if [ "${is_monitor}" = "0" ]; then
-  case ${is_backup} in
-  0)
-    export nodetype=message_routing
-    export redundancy_matelink_connectvia=${service}-b-0.${service}-discovery.${namespace}.svc
-    export redundancy_activestandbyrole=primary
-    ;;
-  1)
-    export nodetype=message_routing
-    export redundancy_matelink_connectvia=${service}-p-0.${service}-discovery.${namespace}.svc
-    export redundancy_activestandbyrole=backup
-    ;;
-  esac
+    case ${is_backup} in
+    0)
+      export nodetype=message_routing
+      export redundancy_matelink_connectvia=${service}-b-0.${service}-discovery.${namespace}.svc
+      export redundancy_activestandbyrole=primary
+      ;;
+    1)
+      export nodetype=message_routing
+      export redundancy_matelink_connectvia=${service}-p-0.${service}-discovery.${namespace}.svc
+      export redundancy_activestandbyrole=backup
+      ;;
+    esac
   else
   export nodetype=monitoring
   fi
