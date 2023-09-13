@@ -15,15 +15,15 @@ if [ "${BROKER_TLS_ENABLED}" = "true" ]; then
   cat /mnt/disks/certs/server/${BROKER_CERT_FILENAME} /mnt/disks/certs/server/${BROKER_CERTKEY_FILENAME} > /dev/shm/server.cert
   export tls_servercertificate_filepath="/dev/shm/server.cert"
 fi
+# Deal with the fact we cannot accept "-" in router names
+export routername=$(echo $(hostname) | sed 's/-//g')
 if [ "${BROKER_REDUNDANCY}" = "true" ]; then
   IFS='-' read -ra host_array <<< $(hostname)
   is_monitor=$([ ${host_array[-2]} = "m" ] && echo 1 || echo 0)
   is_backup=$([ ${host_array[-2]} = "b" ] && echo 1 || echo 0)
   namespace=$(echo $STATEFULSET_NAMESPACE)
   service=${BROKERSERVICES_NAME}
-  # Deal with the fact we cannot accept "-" in broker names
   service_name=$(echo ${service} | sed 's/-//g')
-  export routername=$(echo $(hostname) | sed 's/-//g')
   export redundancy_enable=yes
   export configsync_enable=yes
   export redundancy_authentication_presharedkey_key=$(cat /mnt/disks/secrets/presharedauthkey/preshared_auth_key | base64)
@@ -37,18 +37,18 @@ if [ "${BROKER_REDUNDANCY}" = "true" ]; then
 
   # Non Monitor Nodes
   if [ "${is_monitor}" = "0" ]; then
-  case ${is_backup} in
-  0)
-    export nodetype=message_routing
-    export redundancy_matelink_connectvia=${service}-b-0.${service}-discovery.${namespace}.svc
-    export redundancy_activestandbyrole=primary
-    ;;
-  1)
-    export nodetype=message_routing
-    export redundancy_matelink_connectvia=${service}-p-0.${service}-discovery.${namespace}.svc
-    export redundancy_activestandbyrole=backup
-    ;;
-  esac
+    case ${is_backup} in
+    0)
+      export nodetype=message_routing
+      export redundancy_matelink_connectvia=${service}-b-0.${service}-discovery.${namespace}.svc
+      export redundancy_activestandbyrole=primary
+      ;;
+    1)
+      export nodetype=message_routing
+      export redundancy_matelink_connectvia=${service}-p-0.${service}-discovery.${namespace}.svc
+      export redundancy_activestandbyrole=backup
+      ;;
+    esac
   else
   export nodetype=monitoring
   fi
