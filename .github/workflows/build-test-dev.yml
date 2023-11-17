@@ -81,6 +81,31 @@ jobs:
       - name: Build image and push GitHub Container Registry
         run: make docker-push
 
+
+      - name: Run Whitesource Action
+        uses: SolaceDev/Mend-Scan-GHA@v1.0.0
+        with:
+          wssURL: https://saas.whitesourcesoftware.com/agent
+          apiKey: ${{ secrets.WSS_API_KEY }}
+          productName: 'pubsubplus-kubernetes-operator'
+          projectName: 'pubsubplus-kubernetes-operator'
+          configFile: 'ci/whitesource/whitesource-agent.config'
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ghcr.io/solacedev/pubsubplus-eventbroker-operator:1.0.2-dev
+          format: 'sarif'
+          severity: 'CRITICAL,HIGH'
+          output: 'trivy-results.sarif'
+
+      - name: Uploads Trivy Scan Reports
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v2
+        with:
+          path: |
+            trivy-results.sarif
+
   int-minimal-non-ha:
     # if: ${{ false }}  # disable for now
     needs: build

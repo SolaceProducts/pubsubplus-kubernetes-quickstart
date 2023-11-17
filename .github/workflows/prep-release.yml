@@ -4,7 +4,7 @@ on:
       release_tag:
         description: 'Release tag'
         required: true
-        default: '1.0.1-dev'
+        default: '1.0.2-dev'
       prep_internal_release:
         # Need to distinguish between internal and external releases
         # Internal release: Will use default internal location for created images (ghcr.io) and will tag and push operator candidate there
@@ -114,7 +114,7 @@ jobs:
           docker push `echo $CATALOG | awk '{print $1}'`:latest
 
       - name: Run Whitesource Action
-        uses: mercari/Whitesource-Scan-Action@v1.0.0
+        uses: SolaceDev/Mend-Scan-GHA@v1.0.0
         with:
           wssURL: https://saas.whitesourcesoftware.com/agent
           apiKey: ${{ secrets.WSS_API_KEY }}

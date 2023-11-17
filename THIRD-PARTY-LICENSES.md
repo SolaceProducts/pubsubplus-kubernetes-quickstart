@@ -5568,7 +5568,7 @@ THE SOFTWARE.
 
 
 * Name: golang.org/x/crypto/pkcs12
-* License: [BSD-3-Clause](https://cs.opensource.google/go/x/crypto/+/v0.1.0:LICENSE)
+* License: [BSD-3-Clause](https://cs.opensource.google/go/x/crypto/+/v0.14.0:LICENSE)
 
 LICENSE REQUIREMENTS & SPECIFICATIONS
 ======================================
@@ -5605,7 +5605,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 * Name: golang.org/x/net
-* License: [BSD-3-Clause](https://cs.opensource.google/go/x/net/+/v0.7.0:LICENSE)
+* License: [BSD-3-Clause](https://cs.opensource.google/go/x/net/+/v0.17.0:LICENSE)
 
 LICENSE REQUIREMENTS & SPECIFICATIONS
 ======================================
@@ -5679,7 +5679,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 * Name: golang.org/x/sys/unix
-* License: [BSD-3-Clause](https://cs.opensource.google/go/x/sys/+/v0.5.0:LICENSE)
+* License: [BSD-3-Clause](https://cs.opensource.google/go/x/sys/+/v0.13.0:LICENSE)
 
 LICENSE REQUIREMENTS & SPECIFICATIONS
 ======================================
@@ -5716,7 +5716,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 * Name: golang.org/x/term
-* License: [BSD-3-Clause](https://cs.opensource.google/go/x/term/+/v0.5.0:LICENSE)
+* License: [BSD-3-Clause](https://cs.opensource.google/go/x/term/+/v0.13.0:LICENSE)
 
 LICENSE REQUIREMENTS & SPECIFICATIONS
 ======================================
@@ -5753,7 +5753,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 * Name: golang.org/x/text
-* License: [BSD-3-Clause](https://cs.opensource.google/go/x/text/+/v0.7.0:LICENSE)
+* License: [BSD-3-Clause](https://cs.opensource.google/go/x/text/+/v0.13.0:LICENSE)
 
 LICENSE REQUIREMENTS & SPECIFICATIONS
 ======================================
