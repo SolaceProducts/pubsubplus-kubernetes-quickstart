@@ -1,21 +1,14 @@
-name: Build and Test in Development phase
-
+name: Vuln check
 on:
-  push:
-    branches-ignore:
-      - main
+  schedule:
+    - cron: '0 */6 * * *'
 
-env:
-  VERSION: 1.0.2-dev
-  IMAGE_NAME: pubsubplus-eventbroker-operator
-  VAULT_ADDR: https://vault.maas-vault-prod.solace.cloud:8200
-  GCLOUD_PROJECT_ID_DEV: stellar-arcadia-205014
-  GCLOUD_PROJECT_ID_STAGING: gcp-maas-staging
-  GCLOUD_PROJECT_ID_PROD: gcp-maas-prod
-
+permissions:
+  contents: read
+  security-events: write
 
 jobs:
-  build:
+  vuln-check:
     name: Build & push image
     runs-on: ubuntu-latest
     permissions:
@@ -38,59 +31,6 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.RELEASE_GITHUB_TOKEN }}
-
-      - name: Create k8s Kind Cluster for Unit Tests
-        uses: helm/kind-action@v1.3.0
-
-      - name: Create Secret
-        run: |
-          kubectl create secret generic regcred --from-file=.dockerconfigjson=${HOME}/.docker/config.json --type=kubernetes.io/dockerconfigjson
-
-      - name: Unit Test and Coverage Report.
-        run: |
-            mkdir -p reports
-            make test-coverage
-
-      - name: Upload Test coverage Reports
-        if: ${{ always() }}
-        uses: actions/upload-artifact@v3
-        with:
-          name: code-coverage-report
-          path: |
-            ./reports/cover.out
-            ./reports/cover.html
-
-      - name: Go Coverage Badge
-        uses: tj-actions/coverage-badge-go@v2
-        with:
-          filename: ./reports/coverage.out
-
-      - name: Verify Changed files
-        uses: tj-actions/verify-changed-files@v12
-        id: verify-changed-files
-        with:
-          files: README.md
-
-      - name: Commit changes
-        if: steps.verify-changed-files.outputs.files_changed == 'true'
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add README.md
-          git commit -m "chore: Updated coverage badge."
-
-      # - name: Push changes except for the release branch or main (which is protected)
-      #   if: ${{ !startsWith(github.ref_name, 'v1.') && (github.ref_name != 'main') && (steps.verify-changed-files.outputs.files_changed == 'true') }}
-      #   uses: ad-m/github-push-action@master
-      #   with:
-      #     github_token: ${{ github.token }}
-      #     force: true
-      #     branch: ${{ github.ref }}
-
-      - name: Lint and Build
-        run: |
-          go fmt ./... | wc -l | grep 0
-          make docker-build
 
       - name: Set up Docker Buildx
         id: buildx
@@ -182,46 +122,3 @@ jobs:
         with:
           path: |
             trivy-results.sarif
-
-
-  int-minimal-non-ha:
-    # if: ${{ false }}  # disable for now
-    needs: build
-    uses: ./.github/workflows/test-minimal-params.yml
-    secrets: inherit
-
-  int-minimal-ha:
-    # if: ${{ false }}  # disable for now
-    needs: build
-    uses: ./.github/workflows/test-minimal-params-ha.yml
-    secrets: inherit
-
-  int-full-non-ha:
-    # if: ${{ false }}  # disable for now
-    needs: build
-    uses: ./.github/workflows/test-full-params.yml
-    secrets: inherit
-
-  int-full-ha:
-    # if: ${{ false }}  # disable for now
-    needs: build
-    uses: ./.github/workflows/test-full-params-ha.yml
-    secrets: inherit
-
-  int-broker-version-update:
-    # if: ${{ false }}  # disable for now
-    needs: build
-    uses: ./.github/workflows/test-broker-upgrade-update.yml
-    secrets: inherit
-
-  int-helm-to-operator-upgrade:
-    # if: ${{ false }}  # disable for now
-    needs: build
-    uses: ./.github/workflows/test-helm-upgrade.yml
-    secrets: inherit
-
-  int-chaos-mesh:
-    # if: ${{ false }}  # disable for now
-    needs: build
-    uses: ./.github/workflows/test-broker-chaos-situation.yml
-    secrets: inherit
