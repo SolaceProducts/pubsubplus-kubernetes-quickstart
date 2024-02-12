@@ -138,7 +138,7 @@ jobs:
         with:
           docker_image_to_check: gcr.io/${{ env.GCLOUD_PROJECT_ID_DEV }}/${{ env.IMAGE_NAME }}:${{ env.VERSION }}
           prisma_repository_name: "${{ env.GCLOUD_PROJECT_ID_DEV }}/${{ env.IMAGE_NAME }}"
-          project_squad: "mission-control"
+          project_squad: "launchpad"
           prisma_jira_check: "False"
 
       - name: Build image and push GitHub Container Registry
