@@ -32,6 +32,7 @@ __Contents:__
     - [Broker Scaling](#broker-scaling)
       - [Vertical Scaling](#vertical-scaling)
         - [Minimum footprint deployment for Developers](#minimum-footprint-deployment-for-developers)
+        - [Forward Compatibility for Vertical Scaling](#forward-compatibility-for-vertical-scaling)
     - [Storage](#storage)
       - [Dynamically allocated storage from a Storage Class](#dynamically-allocated-storage-from-a-storage-class)
         - [Using an existing Storage Class](#using-an-existing-storage-class)
@@ -313,6 +314,58 @@ A minimum footprint deployment option is available for development purposes but 
 To activate, set `spec.developer` to `true`.
 
 >Important: If set to `true`, `spec.developer` has precedence over any `spec.systemScaling` vertical scaling settings.
+
+##### Forward Compatibility for Vertical Scaling
+
+Use `extraEnvVars`, which allows configuration of [additional properties for broker pods](#broker-pod-additional-properties) to ensure forward compatibility of `scalingParameters`.
+
+For example from 10.7.x of Solace PubSub+ Software Event Broker, new scaling parameters have been added.
+
+* [Maximum Number of Kafka Bridges](https://docs.solace.com/Software-Broker/System-Scaling-Parameters.htm#max-kafka-bridges)
+* [Maximum Number of Kafka Broker Connections](https://docs.solace.com/Software-Broker/System-Scaling-Parameters.htm#max-kafka-broker-connections)
+
+Configure these parameters outside of `systemScaling` using `extraEnvVars`, as shown below:
+
+```yaml
+apiVersion: pubsubplus.solace.com/v1beta1
+kind: PubSubPlusEventBroker
+metadata:
+  name: ha-scaling-param-extra
+spec:
+  extraEnvVars:
+    - name: system_scaling_maxkafkabrokerconnectioncount
+      value: "300"
+    - name: system_scaling_maxkafkabridgecount
+      value: "10"
+  systemScaling:
+    messagingNodeMemory: "8025Mi"
+    messagingNodeCpu: "2"
+    maxSpoolUsage: 500
+    maxQueueMessages: 100
+    maxConnections: 1000
+  redundancy: false
+```
+
+When the broker pod has started, confirm consistency of values with the command `show system` after having [CLI access to individual event broker](#cli-access-to-individual-event-brokers).
+
+```
+ha-scaling-param-extra-pubsubplus-p-0> show system
+
+System Uptime: 0d 0h 1m 13s
+Last Restart Reason: Unknown reason
+
+Scaling:
+Max Connections: 1000
+Max Queue Messages: 100M
+Max Kafka Bridges: 10
+Max Kafka Broker Connections: 300
+
+Topic Routing:
+Subscription Exceptions: Enabled
+Subscription Exceptions Defer: Enabled
+```
+
+>Note: Please verify that the value aligns with the `scalingParameter` values. This custom method of configuring `scalingParameters` is only effective if it's supported as environment variables and values consistent with what the Solace PubSub+ Software Event Broker expects. Use the [Resource-Calculator](https://docs.solace.com/Admin-Ref/Resource-Calculator/pubsubplus-resource-calculator.html) as guide.
 
 ### Storage
 
