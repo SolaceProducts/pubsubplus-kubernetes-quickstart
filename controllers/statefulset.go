@@ -455,6 +455,12 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(sts *a
 		sts.Spec.Template.Spec.SecurityContext.FSGroup = &m.Spec.SecurityContext.FSGroup
 	}
 
+	// Set container security context
+	// This SecurityContext is for main pubsub container
+	if m.Spec.ContainerSpec.SecurityContext != nil {
+		sts.Spec.Template.Spec.Containers[0].SecurityContext = m.Spec.ContainerSpec.SecurityContext
+	}
+
 	//Set TLS configuration
 	if m.Spec.BrokerTLS.Enabled {
 		allVolumes := sts.Spec.Template.Spec.Volumes

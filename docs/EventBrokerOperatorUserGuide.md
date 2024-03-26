@@ -793,6 +793,28 @@ spec:
 ```
 Above are generally the defaults if not provided. It must be noted that the Operator detects whether the current Kubernetes environment is OpenShift. In that case, if not provided, the default `runAsUser` and `fsGroup` are set to unspecified because otherwise they would conflict with the OpenShift "restricted" Security Context Constraint settings for a project.
 
+On top of pod securityContext, container securityContext can also be configured. It will be set on pubsubplus container. 
+```
+spec:
+  container:
+    securityContext:
+      runAsNonRoot: true
+      runAsGroup: 1000001
+      runAsUser: 1000001
+      allowPrivilegeEscalation: false
+      privileged: false
+      capabilities:
+        drop:
+          - ALL
+      seLinuxOptions:
+        level: s0:c123,c456
+        role: object_r
+        type: svirt_sandbox_file_t
+        user: system_u
+      seccompProfile:
+        type: RuntimeDefault
+```
+
 #### Using Network Policies
 
 In a controlled environment it might be necessary to configure a [NetworkPolicy](https://kubernetes.io/docs/concepts/services-networking/network-policies/ ) to enable [required communication](#serving-pod-selection) between the broker nodes as well as between the broker container and the API server to set the Pod label.
