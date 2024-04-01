@@ -77,7 +77,7 @@ func (r *PubSubPlusEventBrokerReconciler) createStatefulsetForEventBroker(stsNam
 				},
 				Spec: corev1.PersistentVolumeClaimSpec{
 					AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
-					Resources: corev1.ResourceRequirements{
+					Resources: corev1.VolumeResourceRequirements{
 						Requests: map[corev1.ResourceName]resource.Quantity{
 							corev1.ResourceStorage: resource.MustParse(storageSize),
 						},
@@ -614,6 +614,11 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(sts *a
 		sts.Spec.Template.Spec.Affinity = affinityConfiguration
 	}
 
+	tolerationConfiguration := getNodeTolerationDetails(m.Spec.BrokerNodeAssignment, nodeType)
+	if tolerationConfiguration != nil {
+		sts.Spec.Template.Spec.Tolerations = tolerationConfiguration
+	}
+
 }
 
 func (r *PubSubPlusEventBrokerReconciler) getBrokerImageDetails(bm *eventbrokerv1beta1.BrokerImage) string {
@@ -650,6 +655,20 @@ func getNodeAffinityDetails(na []eventbrokerv1beta1.NodeAssignment, nodeType str
 		) {
 			if (corev1.Affinity{}) != nodeAssignment.Spec.Affinity {
 				return &nodeAssignment.Spec.Affinity
+			}
+		}
+	}
+	return nil
+}
+
+func getNodeTolerationDetails(na []eventbrokerv1beta1.NodeAssignment, nodeType string) []corev1.Toleration {
+	for _, nodeAssignment := range na {
+		if strings.Contains(
+			strings.ToLower(nodeType),
+			strings.ToLower(nodeAssignment.Name),
+		) {
+			if len(nodeAssignment.Spec.Tolerations) > 0 {
+				return nodeAssignment.Spec.Tolerations
 			}
 		}
 	}
