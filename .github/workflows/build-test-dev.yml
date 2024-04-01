@@ -246,7 +246,7 @@ jobs:
     secrets: inherit
 
   taints-and-tolerations:
-    # if: ${{ false }}  # disable for now
+    if: ${{ false }}  # disable for now as GKE Autopilot does not allow taints after creation
     needs: build
     uses: ./.github/workflows/test-taints-and-toleration.yml
     secrets: inherit
