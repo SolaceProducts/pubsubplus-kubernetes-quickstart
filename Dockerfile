@@ -1,5 +1,5 @@
 # Build the manager binary
-FROM golang:1.20.12 as builder
+FROM golang:1.21 as builder
 
 WORKDIR /workspace
 # Copy the Go Modules manifests
@@ -23,8 +23,8 @@ FROM registry.access.redhat.com/ubi9/ubi-minimal:latest
 
 LABEL name="solace/pubsubplus-eventbroker-operator"
 LABEL vendor="Solace Corporation"
-LABEL version="1.0.2"
-LABEL release="1.0.2"
+LABEL version="1.0.3"
+LABEL release="1.0.3"
 LABEL summary="Solace PubSub+ Event Broker Kubernetes Operator"
 LABEL description="The Solace PubSub+ Event Broker Kubernetes Operator deploys and manages the lifecycle of PubSub+ Event Brokers"
 

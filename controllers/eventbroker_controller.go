@@ -18,6 +18,9 @@ package controllers
 
 import (
 	"fmt"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"strconv"
 
 	// "reflect"
@@ -44,11 +47,7 @@ import (
 	eventbrokerv1beta1 "github.com/SolaceProducts/pubsubplus-operator/api/v1beta1"
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/fields"
-	"sigs.k8s.io/controller-runtime/pkg/builder"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
-	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 // PubSubPlusEventBrokerReconciler reconciles a PubSubPlusEventBroker object
@@ -817,20 +816,20 @@ func (r *PubSubPlusEventBrokerReconciler) SetupWithManager(mgr ctrl.Manager) err
 		Owns(&corev1.Service{}).
 		Owns(&corev1.ConfigMap{}).
 		Watches(
-			&source.Kind{Type: &corev1.Secret{}},
+			&corev1.Secret{},
 			handler.EnqueueRequestsFromMapFunc(r.reconcileRequestsForEventBrokersDependingOnTlsSecret),
 			builder.WithPredicates(predicate.ResourceVersionChangedPredicate{}),
 		).
 		Complete(r)
 }
 
-func (r *PubSubPlusEventBrokerReconciler) reconcileRequestsForEventBrokersDependingOnTlsSecret(secret client.Object) []reconcile.Request {
+func (r *PubSubPlusEventBrokerReconciler) reconcileRequestsForEventBrokersDependingOnTlsSecret(ctx context.Context, secret client.Object) []reconcile.Request {
 	ebDeployments := &eventbrokerv1beta1.PubSubPlusEventBrokerList{}
 	listOps := &client.ListOptions{
 		FieldSelector: fields.OneTermEqualSelector(dependencyTlsSecretField, secret.GetName()),
 		Namespace:     secret.GetNamespace(),
 	}
-	err := r.List(context.TODO(), ebDeployments, listOps)
+	err := r.List(ctx, ebDeployments, listOps)
 	if err != nil {
 		return []reconcile.Request{}
 	}
