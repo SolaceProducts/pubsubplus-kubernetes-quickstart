@@ -45,7 +45,7 @@ PubSub+ Event Broker
       <td>true</td>
       </tr>
       <tr>
-      <td><b><a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#objectmeta-v1-meta">metadata</a></b></td>
+      <td><b><a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#objectmeta-v1-meta">metadata</a></b></td>
       <td>object</td>
       <td>Refer to the Kubernetes API documentation for the fields of the `metadata` field.</td>
       <td>true</td>
@@ -678,7 +678,14 @@ If provided defines the labels to constrain the PubSubPlusEventBroker node to sp
         <td><b>nodeSelector</b></td>
         <td>map[string]string</td>
         <td>
-          NodeSelector if provided defines the exact labels of nodes to which PubSubPlusEventBroker nodes can be scheduled<br/>
+          NodeSelector if provided defines the exact labels of nodes to which PubSubPlusEventBroker nodes can be scheduled<br/> 
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#pubsubpluseventbrokerspecnodeassignmentindexspectolerationsindex">tolerations</a></b></td>
+        <td>[]object</td>
+        <td>
+          Toleration if provided defines the exact properties of the PubSubPlusEventBroker nodes can be scheduled on nodes with d matching taint.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -1178,7 +1185,7 @@ Required. A pod affinity term, associated with the corresponding weight.
 
 
 
-A label query over a set of resources, in this case pods.
+A label query over a set of resources, in this case pods. If it's null, this PodAffinityTerm matches with no Pods.
 
 <table>
     <thead>
@@ -1376,7 +1383,7 @@ Defines a set of pods (namely those matching the labelSelector relative to the g
 
 
 
-A label query over a set of resources, in this case pods.
+A label query over a set of resources, in this case pods. If it's null, this PodAffinityTerm matches with no Pods.
 
 <table>
     <thead>
@@ -1507,7 +1514,8 @@ A label selector requirement is a selector that contains values, a key, and an o
         <td><b>operator</b></td>
         <td>string</td>
         <td>
-          operator represents a key's relationship to a set of values. Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
+          operator represents a key's relationship to a set of values.
+Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -1611,7 +1619,11 @@ Required. A pod affinity term, associated with the corresponding weight.
         <td><b>topologyKey</b></td>
         <td>string</td>
         <td>
-          This pod should be co-located (affinity) or not co-located (anti-affinity) with the pods matching the labelSelector in the specified namespaces, where co-located is defined as running on a node whose value of the label with key topologyKey matches that of any node on which any of the selected pods is running. Empty topologyKey is not allowed.<br/>
+          This pod should be co-located (affinity) or not co-located (anti-affinity) with the pods matching
+the labelSelector in the specified namespaces, where co-located is defined as running on a node
+whose value of the label with key topologyKey matches that of any node on which any of the
+selected pods is running.
+Empty topologyKey is not allowed.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -1644,7 +1656,7 @@ Required. A pod affinity term, associated with the corresponding weight.
 
 
 
-A label query over a set of resources, in this case pods.
+A label query over a set of resources, in this case pods. If it's null, this PodAffinityTerm matches with no Pods.
 
 <table>
     <thead>
@@ -1842,7 +1854,7 @@ Defines a set of pods (namely those matching the labelSelector relative to the g
 
 
 
-A label query over a set of resources, in this case pods.
+A label query over a set of resources, in this case pods. If it's null, this PodAffinityTerm matches with no Pods.
 
 <table>
     <thead>
@@ -1981,6 +1993,63 @@ A label selector requirement is a selector that contains values, a key, and an o
         <td>[]string</td>
         <td>
           values is an array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty. This array is replaced during a strategic merge patch.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### PubSubPlusEventBroker.spec.nodeAssignment[index].spec.tolerations[index]
+<sup><sup>[↩ Parent](#pubsubpluseventbrokerspecnodeassignmentindexspec)</sup></sup>
+
+
+
+The pod this Toleration is attached to tolerates any taint that matches the triple <key,value,effect> using the matching operator <operator>.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>effect</b></td>
+        <td>string</td>
+        <td>
+          Effect indicates the taint effect to match. Empty means match all taint effects. When specified, allowed values are NoSchedule, PreferNoSchedule and NoExecute.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          Key is the taint key that the toleration applies to. Empty means match all taint keys. If the key is empty, operator must be Exists; this combination means to match all values and all keys.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>operator</b></td>
+        <td>string</td>
+        <td>
+          Operator represents a key's relationship to the value. Valid operators are Exists and Equal. Defaults to Equal. Exists is equivalent to wildcard for value, so that a pod can tolerate all taints of a particular category.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>tolerationSeconds</b></td>
+        <td>integer</td>
+        <td>
+          TolerationSeconds represents the period of time the toleration (which must be of effect NoExecute, otherwise this field is ignored) tolerates the taint. By default, it is not set, which means tolerate the taint forever (do not evict). Zero and negative values will be treated as 0 (evict immediately) by the system.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>value</b></td>
+        <td>string</td>
+        <td>
+          Value is the taint value the toleration matches to. If the operator is Exists, the value should be empty, otherwise just a regular string.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -2526,8 +2595,23 @@ Broker section provides the broker status
 
 
 
-Condition contains details for one aspect of the current state of this API Resource. --- This struct is intended for direct use as an array at the field path .status.conditions.  For example, type FooStatus struct{ // Represents the observations of a foo's current state. // Known .status.conditions.type are: "Available", "Progressing", and "Degraded" // +patchMergeKey=type // +patchStrategy=merge // +listType=map // +listMapKey=type Conditions []metav1.Condition `json:"conditions,omitempty" patchStrategy:"merge" patchMergeKey:"type" protobuf:"bytes,1,rep,name=conditions"` 
- // other fields }
+Condition contains details for one aspect of the current state of this API Resource.
+---
+This struct is intended for direct use as an array at the field path .status.conditions.  For example,
+
+
+	type FooStatus struct{
+	    // Represents the observations of a foo's current state.
+	    // Known .status.conditions.type are: "Available", "Progressing", and "Degraded"
+	    // +patchMergeKey=type
+	    // +patchStrategy=merge
+	    // +listType=map
+	    // +listMapKey=type
+	    Conditions []metav1.Condition `json:"conditions,omitempty" patchStrategy:"merge" patchMergeKey:"type" protobuf:"bytes,1,rep,name=conditions"`
+
+
+	    // other fields
+	}
 
 <table>
     <thead>
