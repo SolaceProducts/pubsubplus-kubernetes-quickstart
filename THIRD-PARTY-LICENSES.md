@@ -354,7 +354,7 @@ LICENSE REQUIREMENTS & SPECIFICATIONS
 
 
 * Name: github.com/beorn7/perks/quantile
-* License: [MIT](https://github.com/beorn7/perks/blob/v1.0.1/LICENSE)
+* License: [MIT](https://github.com/SolaceProducts/pubsubplus-operator/blob/HEAD/vendor/github.com/beorn7/perks/LICENSE)
 
 LICENSE REQUIREMENTS & SPECIFICATIONS
 ======================================
@@ -384,7 +384,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
 * Name: github.com/cespare/xxhash/v2
-* License: [MIT](https://github.com/cespare/xxhash/blob/v2.2.0/LICENSE.txt)
+* License: [MIT](https://github.com/SolaceProducts/pubsubplus-operator/blob/HEAD/vendor/github.com/cespare/xxhash/v2/LICENSE.txt)
 
 LICENSE REQUIREMENTS & SPECIFICATIONS
 ======================================
@@ -416,7 +416,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
 * Name: github.com/davecgh/go-spew/spew
-* License: [ISC](https://github.com/davecgh/go-spew/blob/v1.1.1/LICENSE)
+* License: [ISC](https://github.com/SolaceProducts/pubsubplus-operator/blob/HEAD/vendor/github.com/davecgh/go-spew/LICENSE)
 
 LICENSE REQUIREMENTS & SPECIFICATIONS
 ======================================
@@ -441,7 +441,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 
 * Name: github.com/emicklei/go-restful/v3
-* License: [MIT](https://github.com/emicklei/go-restful/blob/v3.11.0/LICENSE)
+* License: [MIT](https://github.com/SolaceProducts/pubsubplus-operator/blob/HEAD/vendor/github.com/emicklei/go-restful/v3/LICENSE)
 
 LICENSE REQUIREMENTS & SPECIFICATIONS
 ======================================
@@ -472,7 +472,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
 * Name: github.com/evanphx/json-patch/v5
-* License: [BSD-3-Clause](https://github.com/evanphx/json-patch/blob/v5.8.0/v5/LICENSE)
+* License: [BSD-3-Clause](https://github.com/SolaceProducts/pubsubplus-operator/blob/HEAD/vendor/github.com/evanphx/json-patch/v5/LICENSE)
 
 LICENSE REQUIREMENTS & SPECIFICATIONS
 ======================================
@@ -507,7 +507,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 * Name: github.com/fsnotify/fsnotify
-* License: [BSD-3-Clause](https://github.com/fsnotify/fsnotify/blob/v1.7.0/LICENSE)
+* License: [BSD-3-Clause](https://github.com/SolaceProducts/pubsubplus-operator/blob/HEAD/vendor/github.com/fsnotify/fsnotify/LICENSE)
 
 LICENSE REQUIREMENTS & SPECIFICATIONS
 ======================================
@@ -542,7 +542,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 * Name: github.com/go-logr/logr
-* License: [Apache-2.0](https://github.com/go-logr/logr/blob/v1.4.1/LICENSE)
+* License: [Apache-2.0](https://github.com/SolaceProducts/pubsubplus-operator/blob/HEAD/vendor/github.com/go-logr/logr/LICENSE)
 
 LICENSE REQUIREMENTS & SPECIFICATIONS
 ======================================
@@ -753,7 +753,7 @@ LICENSE REQUIREMENTS & SPECIFICATIONS
 
 
 * Name: github.com/go-logr/zapr
-* License: [Apache-2.0](https://github.com/go-logr/zapr/blob/v1.3.0/LICENSE)
+* License: [Apache-2.0](https://github.com/SolaceProducts/pubsubplus-operator/blob/HEAD/vendor/github.com/go-logr/zapr/LICENSE)
 
 LICENSE REQUIREMENTS & SPECIFICATIONS
 ======================================
@@ -964,7 +964,7 @@ LICENSE REQUIREMENTS & SPECIFICATIONS
 
 
 * Name: github.com/go-openapi/jsonpointer
-* License: [Apache-2.0](https://github.com/go-openapi/jsonpointer/blob/v0.19.6/LICENSE)
+* License: [Apache-2.0](https://github.com/SolaceProducts/pubsubplus-operator/blob/HEAD/vendor/github.com/go-openapi/jsonpointer/LICENSE)
 
 LICENSE REQUIREMENTS & SPECIFICATIONS
 ======================================
@@ -1176,7 +1176,7 @@ LICENSE REQUIREMENTS & SPECIFICATIONS
 
 
 * Name: github.com/go-openapi/jsonreference
-* License: [Apache-2.0](https://github.com/go-openapi/jsonreference/blob/v0.20.2/LICENSE)
+* License: [Apache-2.0](https://github.com/SolaceProducts/pubsubplus-operator/blob/HEAD/vendor/github.com/go-openapi/jsonreference/LICENSE)
 
 LICENSE REQUIREMENTS & SPECIFICATIONS
 ======================================
@@ -1388,7 +1388,7 @@ LICENSE REQUIREMENTS & SPECIFICATIONS
 
 
 * Name: github.com/go-openapi/swag
-* License: [Apache-2.0](https://github.com/go-openapi/swag/blob/v0.22.3/LICENSE)
+* License: [Apache-2.0](https://github.com/SolaceProducts/pubsubplus-operator/blob/HEAD/vendor/github.com/go-openapi/swag/LICENSE)
 
 LICENSE REQUIREMENTS & SPECIFICATIONS
 ======================================
@@ -1600,7 +1600,7 @@ LICENSE REQUIREMENTS & SPECIFICATIONS
 
 
 * Name: github.com/gogo/protobuf
-* License: [BSD-3-Clause](https://github.com/gogo/protobuf/blob/v1.3.2/LICENSE)
+* License: [BSD-3-Clause](https://github.com/SolaceProducts/pubsubplus-operator/blob/HEAD/vendor/github.com/gogo/protobuf/LICENSE)
 
 LICENSE REQUIREMENTS & SPECIFICATIONS
 ======================================
@@ -1645,7 +1645,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 * Name: github.com/golang/groupcache/lru
-* License: [Apache-2.0](https://github.com/golang/groupcache/blob/41bb18bfe9da/LICENSE)
+* License: [Apache-2.0](https://github.com/SolaceProducts/pubsubplus-operator/blob/HEAD/vendor/github.com/golang/groupcache/LICENSE)
 
 LICENSE REQUIREMENTS & SPECIFICATIONS
 ======================================
@@ -1846,7 +1846,7 @@ third-party archives.
 
 
 * Name: github.com/golang/protobuf
-* License: [BSD-3-Clause](https://github.com/golang/protobuf/blob/v1.5.3/LICENSE)
+* License: [BSD-3-Clause](https://github.com/SolaceProducts/pubsubplus-operator/blob/HEAD/vendor/github.com/golang/protobuf/LICENSE)
 
 LICENSE REQUIREMENTS & SPECIFICATIONS
 ======================================
@@ -1884,7 +1884,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 * Name: github.com/google/gnostic-models
-* License: [Apache-2.0](https://github.com/google/gnostic-models/blob/v0.6.8/LICENSE)
+* License: [Apache-2.0](https://github.com/SolaceProducts/pubsubplus-operator/blob/HEAD/vendor/github.com/google/gnostic-models/LICENSE)
 
 LICENSE REQUIREMENTS & SPECIFICATIONS
 ======================================
@@ -2097,7 +2097,7 @@ LICENSE REQUIREMENTS & SPECIFICATIONS
 
 
 * Name: github.com/google/go-cmp/cmp
-* License: [BSD-3-Clause](https://github.com/google/go-cmp/blob/v0.6.0/LICENSE)
+* License: [BSD-3-Clause](https://github.com/SolaceProducts/pubsubplus-operator/blob/HEAD/vendor/github.com/google/go-cmp/LICENSE)
 
 LICENSE REQUIREMENTS & SPECIFICATIONS
 ======================================
@@ -2134,7 +2134,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 * Name: github.com/google/gofuzz
-* License: [Apache-2.0](https://github.com/google/gofuzz/blob/v1.2.0/LICENSE)
+* License: [Apache-2.0](https://github.com/SolaceProducts/pubsubplus-operator/blob/HEAD/vendor/github.com/google/gofuzz/LICENSE)
 
 LICENSE REQUIREMENTS & SPECIFICATIONS
 ======================================
@@ -2346,7 +2346,7 @@ LICENSE REQUIREMENTS & SPECIFICATIONS
 
 
 * Name: github.com/google/uuid
-* License: [BSD-3-Clause](https://github.com/google/uuid/blob/v1.3.0/LICENSE)
+* License: [BSD-3-Clause](https://github.com/SolaceProducts/pubsubplus-operator/blob/HEAD/vendor/github.com/google/uuid/LICENSE)
 
 LICENSE REQUIREMENTS & SPECIFICATIONS
 ======================================
@@ -2383,7 +2383,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 * Name: github.com/imdario/mergo
-* License: [BSD-3-Clause](https://github.com/imdario/mergo/blob/v0.3.12/LICENSE)
+* License: [BSD-3-Clause](https://github.com/SolaceProducts/pubsubplus-operator/blob/HEAD/vendor/github.com/imdario/mergo/LICENSE)
 
 LICENSE REQUIREMENTS & SPECIFICATIONS
 ======================================
@@ -2421,7 +2421,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 * Name: github.com/josharian/intern
-* License: [MIT](https://github.com/josharian/intern/blob/v1.0.0/license.md)
+* License: [MIT](https://github.com/SolaceProducts/pubsubplus-operator/blob/HEAD/vendor/github.com/josharian/intern/license.md)
 
 LICENSE REQUIREMENTS & SPECIFICATIONS
 ======================================
@@ -2452,7 +2452,7 @@ SOFTWARE.
 
 
 * Name: github.com/json-iterator/go
-* License: [MIT](https://github.com/json-iterator/go/blob/v1.1.12/LICENSE)
+* License: [MIT](https://github.com/SolaceProducts/pubsubplus-operator/blob/HEAD/vendor/github.com/json-iterator/go/LICENSE)
 
 LICENSE REQUIREMENTS & SPECIFICATIONS
 ======================================
@@ -2483,7 +2483,7 @@ SOFTWARE.
 
 
 * Name: github.com/mailru/easyjson
-* License: [MIT](https://github.com/mailru/easyjson/blob/v0.7.7/LICENSE)
+* License: [MIT](https://github.com/SolaceProducts/pubsubplus-operator/blob/HEAD/vendor/github.com/mailru/easyjson/LICENSE)
 
 LICENSE REQUIREMENTS & SPECIFICATIONS
 ======================================
@@ -2500,7 +2500,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 
 * Name: github.com/matttproud/golang_protobuf_extensions/v2/pbutil
-* License: [Apache-2.0](https://github.com/matttproud/golang_protobuf_extensions/blob/v2.0.0/LICENSE)
+* License: [Apache-2.0](https://github.com/SolaceProducts/pubsubplus-operator/blob/HEAD/vendor/github.com/matttproud/golang_protobuf_extensions/v2/LICENSE)
 
 LICENSE REQUIREMENTS & SPECIFICATIONS
 ======================================
@@ -2711,7 +2711,7 @@ LICENSE REQUIREMENTS & SPECIFICATIONS
 
 
 * Name: github.com/modern-go/concurrent
-* License: [Apache-2.0](https://github.com/modern-go/concurrent/blob/bacd9c7ef1dd/LICENSE)
+* License: [Apache-2.0](https://github.com/SolaceProducts/pubsubplus-operator/blob/HEAD/vendor/github.com/modern-go/concurrent/LICENSE)
 
 LICENSE REQUIREMENTS & SPECIFICATIONS
 ======================================
@@ -2922,7 +2922,7 @@ LICENSE REQUIREMENTS & SPECIFICATIONS
 
 
 * Name: github.com/modern-go/reflect2
-* License: [Apache-2.0](https://github.com/modern-go/reflect2/blob/v1.0.2/LICENSE)
+* License: [Apache-2.0](https://github.com/SolaceProducts/pubsubplus-operator/blob/HEAD/vendor/github.com/modern-go/reflect2/LICENSE)
 
 LICENSE REQUIREMENTS & SPECIFICATIONS
 ======================================
@@ -3133,7 +3133,7 @@ LICENSE REQUIREMENTS & SPECIFICATIONS
 
 
 * Name: github.com/munnerz/goautoneg
-* License: [BSD-3-Clause](https://github.com/munnerz/goautoneg/blob/a7dc8b61c822/LICENSE)
+* License: [BSD-3-Clause](https://github.com/SolaceProducts/pubsubplus-operator/blob/HEAD/vendor/github.com/munnerz/goautoneg/LICENSE)
 
 LICENSE REQUIREMENTS & SPECIFICATIONS
 ======================================
@@ -3174,7 +3174,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 * Name: github.com/pkg/errors
-* License: [BSD-2-Clause](https://github.com/pkg/errors/blob/v0.9.1/LICENSE)
+* License: [BSD-2-Clause](https://github.com/SolaceProducts/pubsubplus-operator/blob/HEAD/vendor/github.com/pkg/errors/LICENSE)
 
 LICENSE REQUIREMENTS & SPECIFICATIONS
 ======================================
@@ -3207,7 +3207,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 * Name: github.com/prometheus/client_golang/prometheus
-* License: [Apache-2.0](https://github.com/prometheus/client_golang/blob/v1.18.0/LICENSE)
+* License: [Apache-2.0](https://github.com/SolaceProducts/pubsubplus-operator/blob/HEAD/vendor/github.com/prometheus/client_golang/LICENSE)
 
 LICENSE REQUIREMENTS & SPECIFICATIONS
 ======================================
@@ -3418,7 +3418,7 @@ LICENSE REQUIREMENTS & SPECIFICATIONS
 
 
 * Name: github.com/prometheus/client_model/go
-* License: [Apache-2.0](https://github.com/prometheus/client_model/blob/v0.5.0/LICENSE)
+* License: [Apache-2.0](https://github.com/SolaceProducts/pubsubplus-operator/blob/HEAD/vendor/github.com/prometheus/client_model/LICENSE)
 
 LICENSE REQUIREMENTS & SPECIFICATIONS
 ======================================
@@ -3629,7 +3629,7 @@ LICENSE REQUIREMENTS & SPECIFICATIONS
 
 
 * Name: github.com/prometheus/common
-* License: [Apache-2.0](https://github.com/prometheus/common/blob/v0.45.0/LICENSE)
+* License: [Apache-2.0](https://github.com/SolaceProducts/pubsubplus-operator/blob/HEAD/vendor/github.com/prometheus/common/LICENSE)
 
 LICENSE REQUIREMENTS & SPECIFICATIONS
 ======================================
@@ -3840,7 +3840,7 @@ LICENSE REQUIREMENTS & SPECIFICATIONS
 
 
 * Name: github.com/prometheus/common/internal/bitbucket.org/ww/goautoneg
-* License: [BSD-3-Clause](https://github.com/prometheus/common/blob/v0.45.0/internal/bitbucket.org/ww/goautoneg/README.txt)
+* License: [BSD-3-Clause](https://github.com/SolaceProducts/pubsubplus-operator/blob/HEAD/vendor/github.com/prometheus/common/internal/bitbucket.org/ww/goautoneg/README.txt)
 
 LICENSE REQUIREMENTS & SPECIFICATIONS
 ======================================
@@ -3917,7 +3917,7 @@ SUBDIRECTORIES
 
 
 * Name: github.com/prometheus/procfs
-* License: [Apache-2.0](https://github.com/prometheus/procfs/blob/v0.12.0/LICENSE)
+* License: [Apache-2.0](https://github.com/SolaceProducts/pubsubplus-operator/blob/HEAD/vendor/github.com/prometheus/procfs/LICENSE)
 
 LICENSE REQUIREMENTS & SPECIFICATIONS
 ======================================
@@ -4128,7 +4128,7 @@ LICENSE REQUIREMENTS & SPECIFICATIONS
 
 
 * Name: github.com/spf13/pflag
-* License: [BSD-3-Clause](https://github.com/spf13/pflag/blob/v1.0.5/LICENSE)
+* License: [BSD-3-Clause](https://github.com/SolaceProducts/pubsubplus-operator/blob/HEAD/vendor/github.com/spf13/pflag/LICENSE)
 
 LICENSE REQUIREMENTS & SPECIFICATIONS
 ======================================
@@ -4166,7 +4166,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 * Name: go.uber.org/multierr
-* License: [MIT](https://github.com/uber-go/multierr/blob/v1.11.0/LICENSE.txt)
+* License: [MIT](https://github.com/SolaceProducts/pubsubplus-operator/blob/HEAD/vendor/go.uber.org/multierr/LICENSE.txt)
 
 LICENSE REQUIREMENTS & SPECIFICATIONS
 ======================================
@@ -4195,7 +4195,7 @@ THE SOFTWARE.
 
 
 * Name: go.uber.org/zap
-* License: [MIT](https://github.com/uber-go/zap/blob/v1.26.0/LICENSE.txt)
+* License: [MIT](https://github.com/SolaceProducts/pubsubplus-operator/blob/HEAD/vendor/go.uber.org/zap/LICENSE.txt)
 
 LICENSE REQUIREMENTS & SPECIFICATIONS
 ======================================
@@ -4224,7 +4224,7 @@ THE SOFTWARE.
 
 
 * Name: golang.org/x/exp/maps
-* License: [BSD-3-Clause](https://cs.opensource.google/go/x/exp/+/a9213eeb:LICENSE)
+* License: [BSD-3-Clause](https://github.com/SolaceProducts/pubsubplus-operator/blob/HEAD/vendor/golang.org/x/exp/LICENSE)
 
 LICENSE REQUIREMENTS & SPECIFICATIONS
 ======================================
@@ -4261,7 +4261,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 * Name: golang.org/x/net
-* License: [BSD-3-Clause](https://cs.opensource.google/go/x/net/+/v0.19.0:LICENSE)
+* License: [BSD-3-Clause](https://github.com/SolaceProducts/pubsubplus-operator/blob/HEAD/vendor/golang.org/x/net/LICENSE)
 
 LICENSE REQUIREMENTS & SPECIFICATIONS
 ======================================
@@ -4298,7 +4298,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 * Name: golang.org/x/oauth2
-* License: [BSD-3-Clause](https://cs.opensource.google/go/x/oauth2/+/v0.12.0:LICENSE)
+* License: [BSD-3-Clause](https://github.com/SolaceProducts/pubsubplus-operator/blob/HEAD/vendor/golang.org/x/oauth2/LICENSE)
 
 LICENSE REQUIREMENTS & SPECIFICATIONS
 ======================================
@@ -4335,7 +4335,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 * Name: golang.org/x/sys/unix
-* License: [BSD-3-Clause](https://cs.opensource.google/go/x/sys/+/v0.16.0:LICENSE)
+* License: [BSD-3-Clause](https://github.com/SolaceProducts/pubsubplus-operator/blob/HEAD/vendor/golang.org/x/sys/LICENSE)
 
 LICENSE REQUIREMENTS & SPECIFICATIONS
 ======================================
@@ -4372,7 +4372,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 * Name: golang.org/x/term
-* License: [BSD-3-Clause](https://cs.opensource.google/go/x/term/+/v0.15.0:LICENSE)
+* License: [BSD-3-Clause](https://github.com/SolaceProducts/pubsubplus-operator/blob/HEAD/vendor/golang.org/x/term/LICENSE)
 
 LICENSE REQUIREMENTS & SPECIFICATIONS
 ======================================
@@ -4409,7 +4409,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 * Name: golang.org/x/text
-* License: [BSD-3-Clause](https://cs.opensource.google/go/x/text/+/v0.14.0:LICENSE)
+* License: [BSD-3-Clause](https://github.com/SolaceProducts/pubsubplus-operator/blob/HEAD/vendor/golang.org/x/text/LICENSE)
 
 LICENSE REQUIREMENTS & SPECIFICATIONS
 ======================================
@@ -4446,7 +4446,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 * Name: golang.org/x/time/rate
-* License: [BSD-3-Clause](https://cs.opensource.google/go/x/time/+/v0.3.0:LICENSE)
+* License: [BSD-3-Clause](https://github.com/SolaceProducts/pubsubplus-operator/blob/HEAD/vendor/golang.org/x/time/LICENSE)
 
 LICENSE REQUIREMENTS & SPECIFICATIONS
 ======================================
@@ -4483,7 +4483,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 * Name: gomodules.xyz/jsonpatch/v2
-* License: [Apache-2.0](https://github.com/gomodules/jsonpatch/blob/v2.4.0/v2/LICENSE)
+* License: [Apache-2.0](https://github.com/SolaceProducts/pubsubplus-operator/blob/HEAD/vendor/gomodules.xyz/jsonpatch/v2/LICENSE)
 
 LICENSE REQUIREMENTS & SPECIFICATIONS
 ======================================
@@ -4695,7 +4695,7 @@ LICENSE REQUIREMENTS & SPECIFICATIONS
 
 
 * Name: google.golang.org/protobuf
-* License: [BSD-3-Clause](https://github.com/protocolbuffers/protobuf-go/blob/v1.31.0/LICENSE)
+* License: [BSD-3-Clause](https://github.com/SolaceProducts/pubsubplus-operator/blob/HEAD/vendor/google.golang.org/protobuf/LICENSE)
 
 LICENSE REQUIREMENTS & SPECIFICATIONS
 ======================================
@@ -4732,7 +4732,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 * Name: gopkg.in/inf.v0
-* License: [BSD-3-Clause](https://github.com/go-inf/inf/blob/v0.9.1/LICENSE)
+* License: [BSD-3-Clause](https://github.com/SolaceProducts/pubsubplus-operator/blob/HEAD/vendor/gopkg.in/inf.v0/LICENSE)
 
 LICENSE REQUIREMENTS & SPECIFICATIONS
 ======================================
@@ -4770,7 +4770,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 * Name: gopkg.in/yaml.v2
-* License: [Apache-2.0](https://github.com/go-yaml/yaml/blob/v2.4.0/LICENSE)
+* License: [Apache-2.0](https://github.com/SolaceProducts/pubsubplus-operator/blob/HEAD/vendor/gopkg.in/yaml.v2/LICENSE)
 
 LICENSE REQUIREMENTS & SPECIFICATIONS
 ======================================
@@ -4981,7 +4981,7 @@ LICENSE REQUIREMENTS & SPECIFICATIONS
 
 
 * Name: gopkg.in/yaml.v3
-* License: [MIT](https://github.com/go-yaml/yaml/blob/v3.0.1/LICENSE)
+* License: [MIT](https://github.com/SolaceProducts/pubsubplus-operator/blob/HEAD/vendor/gopkg.in/yaml.v3/LICENSE)
 
 LICENSE REQUIREMENTS & SPECIFICATIONS
 ======================================
@@ -5041,7 +5041,7 @@ limitations under the License.
 
 
 * Name: k8s.io/api
-* License: [Apache-2.0](https://github.com/kubernetes/api/blob/v0.29.0/LICENSE)
+* License: [Apache-2.0](https://github.com/SolaceProducts/pubsubplus-operator/blob/HEAD/vendor/k8s.io/api/LICENSE)
 
 LICENSE REQUIREMENTS & SPECIFICATIONS
 ======================================
@@ -5253,7 +5253,7 @@ LICENSE REQUIREMENTS & SPECIFICATIONS
 
 
 * Name: k8s.io/apiextensions-apiserver/pkg/apis/apiextensions
-* License: [Apache-2.0](https://github.com/kubernetes/apiextensions-apiserver/blob/v0.29.0/LICENSE)
+* License: [Apache-2.0](https://github.com/SolaceProducts/pubsubplus-operator/blob/HEAD/vendor/k8s.io/apiextensions-apiserver/LICENSE)
 
 LICENSE REQUIREMENTS & SPECIFICATIONS
 ======================================
@@ -5465,7 +5465,7 @@ LICENSE REQUIREMENTS & SPECIFICATIONS
 
 
 * Name: k8s.io/apimachinery/pkg
-* License: [Apache-2.0](https://github.com/kubernetes/apimachinery/blob/v0.29.0/LICENSE)
+* License: [Apache-2.0](https://github.com/SolaceProducts/pubsubplus-operator/blob/HEAD/vendor/k8s.io/apimachinery/LICENSE)
 
 LICENSE REQUIREMENTS & SPECIFICATIONS
 ======================================
@@ -5677,7 +5677,7 @@ LICENSE REQUIREMENTS & SPECIFICATIONS
 
 
 * Name: k8s.io/apimachinery/third_party/forked/golang
-* License: [BSD-3-Clause](https://github.com/kubernetes/apimachinery/blob/v0.29.0/third_party/forked/golang/LICENSE)
+* License: [BSD-3-Clause](https://github.com/SolaceProducts/pubsubplus-operator/blob/HEAD/vendor/k8s.io/apimachinery/third_party/forked/golang/LICENSE)
 
 LICENSE REQUIREMENTS & SPECIFICATIONS
 ======================================
@@ -5714,7 +5714,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 * Name: k8s.io/client-go
-* License: [Apache-2.0](https://github.com/kubernetes/client-go/blob/v0.29.0/LICENSE)
+* License: [Apache-2.0](https://github.com/SolaceProducts/pubsubplus-operator/blob/HEAD/vendor/k8s.io/client-go/LICENSE)
 
 LICENSE REQUIREMENTS & SPECIFICATIONS
 ======================================
@@ -5926,7 +5926,7 @@ LICENSE REQUIREMENTS & SPECIFICATIONS
 
 
 * Name: k8s.io/component-base/config
-* License: [Apache-2.0](https://github.com/kubernetes/component-base/blob/v0.29.0/LICENSE)
+* License: [Apache-2.0](https://github.com/SolaceProducts/pubsubplus-operator/blob/HEAD/vendor/k8s.io/component-base/LICENSE)
 
 LICENSE REQUIREMENTS & SPECIFICATIONS
 ======================================
@@ -6138,7 +6138,7 @@ LICENSE REQUIREMENTS & SPECIFICATIONS
 
 
 * Name: k8s.io/klog/v2
-* License: [Apache-2.0](https://github.com/kubernetes/klog/blob/v2.110.1/LICENSE)
+* License: [Apache-2.0](https://github.com/SolaceProducts/pubsubplus-operator/blob/HEAD/vendor/k8s.io/klog/v2/LICENSE)
 
 LICENSE REQUIREMENTS & SPECIFICATIONS
 ======================================
@@ -6339,7 +6339,7 @@ third-party archives.
 
 
 * Name: k8s.io/kube-openapi/pkg
-* License: [Apache-2.0](https://github.com/kubernetes/kube-openapi/blob/2dd684a91f00/LICENSE)
+* License: [Apache-2.0](https://github.com/SolaceProducts/pubsubplus-operator/blob/HEAD/vendor/k8s.io/kube-openapi/LICENSE)
 
 LICENSE REQUIREMENTS & SPECIFICATIONS
 ======================================
@@ -6551,7 +6551,7 @@ LICENSE REQUIREMENTS & SPECIFICATIONS
 
 
 * Name: k8s.io/kube-openapi/pkg/internal/third_party/go-json-experiment/json
-* License: [BSD-3-Clause](https://github.com/kubernetes/kube-openapi/blob/2dd684a91f00/pkg/internal/third_party/go-json-experiment/json/LICENSE)
+* License: [BSD-3-Clause](https://github.com/SolaceProducts/pubsubplus-operator/blob/HEAD/vendor/k8s.io/kube-openapi/pkg/internal/third_party/go-json-experiment/json/LICENSE)
 
 LICENSE REQUIREMENTS & SPECIFICATIONS
 ======================================
@@ -6588,7 +6588,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 * Name: k8s.io/kube-openapi/pkg/validation/spec
-* License: [Apache-2.0](https://github.com/kubernetes/kube-openapi/blob/2dd684a91f00/pkg/validation/spec/LICENSE)
+* License: [Apache-2.0](https://github.com/SolaceProducts/pubsubplus-operator/blob/HEAD/vendor/k8s.io/kube-openapi/pkg/validation/spec/LICENSE)
 
 LICENSE REQUIREMENTS & SPECIFICATIONS
 ======================================
@@ -6800,7 +6800,7 @@ LICENSE REQUIREMENTS & SPECIFICATIONS
 
 
 * Name: k8s.io/utils
-* License: [Apache-2.0](https://github.com/kubernetes/utils/blob/3b25d923346b/LICENSE)
+* License: [Apache-2.0](https://github.com/SolaceProducts/pubsubplus-operator/blob/HEAD/vendor/k8s.io/utils/LICENSE)
 
 LICENSE REQUIREMENTS & SPECIFICATIONS
 ======================================
@@ -7012,7 +7012,7 @@ LICENSE REQUIREMENTS & SPECIFICATIONS
 
 
 * Name: k8s.io/utils/internal/third_party/forked/golang/net
-* License: [BSD-3-Clause](https://github.com/kubernetes/utils/blob/3b25d923346b/internal/third_party/forked/golang/LICENSE)
+* License: [BSD-3-Clause](https://github.com/SolaceProducts/pubsubplus-operator/blob/HEAD/vendor/k8s.io/utils/internal/third_party/forked/golang/LICENSE)
 
 LICENSE REQUIREMENTS & SPECIFICATIONS
 ======================================
@@ -7049,7 +7049,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 * Name: sigs.k8s.io/controller-runtime
-* License: [Apache-2.0](https://github.com/kubernetes-sigs/controller-runtime/blob/v0.17.2/LICENSE)
+* License: [Apache-2.0](https://github.com/SolaceProducts/pubsubplus-operator/blob/HEAD/vendor/sigs.k8s.io/controller-runtime/LICENSE)
 
 LICENSE REQUIREMENTS & SPECIFICATIONS
 ======================================
@@ -7260,7 +7260,7 @@ LICENSE REQUIREMENTS & SPECIFICATIONS
 
 
 * Name: sigs.k8s.io/json
-* License: [Apache-2.0](https://github.com/kubernetes-sigs/json/blob/bc3834ca7abd/LICENSE)
+* License: [Apache-2.0](https://github.com/SolaceProducts/pubsubplus-operator/blob/HEAD/vendor/sigs.k8s.io/json/LICENSE)
 
 LICENSE REQUIREMENTS & SPECIFICATIONS
 ======================================
@@ -7508,7 +7508,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 * Name: sigs.k8s.io/structured-merge-diff/v4
-* License: [Apache-2.0](https://github.com/kubernetes-sigs/structured-merge-diff/blob/v4.4.1/LICENSE)
+* License: [Apache-2.0](https://github.com/SolaceProducts/pubsubplus-operator/blob/HEAD/vendor/sigs.k8s.io/structured-merge-diff/v4/LICENSE)
 
 LICENSE REQUIREMENTS & SPECIFICATIONS
 ======================================
@@ -7719,7 +7719,7 @@ LICENSE REQUIREMENTS & SPECIFICATIONS
 
 
 * Name: sigs.k8s.io/yaml
-* License: [Apache-2.0](https://github.com/kubernetes-sigs/yaml/blob/v1.4.0/LICENSE)
+* License: [Apache-2.0](https://github.com/SolaceProducts/pubsubplus-operator/blob/HEAD/vendor/sigs.k8s.io/yaml/LICENSE)
 
 LICENSE REQUIREMENTS & SPECIFICATIONS
 ======================================
@@ -8035,7 +8035,7 @@ Apache license:
 
 
 * Name: sigs.k8s.io/yaml/goyaml.v2
-* License: [Apache-2.0](https://github.com/kubernetes-sigs/yaml/blob/v1.4.0/goyaml.v2/LICENSE)
+* License: [Apache-2.0](https://github.com/SolaceProducts/pubsubplus-operator/blob/HEAD/vendor/sigs.k8s.io/yaml/goyaml.v2/LICENSE)
 
 LICENSE REQUIREMENTS & SPECIFICATIONS
 ======================================
