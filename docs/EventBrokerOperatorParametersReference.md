@@ -87,14 +87,16 @@ EventBrokerSpec defines the desired state of PubSubPlusEventBroker
         <td><b>adminCredentialsSecret</b></td>
         <td>string</td>
         <td>
-          Defines the password for PubSubPlusEventBroker if provided. Random one will be generated if not provided. When provided, ensure the secret key name is `username_admin_password`. For valid values refer to the Solace documentation https://docs.solace.com/Admin/Configuring-Internal-CLI-User-Accounts.htm.<br/>
+          Defines the password for PubSubPlusEventBroker if provided. Random one will be generated if not provided.
+When provided, ensure the secret key name is `username_admin_password`. For valid values refer to the Solace documentation https://docs.solace.com/Admin/Configuring-Internal-CLI-User-Accounts.htm.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>developer</b></td>
         <td>boolean</td>
         <td>
-          Developer true specifies a minimum footprint scaled-down deployment, not for production use. If set to true it overrides SystemScaling parameters.<br/>
+          Developer true specifies a minimum footprint scaled-down deployment, not for production use.
+If set to true it overrides SystemScaling parameters.<br/>
           <br/>
             <i>Default</i>: false<br/>
         </td>
@@ -103,7 +105,8 @@ EventBrokerSpec defines the desired state of PubSubPlusEventBroker
         <td><b><a href="#pubsubpluseventbrokerspecextraenvvarsindex">extraEnvVars</a></b></td>
         <td>[]object</td>
         <td>
-          List of extra environment variables to be added to the PubSubPlusEventBroker container. Note: Do not configure Timezone or SystemScaling parameters here as it could cause unintended consequences. A primary use case is to specify configuration keys, although the variables defined here will not override the ones defined in ConfigMap<br/>
+          List of extra environment variables to be added to the PubSubPlusEventBroker container. Note: Do not configure Timezone or SystemScaling parameters here as it could cause unintended consequences.
+A primary use case is to specify configuration keys, although the variables defined here will not override the ones defined in ConfigMap<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -138,7 +141,8 @@ EventBrokerSpec defines the desired state of PubSubPlusEventBroker
         <td><b>monitoringCredentialsSecret</b></td>
         <td>string</td>
         <td>
-          Defines the password for PubSubPlusEventBroker to be used by the Exporter for monitoring. When provided, ensure the secret key name is `username_monitor_password`. For valid values refer to the Solace documentation https://docs.solace.com/Admin/Configuring-Internal-CLI-User-Accounts.htm.<br/>
+          Defines the password for PubSubPlusEventBroker to be used by the Exporter for monitoring.
+When provided, ensure the secret key name is `username_monitor_password`. For valid values refer to the Solace documentation https://docs.solace.com/Admin/Configuring-Internal-CLI-User-Accounts.htm.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -153,13 +157,16 @@ EventBrokerSpec defines the desired state of PubSubPlusEventBroker
         <td>map[string]string</td>
         <td>
           PodAnnotations allows adding provider-specific pod annotations to PubSubPlusEventBroker pods<br/>
+          <br/>
+            <i>Default</i>: map[]<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>podDisruptionBudgetForHA</b></td>
         <td>boolean</td>
         <td>
-          PodDisruptionBudgetForHA enables setting up PodDisruptionBudget for the broker pods in HA deployment. This parameter is ignored for non-HA deployments (if redundancy is false).<br/>
+          PodDisruptionBudgetForHA enables setting up PodDisruptionBudget for the broker pods in HA deployment.
+This parameter is ignored for non-HA deployments (if redundancy is false).<br/>
           <br/>
             <i>Default</i>: false<br/>
         </td>
@@ -169,13 +176,16 @@ EventBrokerSpec defines the desired state of PubSubPlusEventBroker
         <td>map[string]string</td>
         <td>
           PodLabels allows adding provider-specific pod labels to PubSubPlusEventBroker pods<br/>
+          <br/>
+            <i>Default</i>: map[]<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>preSharedAuthKeySecret</b></td>
         <td>string</td>
         <td>
-          PreSharedAuthKeySecret defines the PreSharedAuthKey Secret for PubSubPlusEventBroker. Random one will be generated if not provided. When provided, ensure the secret key name is `preshared_auth_key`. For valid values refer to the Solace documentation https://docs.solace.com/Features/HA-Redundancy/Pre-Shared-Keys-SMB.htm?Highlight=pre%20shared.<br/>
+          PreSharedAuthKeySecret defines the PreSharedAuthKey Secret for PubSubPlusEventBroker. Random one will be generated if not provided.
+When provided, ensure the secret key name is `preshared_auth_key`. For valid values refer to the Solace documentation https://docs.solace.com/Features/HA-Redundancy/Pre-Shared-Keys-SMB.htm?Highlight=pre%20shared.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -219,7 +229,8 @@ EventBrokerSpec defines the desired state of PubSubPlusEventBroker
         <td><b><a href="#pubsubpluseventbrokerspecsystemscaling">systemScaling</a></b></td>
         <td>object</td>
         <td>
-          SystemScaling provides exact fine-grained specification of the event broker scaling parameters and the assigned CPU / memory resources to the Pod.<br/>
+          SystemScaling provides exact fine-grained specification of the event broker scaling parameters
+and the assigned CPU / memory resources to the Pod.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -343,7 +354,8 @@ Image defines container image parameters for the event broker.
 
 
 
-LocalObjectReference contains enough information to let you locate the referenced object inside the same namespace.
+LocalObjectReference contains enough information to let you locate the
+referenced object inside the same namespace.
 
 <table>
     <thead>
@@ -358,7 +370,9 @@ LocalObjectReference contains enough information to let you locate the reference
         <td><b>name</b></td>
         <td>string</td>
         <td>
-          Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+          Name of the referent.
+More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+TODO: Add other useful fields. apiVersion, kind, uid?<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -493,7 +507,8 @@ Image defines container image parameters for the Prometheus Exporter.
 
 
 
-LocalObjectReference contains enough information to let you locate the referenced object inside the same namespace.
+LocalObjectReference contains enough information to let you locate the
+referenced object inside the same namespace.
 
 <table>
     <thead>
@@ -508,7 +523,9 @@ LocalObjectReference contains enough information to let you locate the reference
         <td><b>name</b></td>
         <td>string</td>
         <td>
-          Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+          Name of the referent.
+More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+TODO: Add other useful fields. apiVersion, kind, uid?<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -672,6 +689,8 @@ If provided defines the labels to constrain the PubSubPlusEventBroker node to sp
         <td>object</td>
         <td>
           Affinity if provided defines the conditional approach to assign PubSubPlusEventBroker nodes to specific nodes to which they can be scheduled<br/>
+          <br/>
+            <i>Default</i>: map[]<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -679,6 +698,15 @@ If provided defines the labels to constrain the PubSubPlusEventBroker node to sp
         <td>map[string]string</td>
         <td>
           NodeSelector if provided defines the exact labels of nodes to which PubSubPlusEventBroker nodes can be scheduled<br/>
+          <br/>
+            <i>Default</i>: map[]<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#pubsubpluseventbrokerspecnodeassignmentindexspectolerationsindex">tolerations</a></b></td>
+        <td>[]object</td>
+        <td>
+          Toleration if provided defines the exact properties of the PubSubPlusEventBroker nodes can be scheduled on nodes with d matching taint.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -746,14 +774,26 @@ Describes node affinity scheduling rules for the pod.
         <td><b><a href="#pubsubpluseventbrokerspecnodeassignmentindexspecaffinitynodeaffinitypreferredduringschedulingignoredduringexecutionindex">preferredDuringSchedulingIgnoredDuringExecution</a></b></td>
         <td>[]object</td>
         <td>
-          The scheduler will prefer to schedule pods to nodes that satisfy the affinity expressions specified by this field, but it may choose a node that violates one or more of the expressions. The node that is most preferred is the one with the greatest sum of weights, i.e. for each node that meets all of the scheduling requirements (resource request, requiredDuringScheduling affinity expressions, etc.), compute a sum by iterating through the elements of this field and adding "weight" to the sum if the node matches the corresponding matchExpressions; the node(s) with the highest sum are the most preferred.<br/>
+          The scheduler will prefer to schedule pods to nodes that satisfy
+the affinity expressions specified by this field, but it may choose
+a node that violates one or more of the expressions. The node that is
+most preferred is the one with the greatest sum of weights, i.e.
+for each node that meets all of the scheduling requirements (resource
+request, requiredDuringScheduling affinity expressions, etc.),
+compute a sum by iterating through the elements of this field and adding
+"weight" to the sum if the node matches the corresponding matchExpressions; the
+node(s) with the highest sum are the most preferred.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#pubsubpluseventbrokerspecnodeassignmentindexspecaffinitynodeaffinityrequiredduringschedulingignoredduringexecution">requiredDuringSchedulingIgnoredDuringExecution</a></b></td>
         <td>object</td>
         <td>
-          If the affinity requirements specified by this field are not met at scheduling time, the pod will not be scheduled onto the node. If the affinity requirements specified by this field cease to be met at some point during pod execution (e.g. due to an update), the system may or may not try to eventually evict the pod from its node.<br/>
+          If the affinity requirements specified by this field are not met at
+scheduling time, the pod will not be scheduled onto the node.
+If the affinity requirements specified by this field cease to be met
+at some point during pod execution (e.g. due to an update), the system
+may or may not try to eventually evict the pod from its node.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -765,7 +805,8 @@ Describes node affinity scheduling rules for the pod.
 
 
 
-An empty preferred scheduling term matches all objects with implicit weight 0 (i.e. it's a no-op). A null preferred scheduling term matches no objects (i.e. is also a no-op).
+An empty preferred scheduling term matches all objects with implicit weight 0
+(i.e. it's a no-op). A null preferred scheduling term matches no objects (i.e. is also a no-op).
 
 <table>
     <thead>
@@ -835,7 +876,8 @@ A node selector term, associated with the corresponding weight.
 
 
 
-A node selector requirement is a selector that contains values, a key, and an operator that relates the key and values.
+A node selector requirement is a selector that contains values, a key, and an operator
+that relates the key and values.
 
 <table>
     <thead>
@@ -857,14 +899,19 @@ A node selector requirement is a selector that contains values, a key, and an op
         <td><b>operator</b></td>
         <td>string</td>
         <td>
-          Represents a key's relationship to a set of values. Valid operators are In, NotIn, Exists, DoesNotExist. Gt, and Lt.<br/>
+          Represents a key's relationship to a set of values.
+Valid operators are In, NotIn, Exists, DoesNotExist. Gt, and Lt.<br/>
         </td>
         <td>true</td>
       </tr><tr>
         <td><b>values</b></td>
         <td>[]string</td>
         <td>
-          An array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty. If the operator is Gt or Lt, the values array must have a single element, which will be interpreted as an integer. This array is replaced during a strategic merge patch.<br/>
+          An array of string values. If the operator is In or NotIn,
+the values array must be non-empty. If the operator is Exists or DoesNotExist,
+the values array must be empty. If the operator is Gt or Lt, the values
+array must have a single element, which will be interpreted as an integer.
+This array is replaced during a strategic merge patch.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -876,7 +923,8 @@ A node selector requirement is a selector that contains values, a key, and an op
 
 
 
-A node selector requirement is a selector that contains values, a key, and an operator that relates the key and values.
+A node selector requirement is a selector that contains values, a key, and an operator
+that relates the key and values.
 
 <table>
     <thead>
@@ -898,14 +946,19 @@ A node selector requirement is a selector that contains values, a key, and an op
         <td><b>operator</b></td>
         <td>string</td>
         <td>
-          Represents a key's relationship to a set of values. Valid operators are In, NotIn, Exists, DoesNotExist. Gt, and Lt.<br/>
+          Represents a key's relationship to a set of values.
+Valid operators are In, NotIn, Exists, DoesNotExist. Gt, and Lt.<br/>
         </td>
         <td>true</td>
       </tr><tr>
         <td><b>values</b></td>
         <td>[]string</td>
         <td>
-          An array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty. If the operator is Gt or Lt, the values array must have a single element, which will be interpreted as an integer. This array is replaced during a strategic merge patch.<br/>
+          An array of string values. If the operator is In or NotIn,
+the values array must be non-empty. If the operator is Exists or DoesNotExist,
+the values array must be empty. If the operator is Gt or Lt, the values
+array must have a single element, which will be interpreted as an integer.
+This array is replaced during a strategic merge patch.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -917,7 +970,11 @@ A node selector requirement is a selector that contains values, a key, and an op
 
 
 
-If the affinity requirements specified by this field are not met at scheduling time, the pod will not be scheduled onto the node. If the affinity requirements specified by this field cease to be met at some point during pod execution (e.g. due to an update), the system may or may not try to eventually evict the pod from its node.
+If the affinity requirements specified by this field are not met at
+scheduling time, the pod will not be scheduled onto the node.
+If the affinity requirements specified by this field cease to be met
+at some point during pod execution (e.g. due to an update), the system
+may or may not try to eventually evict the pod from its node.
 
 <table>
     <thead>
@@ -944,7 +1001,9 @@ If the affinity requirements specified by this field are not met at scheduling t
 
 
 
-A null or empty node selector term matches no objects. The requirements of them are ANDed. The TopologySelectorTerm type implements a subset of the NodeSelectorTerm.
+A null or empty node selector term matches no objects. The requirements of
+them are ANDed.
+The TopologySelectorTerm type implements a subset of the NodeSelectorTerm.
 
 <table>
     <thead>
@@ -978,7 +1037,8 @@ A null or empty node selector term matches no objects. The requirements of them 
 
 
 
-A node selector requirement is a selector that contains values, a key, and an operator that relates the key and values.
+A node selector requirement is a selector that contains values, a key, and an operator
+that relates the key and values.
 
 <table>
     <thead>
@@ -1000,14 +1060,19 @@ A node selector requirement is a selector that contains values, a key, and an op
         <td><b>operator</b></td>
         <td>string</td>
         <td>
-          Represents a key's relationship to a set of values. Valid operators are In, NotIn, Exists, DoesNotExist. Gt, and Lt.<br/>
+          Represents a key's relationship to a set of values.
+Valid operators are In, NotIn, Exists, DoesNotExist. Gt, and Lt.<br/>
         </td>
         <td>true</td>
       </tr><tr>
         <td><b>values</b></td>
         <td>[]string</td>
         <td>
-          An array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty. If the operator is Gt or Lt, the values array must have a single element, which will be interpreted as an integer. This array is replaced during a strategic merge patch.<br/>
+          An array of string values. If the operator is In or NotIn,
+the values array must be non-empty. If the operator is Exists or DoesNotExist,
+the values array must be empty. If the operator is Gt or Lt, the values
+array must have a single element, which will be interpreted as an integer.
+This array is replaced during a strategic merge patch.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -1019,7 +1084,8 @@ A node selector requirement is a selector that contains values, a key, and an op
 
 
 
-A node selector requirement is a selector that contains values, a key, and an operator that relates the key and values.
+A node selector requirement is a selector that contains values, a key, and an operator
+that relates the key and values.
 
 <table>
     <thead>
@@ -1041,14 +1107,19 @@ A node selector requirement is a selector that contains values, a key, and an op
         <td><b>operator</b></td>
         <td>string</td>
         <td>
-          Represents a key's relationship to a set of values. Valid operators are In, NotIn, Exists, DoesNotExist. Gt, and Lt.<br/>
+          Represents a key's relationship to a set of values.
+Valid operators are In, NotIn, Exists, DoesNotExist. Gt, and Lt.<br/>
         </td>
         <td>true</td>
       </tr><tr>
         <td><b>values</b></td>
         <td>[]string</td>
         <td>
-          An array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty. If the operator is Gt or Lt, the values array must have a single element, which will be interpreted as an integer. This array is replaced during a strategic merge patch.<br/>
+          An array of string values. If the operator is In or NotIn,
+the values array must be non-empty. If the operator is Exists or DoesNotExist,
+the values array must be empty. If the operator is Gt or Lt, the values
+array must have a single element, which will be interpreted as an integer.
+This array is replaced during a strategic merge patch.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -1075,14 +1146,28 @@ Describes pod affinity scheduling rules (e.g. co-locate this pod in the same nod
         <td><b><a href="#pubsubpluseventbrokerspecnodeassignmentindexspecaffinitypodaffinitypreferredduringschedulingignoredduringexecutionindex">preferredDuringSchedulingIgnoredDuringExecution</a></b></td>
         <td>[]object</td>
         <td>
-          The scheduler will prefer to schedule pods to nodes that satisfy the affinity expressions specified by this field, but it may choose a node that violates one or more of the expressions. The node that is most preferred is the one with the greatest sum of weights, i.e. for each node that meets all of the scheduling requirements (resource request, requiredDuringScheduling affinity expressions, etc.), compute a sum by iterating through the elements of this field and adding "weight" to the sum if the node has pods which matches the corresponding podAffinityTerm; the node(s) with the highest sum are the most preferred.<br/>
+          The scheduler will prefer to schedule pods to nodes that satisfy
+the affinity expressions specified by this field, but it may choose
+a node that violates one or more of the expressions. The node that is
+most preferred is the one with the greatest sum of weights, i.e.
+for each node that meets all of the scheduling requirements (resource
+request, requiredDuringScheduling affinity expressions, etc.),
+compute a sum by iterating through the elements of this field and adding
+"weight" to the sum if the node has pods which matches the corresponding podAffinityTerm; the
+node(s) with the highest sum are the most preferred.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#pubsubpluseventbrokerspecnodeassignmentindexspecaffinitypodaffinityrequiredduringschedulingignoredduringexecutionindex">requiredDuringSchedulingIgnoredDuringExecution</a></b></td>
         <td>[]object</td>
         <td>
-          If the affinity requirements specified by this field are not met at scheduling time, the pod will not be scheduled onto the node. If the affinity requirements specified by this field cease to be met at some point during pod execution (e.g. due to a pod label update), the system may or may not try to eventually evict the pod from its node. When there are multiple elements, the lists of nodes corresponding to each podAffinityTerm are intersected, i.e. all terms must be satisfied.<br/>
+          If the affinity requirements specified by this field are not met at
+scheduling time, the pod will not be scheduled onto the node.
+If the affinity requirements specified by this field cease to be met
+at some point during pod execution (e.g. due to a pod label update), the
+system may or may not try to eventually evict the pod from its node.
+When there are multiple elements, the lists of nodes corresponding to each
+podAffinityTerm are intersected, i.e. all terms must be satisfied.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -1116,7 +1201,8 @@ The weights of all of the matched WeightedPodAffinityTerm fields are added per-n
         <td><b>weight</b></td>
         <td>integer</td>
         <td>
-          weight associated with matching the corresponding podAffinityTerm, in the range 1-100.<br/>
+          weight associated with matching the corresponding podAffinityTerm,
+in the range 1-100.<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -1145,28 +1231,70 @@ Required. A pod affinity term, associated with the corresponding weight.
         <td><b>topologyKey</b></td>
         <td>string</td>
         <td>
-          This pod should be co-located (affinity) or not co-located (anti-affinity) with the pods matching the labelSelector in the specified namespaces, where co-located is defined as running on a node whose value of the label with key topologyKey matches that of any node on which any of the selected pods is running. Empty topologyKey is not allowed.<br/>
+          This pod should be co-located (affinity) or not co-located (anti-affinity) with the pods matching
+the labelSelector in the specified namespaces, where co-located is defined as running on a node
+whose value of the label with key topologyKey matches that of any node on which any of the
+selected pods is running.
+Empty topologyKey is not allowed.<br/>
         </td>
         <td>true</td>
       </tr><tr>
         <td><b><a href="#pubsubpluseventbrokerspecnodeassignmentindexspecaffinitypodaffinitypreferredduringschedulingignoredduringexecutionindexpodaffinitytermlabelselector">labelSelector</a></b></td>
         <td>object</td>
         <td>
-          A label query over a set of resources, in this case pods.<br/>
+          A label query over a set of resources, in this case pods.
+If it's null, this PodAffinityTerm matches with no Pods.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>matchLabelKeys</b></td>
+        <td>[]string</td>
+        <td>
+          MatchLabelKeys is a set of pod label keys to select which pods will
+be taken into consideration. The keys are used to lookup values from the
+incoming pod labels, those key-value labels are merged with `LabelSelector` as `key in (value)`
+to select the group of existing pods which pods will be taken into consideration
+for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
+pod labels will be ignored. The default value is empty.
+The same key is forbidden to exist in both MatchLabelKeys and LabelSelector.
+Also, MatchLabelKeys cannot be set when LabelSelector isn't set.
+This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>mismatchLabelKeys</b></td>
+        <td>[]string</td>
+        <td>
+          MismatchLabelKeys is a set of pod label keys to select which pods will
+be taken into consideration. The keys are used to lookup values from the
+incoming pod labels, those key-value labels are merged with `LabelSelector` as `key notin (value)`
+to select the group of existing pods which pods will be taken into consideration
+for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
+pod labels will be ignored. The default value is empty.
+The same key is forbidden to exist in both MismatchLabelKeys and LabelSelector.
+Also, MismatchLabelKeys cannot be set when LabelSelector isn't set.
+This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#pubsubpluseventbrokerspecnodeassignmentindexspecaffinitypodaffinitypreferredduringschedulingignoredduringexecutionindexpodaffinitytermnamespaceselector">namespaceSelector</a></b></td>
         <td>object</td>
         <td>
-          A label query over the set of namespaces that the term applies to. The term is applied to the union of the namespaces selected by this field and the ones listed in the namespaces field. null selector and null or empty namespaces list means "this pod's namespace". An empty selector ({}) matches all namespaces.<br/>
+          A label query over the set of namespaces that the term applies to.
+The term is applied to the union of the namespaces selected by this field
+and the ones listed in the namespaces field.
+null selector and null or empty namespaces list means "this pod's namespace".
+An empty selector ({}) matches all namespaces.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>namespaces</b></td>
         <td>[]string</td>
         <td>
-          namespaces specifies a static list of namespace names that the term applies to. The term is applied to the union of the namespaces listed in this field and the ones selected by namespaceSelector. null or empty namespaces list and null namespaceSelector means "this pod's namespace".<br/>
+          namespaces specifies a static list of namespace names that the term applies to.
+The term is applied to the union of the namespaces listed in this field
+and the ones selected by namespaceSelector.
+null or empty namespaces list and null namespaceSelector means "this pod's namespace".<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -1179,6 +1307,7 @@ Required. A pod affinity term, associated with the corresponding weight.
 
 
 A label query over a set of resources, in this case pods.
+If it's null, this PodAffinityTerm matches with no Pods.
 
 <table>
     <thead>
@@ -1200,7 +1329,9 @@ A label query over a set of resources, in this case pods.
         <td><b>matchLabels</b></td>
         <td>map[string]string</td>
         <td>
-          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of matchExpressions, whose key field is "key", the operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -1212,7 +1343,8 @@ A label query over a set of resources, in this case pods.
 
 
 
-A label selector requirement is a selector that contains values, a key, and an operator that relates the key and values.
+A label selector requirement is a selector that contains values, a key, and an operator that
+relates the key and values.
 
 <table>
     <thead>
@@ -1234,14 +1366,18 @@ A label selector requirement is a selector that contains values, a key, and an o
         <td><b>operator</b></td>
         <td>string</td>
         <td>
-          operator represents a key's relationship to a set of values. Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
+          operator represents a key's relationship to a set of values.
+Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
         </td>
         <td>true</td>
       </tr><tr>
         <td><b>values</b></td>
         <td>[]string</td>
         <td>
-          values is an array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty. This array is replaced during a strategic merge patch.<br/>
+          values is an array of string values. If the operator is In or NotIn,
+the values array must be non-empty. If the operator is Exists or DoesNotExist,
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -1253,7 +1389,11 @@ A label selector requirement is a selector that contains values, a key, and an o
 
 
 
-A label query over the set of namespaces that the term applies to. The term is applied to the union of the namespaces selected by this field and the ones listed in the namespaces field. null selector and null or empty namespaces list means "this pod's namespace". An empty selector ({}) matches all namespaces.
+A label query over the set of namespaces that the term applies to.
+The term is applied to the union of the namespaces selected by this field
+and the ones listed in the namespaces field.
+null selector and null or empty namespaces list means "this pod's namespace".
+An empty selector ({}) matches all namespaces.
 
 <table>
     <thead>
@@ -1275,7 +1415,9 @@ A label query over the set of namespaces that the term applies to. The term is a
         <td><b>matchLabels</b></td>
         <td>map[string]string</td>
         <td>
-          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of matchExpressions, whose key field is "key", the operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -1287,7 +1429,8 @@ A label query over the set of namespaces that the term applies to. The term is a
 
 
 
-A label selector requirement is a selector that contains values, a key, and an operator that relates the key and values.
+A label selector requirement is a selector that contains values, a key, and an operator that
+relates the key and values.
 
 <table>
     <thead>
@@ -1309,14 +1452,18 @@ A label selector requirement is a selector that contains values, a key, and an o
         <td><b>operator</b></td>
         <td>string</td>
         <td>
-          operator represents a key's relationship to a set of values. Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
+          operator represents a key's relationship to a set of values.
+Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
         </td>
         <td>true</td>
       </tr><tr>
         <td><b>values</b></td>
         <td>[]string</td>
         <td>
-          values is an array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty. This array is replaced during a strategic merge patch.<br/>
+          values is an array of string values. If the operator is In or NotIn,
+the values array must be non-empty. If the operator is Exists or DoesNotExist,
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -1328,7 +1475,12 @@ A label selector requirement is a selector that contains values, a key, and an o
 
 
 
-Defines a set of pods (namely those matching the labelSelector relative to the given namespace(s)) that this pod should be co-located (affinity) or not co-located (anti-affinity) with, where co-located is defined as running on a node whose value of the label with key <topologyKey> matches that of any node on which a pod of the set of pods is running
+Defines a set of pods (namely those matching the labelSelector
+relative to the given namespace(s)) that this pod should be
+co-located (affinity) or not co-located (anti-affinity) with,
+where co-located is defined as running on a node whose value of
+the label with key <topologyKey> matches that of any node on which
+a pod of the set of pods is running
 
 <table>
     <thead>
@@ -1343,28 +1495,70 @@ Defines a set of pods (namely those matching the labelSelector relative to the g
         <td><b>topologyKey</b></td>
         <td>string</td>
         <td>
-          This pod should be co-located (affinity) or not co-located (anti-affinity) with the pods matching the labelSelector in the specified namespaces, where co-located is defined as running on a node whose value of the label with key topologyKey matches that of any node on which any of the selected pods is running. Empty topologyKey is not allowed.<br/>
+          This pod should be co-located (affinity) or not co-located (anti-affinity) with the pods matching
+the labelSelector in the specified namespaces, where co-located is defined as running on a node
+whose value of the label with key topologyKey matches that of any node on which any of the
+selected pods is running.
+Empty topologyKey is not allowed.<br/>
         </td>
         <td>true</td>
       </tr><tr>
         <td><b><a href="#pubsubpluseventbrokerspecnodeassignmentindexspecaffinitypodaffinityrequiredduringschedulingignoredduringexecutionindexlabelselector">labelSelector</a></b></td>
         <td>object</td>
         <td>
-          A label query over a set of resources, in this case pods.<br/>
+          A label query over a set of resources, in this case pods.
+If it's null, this PodAffinityTerm matches with no Pods.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>matchLabelKeys</b></td>
+        <td>[]string</td>
+        <td>
+          MatchLabelKeys is a set of pod label keys to select which pods will
+be taken into consideration. The keys are used to lookup values from the
+incoming pod labels, those key-value labels are merged with `LabelSelector` as `key in (value)`
+to select the group of existing pods which pods will be taken into consideration
+for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
+pod labels will be ignored. The default value is empty.
+The same key is forbidden to exist in both MatchLabelKeys and LabelSelector.
+Also, MatchLabelKeys cannot be set when LabelSelector isn't set.
+This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>mismatchLabelKeys</b></td>
+        <td>[]string</td>
+        <td>
+          MismatchLabelKeys is a set of pod label keys to select which pods will
+be taken into consideration. The keys are used to lookup values from the
+incoming pod labels, those key-value labels are merged with `LabelSelector` as `key notin (value)`
+to select the group of existing pods which pods will be taken into consideration
+for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
+pod labels will be ignored. The default value is empty.
+The same key is forbidden to exist in both MismatchLabelKeys and LabelSelector.
+Also, MismatchLabelKeys cannot be set when LabelSelector isn't set.
+This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#pubsubpluseventbrokerspecnodeassignmentindexspecaffinitypodaffinityrequiredduringschedulingignoredduringexecutionindexnamespaceselector">namespaceSelector</a></b></td>
         <td>object</td>
         <td>
-          A label query over the set of namespaces that the term applies to. The term is applied to the union of the namespaces selected by this field and the ones listed in the namespaces field. null selector and null or empty namespaces list means "this pod's namespace". An empty selector ({}) matches all namespaces.<br/>
+          A label query over the set of namespaces that the term applies to.
+The term is applied to the union of the namespaces selected by this field
+and the ones listed in the namespaces field.
+null selector and null or empty namespaces list means "this pod's namespace".
+An empty selector ({}) matches all namespaces.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>namespaces</b></td>
         <td>[]string</td>
         <td>
-          namespaces specifies a static list of namespace names that the term applies to. The term is applied to the union of the namespaces listed in this field and the ones selected by namespaceSelector. null or empty namespaces list and null namespaceSelector means "this pod's namespace".<br/>
+          namespaces specifies a static list of namespace names that the term applies to.
+The term is applied to the union of the namespaces listed in this field
+and the ones selected by namespaceSelector.
+null or empty namespaces list and null namespaceSelector means "this pod's namespace".<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -1377,6 +1571,7 @@ Defines a set of pods (namely those matching the labelSelector relative to the g
 
 
 A label query over a set of resources, in this case pods.
+If it's null, this PodAffinityTerm matches with no Pods.
 
 <table>
     <thead>
@@ -1398,7 +1593,9 @@ A label query over a set of resources, in this case pods.
         <td><b>matchLabels</b></td>
         <td>map[string]string</td>
         <td>
-          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of matchExpressions, whose key field is "key", the operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -1410,7 +1607,8 @@ A label query over a set of resources, in this case pods.
 
 
 
-A label selector requirement is a selector that contains values, a key, and an operator that relates the key and values.
+A label selector requirement is a selector that contains values, a key, and an operator that
+relates the key and values.
 
 <table>
     <thead>
@@ -1432,14 +1630,18 @@ A label selector requirement is a selector that contains values, a key, and an o
         <td><b>operator</b></td>
         <td>string</td>
         <td>
-          operator represents a key's relationship to a set of values. Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
+          operator represents a key's relationship to a set of values.
+Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
         </td>
         <td>true</td>
       </tr><tr>
         <td><b>values</b></td>
         <td>[]string</td>
         <td>
-          values is an array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty. This array is replaced during a strategic merge patch.<br/>
+          values is an array of string values. If the operator is In or NotIn,
+the values array must be non-empty. If the operator is Exists or DoesNotExist,
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -1451,7 +1653,11 @@ A label selector requirement is a selector that contains values, a key, and an o
 
 
 
-A label query over the set of namespaces that the term applies to. The term is applied to the union of the namespaces selected by this field and the ones listed in the namespaces field. null selector and null or empty namespaces list means "this pod's namespace". An empty selector ({}) matches all namespaces.
+A label query over the set of namespaces that the term applies to.
+The term is applied to the union of the namespaces selected by this field
+and the ones listed in the namespaces field.
+null selector and null or empty namespaces list means "this pod's namespace".
+An empty selector ({}) matches all namespaces.
 
 <table>
     <thead>
@@ -1473,7 +1679,9 @@ A label query over the set of namespaces that the term applies to. The term is a
         <td><b>matchLabels</b></td>
         <td>map[string]string</td>
         <td>
-          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of matchExpressions, whose key field is "key", the operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -1485,7 +1693,8 @@ A label query over the set of namespaces that the term applies to. The term is a
 
 
 
-A label selector requirement is a selector that contains values, a key, and an operator that relates the key and values.
+A label selector requirement is a selector that contains values, a key, and an operator that
+relates the key and values.
 
 <table>
     <thead>
@@ -1507,14 +1716,18 @@ A label selector requirement is a selector that contains values, a key, and an o
         <td><b>operator</b></td>
         <td>string</td>
         <td>
-          operator represents a key's relationship to a set of values. Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
+          operator represents a key's relationship to a set of values.
+Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
         </td>
         <td>true</td>
       </tr><tr>
         <td><b>values</b></td>
         <td>[]string</td>
         <td>
-          values is an array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty. This array is replaced during a strategic merge patch.<br/>
+          values is an array of string values. If the operator is In or NotIn,
+the values array must be non-empty. If the operator is Exists or DoesNotExist,
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -1541,14 +1754,28 @@ Describes pod anti-affinity scheduling rules (e.g. avoid putting this pod in the
         <td><b><a href="#pubsubpluseventbrokerspecnodeassignmentindexspecaffinitypodantiaffinitypreferredduringschedulingignoredduringexecutionindex">preferredDuringSchedulingIgnoredDuringExecution</a></b></td>
         <td>[]object</td>
         <td>
-          The scheduler will prefer to schedule pods to nodes that satisfy the anti-affinity expressions specified by this field, but it may choose a node that violates one or more of the expressions. The node that is most preferred is the one with the greatest sum of weights, i.e. for each node that meets all of the scheduling requirements (resource request, requiredDuringScheduling anti-affinity expressions, etc.), compute a sum by iterating through the elements of this field and adding "weight" to the sum if the node has pods which matches the corresponding podAffinityTerm; the node(s) with the highest sum are the most preferred.<br/>
+          The scheduler will prefer to schedule pods to nodes that satisfy
+the anti-affinity expressions specified by this field, but it may choose
+a node that violates one or more of the expressions. The node that is
+most preferred is the one with the greatest sum of weights, i.e.
+for each node that meets all of the scheduling requirements (resource
+request, requiredDuringScheduling anti-affinity expressions, etc.),
+compute a sum by iterating through the elements of this field and adding
+"weight" to the sum if the node has pods which matches the corresponding podAffinityTerm; the
+node(s) with the highest sum are the most preferred.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#pubsubpluseventbrokerspecnodeassignmentindexspecaffinitypodantiaffinityrequiredduringschedulingignoredduringexecutionindex">requiredDuringSchedulingIgnoredDuringExecution</a></b></td>
         <td>[]object</td>
         <td>
-          If the anti-affinity requirements specified by this field are not met at scheduling time, the pod will not be scheduled onto the node. If the anti-affinity requirements specified by this field cease to be met at some point during pod execution (e.g. due to a pod label update), the system may or may not try to eventually evict the pod from its node. When there are multiple elements, the lists of nodes corresponding to each podAffinityTerm are intersected, i.e. all terms must be satisfied.<br/>
+          If the anti-affinity requirements specified by this field are not met at
+scheduling time, the pod will not be scheduled onto the node.
+If the anti-affinity requirements specified by this field cease to be met
+at some point during pod execution (e.g. due to a pod label update), the
+system may or may not try to eventually evict the pod from its node.
+When there are multiple elements, the lists of nodes corresponding to each
+podAffinityTerm are intersected, i.e. all terms must be satisfied.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -1582,7 +1809,8 @@ The weights of all of the matched WeightedPodAffinityTerm fields are added per-n
         <td><b>weight</b></td>
         <td>integer</td>
         <td>
-          weight associated with matching the corresponding podAffinityTerm, in the range 1-100.<br/>
+          weight associated with matching the corresponding podAffinityTerm,
+in the range 1-100.<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -1611,28 +1839,70 @@ Required. A pod affinity term, associated with the corresponding weight.
         <td><b>topologyKey</b></td>
         <td>string</td>
         <td>
-          This pod should be co-located (affinity) or not co-located (anti-affinity) with the pods matching the labelSelector in the specified namespaces, where co-located is defined as running on a node whose value of the label with key topologyKey matches that of any node on which any of the selected pods is running. Empty topologyKey is not allowed.<br/>
+          This pod should be co-located (affinity) or not co-located (anti-affinity) with the pods matching
+the labelSelector in the specified namespaces, where co-located is defined as running on a node
+whose value of the label with key topologyKey matches that of any node on which any of the
+selected pods is running.
+Empty topologyKey is not allowed.<br/>
         </td>
         <td>true</td>
       </tr><tr>
         <td><b><a href="#pubsubpluseventbrokerspecnodeassignmentindexspecaffinitypodantiaffinitypreferredduringschedulingignoredduringexecutionindexpodaffinitytermlabelselector">labelSelector</a></b></td>
         <td>object</td>
         <td>
-          A label query over a set of resources, in this case pods.<br/>
+          A label query over a set of resources, in this case pods.
+If it's null, this PodAffinityTerm matches with no Pods.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>matchLabelKeys</b></td>
+        <td>[]string</td>
+        <td>
+          MatchLabelKeys is a set of pod label keys to select which pods will
+be taken into consideration. The keys are used to lookup values from the
+incoming pod labels, those key-value labels are merged with `LabelSelector` as `key in (value)`
+to select the group of existing pods which pods will be taken into consideration
+for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
+pod labels will be ignored. The default value is empty.
+The same key is forbidden to exist in both MatchLabelKeys and LabelSelector.
+Also, MatchLabelKeys cannot be set when LabelSelector isn't set.
+This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>mismatchLabelKeys</b></td>
+        <td>[]string</td>
+        <td>
+          MismatchLabelKeys is a set of pod label keys to select which pods will
+be taken into consideration. The keys are used to lookup values from the
+incoming pod labels, those key-value labels are merged with `LabelSelector` as `key notin (value)`
+to select the group of existing pods which pods will be taken into consideration
+for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
+pod labels will be ignored. The default value is empty.
+The same key is forbidden to exist in both MismatchLabelKeys and LabelSelector.
+Also, MismatchLabelKeys cannot be set when LabelSelector isn't set.
+This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#pubsubpluseventbrokerspecnodeassignmentindexspecaffinitypodantiaffinitypreferredduringschedulingignoredduringexecutionindexpodaffinitytermnamespaceselector">namespaceSelector</a></b></td>
         <td>object</td>
         <td>
-          A label query over the set of namespaces that the term applies to. The term is applied to the union of the namespaces selected by this field and the ones listed in the namespaces field. null selector and null or empty namespaces list means "this pod's namespace". An empty selector ({}) matches all namespaces.<br/>
+          A label query over the set of namespaces that the term applies to.
+The term is applied to the union of the namespaces selected by this field
+and the ones listed in the namespaces field.
+null selector and null or empty namespaces list means "this pod's namespace".
+An empty selector ({}) matches all namespaces.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>namespaces</b></td>
         <td>[]string</td>
         <td>
-          namespaces specifies a static list of namespace names that the term applies to. The term is applied to the union of the namespaces listed in this field and the ones selected by namespaceSelector. null or empty namespaces list and null namespaceSelector means "this pod's namespace".<br/>
+          namespaces specifies a static list of namespace names that the term applies to.
+The term is applied to the union of the namespaces listed in this field
+and the ones selected by namespaceSelector.
+null or empty namespaces list and null namespaceSelector means "this pod's namespace".<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -1645,6 +1915,7 @@ Required. A pod affinity term, associated with the corresponding weight.
 
 
 A label query over a set of resources, in this case pods.
+If it's null, this PodAffinityTerm matches with no Pods.
 
 <table>
     <thead>
@@ -1666,7 +1937,9 @@ A label query over a set of resources, in this case pods.
         <td><b>matchLabels</b></td>
         <td>map[string]string</td>
         <td>
-          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of matchExpressions, whose key field is "key", the operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -1678,7 +1951,8 @@ A label query over a set of resources, in this case pods.
 
 
 
-A label selector requirement is a selector that contains values, a key, and an operator that relates the key and values.
+A label selector requirement is a selector that contains values, a key, and an operator that
+relates the key and values.
 
 <table>
     <thead>
@@ -1700,14 +1974,18 @@ A label selector requirement is a selector that contains values, a key, and an o
         <td><b>operator</b></td>
         <td>string</td>
         <td>
-          operator represents a key's relationship to a set of values. Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
+          operator represents a key's relationship to a set of values.
+Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
         </td>
         <td>true</td>
       </tr><tr>
         <td><b>values</b></td>
         <td>[]string</td>
         <td>
-          values is an array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty. This array is replaced during a strategic merge patch.<br/>
+          values is an array of string values. If the operator is In or NotIn,
+the values array must be non-empty. If the operator is Exists or DoesNotExist,
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -1719,7 +1997,11 @@ A label selector requirement is a selector that contains values, a key, and an o
 
 
 
-A label query over the set of namespaces that the term applies to. The term is applied to the union of the namespaces selected by this field and the ones listed in the namespaces field. null selector and null or empty namespaces list means "this pod's namespace". An empty selector ({}) matches all namespaces.
+A label query over the set of namespaces that the term applies to.
+The term is applied to the union of the namespaces selected by this field
+and the ones listed in the namespaces field.
+null selector and null or empty namespaces list means "this pod's namespace".
+An empty selector ({}) matches all namespaces.
 
 <table>
     <thead>
@@ -1741,7 +2023,9 @@ A label query over the set of namespaces that the term applies to. The term is a
         <td><b>matchLabels</b></td>
         <td>map[string]string</td>
         <td>
-          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of matchExpressions, whose key field is "key", the operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -1753,7 +2037,8 @@ A label query over the set of namespaces that the term applies to. The term is a
 
 
 
-A label selector requirement is a selector that contains values, a key, and an operator that relates the key and values.
+A label selector requirement is a selector that contains values, a key, and an operator that
+relates the key and values.
 
 <table>
     <thead>
@@ -1775,14 +2060,18 @@ A label selector requirement is a selector that contains values, a key, and an o
         <td><b>operator</b></td>
         <td>string</td>
         <td>
-          operator represents a key's relationship to a set of values. Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
+          operator represents a key's relationship to a set of values.
+Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
         </td>
         <td>true</td>
       </tr><tr>
         <td><b>values</b></td>
         <td>[]string</td>
         <td>
-          values is an array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty. This array is replaced during a strategic merge patch.<br/>
+          values is an array of string values. If the operator is In or NotIn,
+the values array must be non-empty. If the operator is Exists or DoesNotExist,
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -1794,7 +2083,12 @@ A label selector requirement is a selector that contains values, a key, and an o
 
 
 
-Defines a set of pods (namely those matching the labelSelector relative to the given namespace(s)) that this pod should be co-located (affinity) or not co-located (anti-affinity) with, where co-located is defined as running on a node whose value of the label with key <topologyKey> matches that of any node on which a pod of the set of pods is running
+Defines a set of pods (namely those matching the labelSelector
+relative to the given namespace(s)) that this pod should be
+co-located (affinity) or not co-located (anti-affinity) with,
+where co-located is defined as running on a node whose value of
+the label with key <topologyKey> matches that of any node on which
+a pod of the set of pods is running
 
 <table>
     <thead>
@@ -1809,28 +2103,70 @@ Defines a set of pods (namely those matching the labelSelector relative to the g
         <td><b>topologyKey</b></td>
         <td>string</td>
         <td>
-          This pod should be co-located (affinity) or not co-located (anti-affinity) with the pods matching the labelSelector in the specified namespaces, where co-located is defined as running on a node whose value of the label with key topologyKey matches that of any node on which any of the selected pods is running. Empty topologyKey is not allowed.<br/>
+          This pod should be co-located (affinity) or not co-located (anti-affinity) with the pods matching
+the labelSelector in the specified namespaces, where co-located is defined as running on a node
+whose value of the label with key topologyKey matches that of any node on which any of the
+selected pods is running.
+Empty topologyKey is not allowed.<br/>
         </td>
         <td>true</td>
       </tr><tr>
         <td><b><a href="#pubsubpluseventbrokerspecnodeassignmentindexspecaffinitypodantiaffinityrequiredduringschedulingignoredduringexecutionindexlabelselector">labelSelector</a></b></td>
         <td>object</td>
         <td>
-          A label query over a set of resources, in this case pods.<br/>
+          A label query over a set of resources, in this case pods.
+If it's null, this PodAffinityTerm matches with no Pods.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>matchLabelKeys</b></td>
+        <td>[]string</td>
+        <td>
+          MatchLabelKeys is a set of pod label keys to select which pods will
+be taken into consideration. The keys are used to lookup values from the
+incoming pod labels, those key-value labels are merged with `LabelSelector` as `key in (value)`
+to select the group of existing pods which pods will be taken into consideration
+for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
+pod labels will be ignored. The default value is empty.
+The same key is forbidden to exist in both MatchLabelKeys and LabelSelector.
+Also, MatchLabelKeys cannot be set when LabelSelector isn't set.
+This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>mismatchLabelKeys</b></td>
+        <td>[]string</td>
+        <td>
+          MismatchLabelKeys is a set of pod label keys to select which pods will
+be taken into consideration. The keys are used to lookup values from the
+incoming pod labels, those key-value labels are merged with `LabelSelector` as `key notin (value)`
+to select the group of existing pods which pods will be taken into consideration
+for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
+pod labels will be ignored. The default value is empty.
+The same key is forbidden to exist in both MismatchLabelKeys and LabelSelector.
+Also, MismatchLabelKeys cannot be set when LabelSelector isn't set.
+This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#pubsubpluseventbrokerspecnodeassignmentindexspecaffinitypodantiaffinityrequiredduringschedulingignoredduringexecutionindexnamespaceselector">namespaceSelector</a></b></td>
         <td>object</td>
         <td>
-          A label query over the set of namespaces that the term applies to. The term is applied to the union of the namespaces selected by this field and the ones listed in the namespaces field. null selector and null or empty namespaces list means "this pod's namespace". An empty selector ({}) matches all namespaces.<br/>
+          A label query over the set of namespaces that the term applies to.
+The term is applied to the union of the namespaces selected by this field
+and the ones listed in the namespaces field.
+null selector and null or empty namespaces list means "this pod's namespace".
+An empty selector ({}) matches all namespaces.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>namespaces</b></td>
         <td>[]string</td>
         <td>
-          namespaces specifies a static list of namespace names that the term applies to. The term is applied to the union of the namespaces listed in this field and the ones selected by namespaceSelector. null or empty namespaces list and null namespaceSelector means "this pod's namespace".<br/>
+          namespaces specifies a static list of namespace names that the term applies to.
+The term is applied to the union of the namespaces listed in this field
+and the ones selected by namespaceSelector.
+null or empty namespaces list and null namespaceSelector means "this pod's namespace".<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -1843,6 +2179,7 @@ Defines a set of pods (namely those matching the labelSelector relative to the g
 
 
 A label query over a set of resources, in this case pods.
+If it's null, this PodAffinityTerm matches with no Pods.
 
 <table>
     <thead>
@@ -1864,7 +2201,9 @@ A label query over a set of resources, in this case pods.
         <td><b>matchLabels</b></td>
         <td>map[string]string</td>
         <td>
-          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of matchExpressions, whose key field is "key", the operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -1876,7 +2215,8 @@ A label query over a set of resources, in this case pods.
 
 
 
-A label selector requirement is a selector that contains values, a key, and an operator that relates the key and values.
+A label selector requirement is a selector that contains values, a key, and an operator that
+relates the key and values.
 
 <table>
     <thead>
@@ -1898,14 +2238,18 @@ A label selector requirement is a selector that contains values, a key, and an o
         <td><b>operator</b></td>
         <td>string</td>
         <td>
-          operator represents a key's relationship to a set of values. Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
+          operator represents a key's relationship to a set of values.
+Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
         </td>
         <td>true</td>
       </tr><tr>
         <td><b>values</b></td>
         <td>[]string</td>
         <td>
-          values is an array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty. This array is replaced during a strategic merge patch.<br/>
+          values is an array of string values. If the operator is In or NotIn,
+the values array must be non-empty. If the operator is Exists or DoesNotExist,
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -1917,7 +2261,11 @@ A label selector requirement is a selector that contains values, a key, and an o
 
 
 
-A label query over the set of namespaces that the term applies to. The term is applied to the union of the namespaces selected by this field and the ones listed in the namespaces field. null selector and null or empty namespaces list means "this pod's namespace". An empty selector ({}) matches all namespaces.
+A label query over the set of namespaces that the term applies to.
+The term is applied to the union of the namespaces selected by this field
+and the ones listed in the namespaces field.
+null selector and null or empty namespaces list means "this pod's namespace".
+An empty selector ({}) matches all namespaces.
 
 <table>
     <thead>
@@ -1939,7 +2287,9 @@ A label query over the set of namespaces that the term applies to. The term is a
         <td><b>matchLabels</b></td>
         <td>map[string]string</td>
         <td>
-          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of matchExpressions, whose key field is "key", the operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -1951,7 +2301,8 @@ A label query over the set of namespaces that the term applies to. The term is a
 
 
 
-A label selector requirement is a selector that contains values, a key, and an operator that relates the key and values.
+A label selector requirement is a selector that contains values, a key, and an operator that
+relates the key and values.
 
 <table>
     <thead>
@@ -1973,14 +2324,85 @@ A label selector requirement is a selector that contains values, a key, and an o
         <td><b>operator</b></td>
         <td>string</td>
         <td>
-          operator represents a key's relationship to a set of values. Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
+          operator represents a key's relationship to a set of values.
+Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
         </td>
         <td>true</td>
       </tr><tr>
         <td><b>values</b></td>
         <td>[]string</td>
         <td>
-          values is an array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty. This array is replaced during a strategic merge patch.<br/>
+          values is an array of string values. If the operator is In or NotIn,
+the values array must be non-empty. If the operator is Exists or DoesNotExist,
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### PubSubPlusEventBroker.spec.nodeAssignment[index].spec.tolerations[index]
+<sup><sup>[↩ Parent](#pubsubpluseventbrokerspecnodeassignmentindexspec)</sup></sup>
+
+
+
+The pod this Toleration is attached to tolerates any taint that matches
+the triple <key,value,effect> using the matching operator <operator>.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>effect</b></td>
+        <td>string</td>
+        <td>
+          Effect indicates the taint effect to match. Empty means match all taint effects.
+When specified, allowed values are NoSchedule, PreferNoSchedule and NoExecute.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          Key is the taint key that the toleration applies to. Empty means match all taint keys.
+If the key is empty, operator must be Exists; this combination means to match all values and all keys.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>operator</b></td>
+        <td>string</td>
+        <td>
+          Operator represents a key's relationship to the value.
+Valid operators are Exists and Equal. Defaults to Equal.
+Exists is equivalent to wildcard for value, so that a pod can
+tolerate all taints of a particular category.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>tolerationSeconds</b></td>
+        <td>integer</td>
+        <td>
+          TolerationSeconds represents the period of time the toleration (which must be
+of effect NoExecute, otherwise this field is ignored) tolerates the taint. By default,
+it is not set, which means tolerate the taint forever (do not evict). Zero and
+negative values will be treated as 0 (evict immediately) by the system.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>value</b></td>
+        <td>string</td>
+        <td>
+          Value is the taint value the toleration matches to.
+If the operator is Exists, the value should be empty, otherwise just a regular string.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -2046,6 +2468,8 @@ Service defines broker service details.
         <td>map[string]string</td>
         <td>
           Annotations allows adding provider-specific service annotations<br/>
+          <br/>
+            <i>Default</i>: map[]<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -2145,7 +2569,8 @@ ServiceAccount defines a ServiceAccount dedicated to the PubSubPlusEventBroker
         <td><b>name</b></td>
         <td>string</td>
         <td>
-          Name specifies the name of an existing ServiceAccount dedicated to the PubSubPlusEventBroker. If this value is missing a new ServiceAccount will be created.<br/>
+          Name specifies the name of an existing ServiceAccount dedicated to the PubSubPlusEventBroker.
+If this value is missing a new ServiceAccount will be created.<br/>
         </td>
         <td>true</td>
       </tr></tbody>
@@ -2281,7 +2706,8 @@ Defines the customVolumeMount that can be used mount the data volume instead of 
 
 
 
-SystemScaling provides exact fine-grained specification of the event broker scaling parameters and the assigned CPU / memory resources to the Pod.
+SystemScaling provides exact fine-grained specification of the event broker scaling parameters
+and the assigned CPU / memory resources to the Pod.
 
 <table>
     <thead>
@@ -2526,8 +2952,23 @@ Broker section provides the broker status
 
 
 
-Condition contains details for one aspect of the current state of this API Resource. --- This struct is intended for direct use as an array at the field path .status.conditions.  For example, type FooStatus struct{ // Represents the observations of a foo's current state. // Known .status.conditions.type are: "Available", "Progressing", and "Degraded" // +patchMergeKey=type // +patchStrategy=merge // +listType=map // +listMapKey=type Conditions []metav1.Condition `json:"conditions,omitempty" patchStrategy:"merge" patchMergeKey:"type" protobuf:"bytes,1,rep,name=conditions"` 
- // other fields }
+Condition contains details for one aspect of the current state of this API Resource.
+---
+This struct is intended for direct use as an array at the field path .status.conditions.  For example,
+
+
+	type FooStatus struct{
+	    // Represents the observations of a foo's current state.
+	    // Known .status.conditions.type are: "Available", "Progressing", and "Degraded"
+	    // +patchMergeKey=type
+	    // +patchStrategy=merge
+	    // +listType=map
+	    // +listMapKey=type
+	    Conditions []metav1.Condition `json:"conditions,omitempty" patchStrategy:"merge" patchMergeKey:"type" protobuf:"bytes,1,rep,name=conditions"`
+
+
+	    // other fields
+	}
 
 <table>
     <thead>
@@ -2542,7 +2983,8 @@ Condition contains details for one aspect of the current state of this API Resou
         <td><b>lastTransitionTime</b></td>
         <td>string</td>
         <td>
-          lastTransitionTime is the last time the condition transitioned from one status to another. This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.<br/>
+          lastTransitionTime is the last time the condition transitioned from one status to another.
+This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.<br/>
           <br/>
             <i>Format</i>: date-time<br/>
         </td>
@@ -2551,14 +2993,19 @@ Condition contains details for one aspect of the current state of this API Resou
         <td><b>message</b></td>
         <td>string</td>
         <td>
-          message is a human readable message indicating details about the transition. This may be an empty string.<br/>
+          message is a human readable message indicating details about the transition.
+This may be an empty string.<br/>
         </td>
         <td>true</td>
       </tr><tr>
         <td><b>reason</b></td>
         <td>string</td>
         <td>
-          reason contains a programmatic identifier indicating the reason for the condition's last transition. Producers of specific condition types may define expected values and meanings for this field, and whether the values are considered a guaranteed API. The value should be a CamelCase string. This field may not be empty.<br/>
+          reason contains a programmatic identifier indicating the reason for the condition's last transition.
+Producers of specific condition types may define expected values and meanings for this field,
+and whether the values are considered a guaranteed API.
+The value should be a CamelCase string.
+This field may not be empty.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -2574,14 +3021,20 @@ Condition contains details for one aspect of the current state of this API Resou
         <td><b>type</b></td>
         <td>string</td>
         <td>
-          type of condition in CamelCase or in foo.example.com/CamelCase. --- Many .condition.type values are consistent across resources like Available, but because arbitrary conditions can be useful (see .node.status.conditions), the ability to deconflict is important. The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)<br/>
+          type of condition in CamelCase or in foo.example.com/CamelCase.
+---
+Many .condition.type values are consistent across resources like Available, but because arbitrary conditions can be
+useful (see .node.status.conditions), the ability to deconflict is important.
+The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)<br/>
         </td>
         <td>true</td>
       </tr><tr>
         <td><b>observedGeneration</b></td>
         <td>integer</td>
         <td>
-          observedGeneration represents the .metadata.generation that the condition was set based upon. For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date with respect to the current state of the instance.<br/>
+          observedGeneration represents the .metadata.generation that the condition was set based upon.
+For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+with respect to the current state of the instance.<br/>
           <br/>
             <i>Format</i>: int64<br/>
             <i>Minimum</i>: 0<br/>
