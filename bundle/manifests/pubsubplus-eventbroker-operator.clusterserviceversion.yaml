@@ -20,7 +20,7 @@ metadata:
     certified: "true"
     com.redhat.delivery.operator.bundle: "true"
     com.redhat.openshift.versions: v4.10
-    containerImage: ghcr.io/solacedev/pubsubplus-eventbroker-operator:1.0.3-dev
+    containerImage: ghcr.io/solacedev/pubsubplus-eventbroker-operator:1.0.3
     createdAt: "2024-04-23T16:09:41Z"
     description: The Solace PubSub+ Event Broker Operator deploys and manages the
       lifecycle of PubSub+ Event Brokers
@@ -29,7 +29,7 @@ metadata:
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
     repository: https://github.com/SolaceProducts/pubsubplus-kubernetes-quickstart
     support: Solace Products
-  name: pubsubplus-eventbroker-operator.v1.0.3-dev
+  name: pubsubplus-eventbroker-operator.v1.0.3
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -296,7 +296,7 @@ spec:
                   valueFrom:
                     fieldRef:
                       fieldPath: metadata.annotations['olm.targetNamespaces']
-                image: ghcr.io/solacedev/pubsubplus-eventbroker-operator:1.0.3-dev
+                image: ghcr.io/solacedev/pubsubplus-eventbroker-operator:1.0.3
                 imagePullPolicy: Always
                 livenessProbe:
                   httpGet:
@@ -411,4 +411,4 @@ spec:
   provider:
     name: Solace Corporation
     url: www.solace.com
-  version: 1.0.3-dev
+  version: 1.0.3

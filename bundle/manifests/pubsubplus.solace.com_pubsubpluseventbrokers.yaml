@@ -4,7 +4,7 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.14.0
   labels:
-    app.kubernetes.io/version: v1.0.3-dev
+    app.kubernetes.io/version: v1.0.3
   name: pubsubpluseventbrokers.pubsubplus.solace.com
 spec:
   group: pubsubplus.solace.com
