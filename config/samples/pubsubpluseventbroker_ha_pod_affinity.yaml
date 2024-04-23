@@ -75,6 +75,5 @@ spec:
   monitoring:
     enabled: true
     image:
-      repository: ghcr.io/solacedev/pubsubplus-prometheus-exporter@sha256
-      tag: b0ff45382b20260ea982e8353f1889bed4c6611d812e02ec16e5e5b1702721a7
+      repository: ghcr.io/solacedev/pubsubplus-prometheus-exporter
       pullPolicy: Always
