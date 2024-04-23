@@ -1,4 +1,4 @@
-name: Integration Test for FULL HA Deployment
+name: Integration Test for FULL HA Taints and Toleration Support
 
 on: workflow_call
 
@@ -48,6 +48,7 @@ jobs:
       - name: Testing operator deployment
         run: |
           kubectl cluster-info
+          kubectl get nodes -o wide
           kubectl get pods -n kube-system
           echo "current-context:" $(kubectl config current-context)
           echo "environment-kubeconfig:" ${KUBECONFIG}
@@ -57,26 +58,30 @@ jobs:
           kubectl rollout status deployment pubsubplus-eventbroker-operator -n pubsubplus-operator-system --timeout=240s
           kubectl get crd | grep eventbrokers
 
-      - name: Testing the Operator - HA
+      - name: Testing the Operator - HA Tolerations
         run: |
           kubectl create ns $TESTNAMESPACE; kubectl config set-context --current --namespace=$TESTNAMESPACE
-          openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout tls.key -out tls.crt -subj "/CN=*"
-          kubectl create secret tls test-tls --key="tls.key" --cert="tls.crt"
-          openssl x509 -in tls.crt -out tls.public.pem
-          openssl rsa -in tls.key -text > tls.private.pem
-          kubectl create secret tls monitoring-tls --key="tls.private.pem" --cert="tls.public.pem"
-          kubectl apply -f ci/manifests/eventbroker-ha.yaml | grep "test-ha created"
+          #create taint for first node
+          nodesAll=$(kubectl get nodes --output name) &&  firstNode=`echo "${nodesAll}" | head -1`
+          kubectl taint nodes $firstNode node=primary:NoSchedule
+          kubectl taint nodes $firstNode node=backup:NoSchedule
+          kubectl taint nodes $firstNode node=monitor:NoSchedule
+          #confirm node taint
+          echo "$firstNode has been tainted"
+          kubectl describe $firstNode
+          kubectl apply -f ci/manifests/eventbroker-ha-taints.yaml | grep "ha-toleration-test created"
           sleep 10 ; kubectl get all
           kubectl wait pods --selector app.kubernetes.io/instance=test-ha --for condition=Ready --timeout=300s
           kubectl get po --show-labels -n $TESTNAMESPACE | grep test-ha | grep "1/1"
           kubectl get po --show-labels -n $TESTNAMESPACE | grep test-ha | grep active=true
-          kubectl get sts -n $TESTNAMESPACE | grep test-ha
-          kubectl port-forward svc/test-ha-pubsubplus -n $TESTNAMESPACE 55555:55555 &
-          sleep 5
-          curl -O https://sftp.solace.com/download/SDKPERF_C_LINUX64
-          tar -xvf SDKPERF_C_LINUX64
-          pubSubTools/sdkperf_c -cip=tcp://localhost:55555 -mn=1000 -mr=0 -ptl=t1 -stl=t1 | grep "Total Messages"
+          kubectl get sts ha-toleration-test-pubsubplus-p -o jsonpath='{.spec.template.spec.tolerations}' | grep "value":"primary"
+          kubectl get sts ha-toleration-test-pubsubplus-b -o jsonpath='{.spec.template.spec.tolerations}' | grep "value":"backup"
+          kubectl get sts ha-toleration-test-pubsubplus-m -o jsonpath='{.spec.template.spec.tolerations}' | grep "value":"monitor"        
           kubectl delete eventbroker test-ha -n $TESTNAMESPACE | grep deleted
+          kubectl taint nodes $firstNode node=primary:NoSchedule-
+          kubectl taint nodes $firstNode node=backup:NoSchedule-
+          kubectl taint nodes $firstNode node=monitor:NoSchedule-
+          kubectl get nodes -o wide
 
       - name: Cleanup
         if: ${{ always() }}

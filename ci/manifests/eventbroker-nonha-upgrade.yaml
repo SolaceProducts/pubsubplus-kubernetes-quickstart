@@ -56,7 +56,7 @@ spec:
     enabled: true
     image:
       repository: ghcr.io/solacedev/pubsubplus-prometheus-exporter
-      tag: latest
+      tag: 1.0.2-dev
       pullPolicy: Always
       pullSecrets:
       - name: regcred

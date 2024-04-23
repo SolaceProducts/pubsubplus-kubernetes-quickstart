@@ -20,6 +20,8 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	ctrlruntime_cache "sigs.k8s.io/controller-runtime/pkg/cache"
+	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"strings"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
@@ -33,7 +35,6 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
@@ -75,9 +76,10 @@ func main() {
 
 	// Create Manager
 	options := ctrl.Options{
-		Scheme:                 scheme,
-		MetricsBindAddress:     metricsAddr,
-		Port:                   9443,
+		Scheme: scheme,
+		Metrics: server.Options{
+			BindAddress: metricsAddr,
+		},
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       "cb271b96.solace.com",
@@ -90,19 +92,21 @@ func main() {
 	}
 	if watchNs != "" {
 		setupLog.Info(fmt.Sprintf("Watching following namespace(s): %s", watchNs))
+		if strings.Contains(watchNs, ",") {
+			nsList := strings.Split(watchNs, ",")
+			options.Cache.DefaultNamespaces = make(map[string]ctrlruntime_cache.Config)
+			for _, namespace := range nsList {
+				options.Cache.DefaultNamespaces[namespace] = ctrlruntime_cache.Config{}
+			}
+		} else {
+			options.Cache = ctrlruntime_cache.Options{
+				DefaultNamespaces: map[string]ctrlruntime_cache.Config{watchNs: {}},
+			}
+		}
 	} else {
 		setupLog.Info("Watching all namespaces")
 	}
-	if strings.Contains(watchNs, ",") {
-		nsList := strings.Split(watchNs, ",")
-		var newNsList []string
-		for _, ns := range nsList {
-			newNsList = append(newNsList, strings.TrimSpace(ns))
-		}
-		options.NewCache = cache.MultiNamespacedCacheBuilder(newNsList)
-	} else {
-		options.Namespace = watchNs
-	}
+
 	cfg := ctrl.GetConfigOrDie()
 	mgr, err := ctrl.NewManager(cfg, options)
 	if err != nil {
