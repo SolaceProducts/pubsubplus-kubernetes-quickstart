@@ -8,10 +8,8 @@ on:
 env:
   VERSION: 1.0.3
   IMAGE_NAME: pubsubplus-eventbroker-operator
-  VAULT_ADDR: https://vault.maas-vault-prod.solace.cloud:8200
-  GCLOUD_PROJECT_ID_DEV: stellar-arcadia-205014
-  GCLOUD_PROJECT_ID_STAGING: gcp-maas-staging
-  GCLOUD_PROJECT_ID_PROD: gcp-maas-prod
+  VAULT_ADDR: ${{ secrets.VAULT_ADDR }}
+  GCLOUD_PROJECT_ID_DEV: ${{ secrets.GCLOUD_PROJECT_ID }}
 
 
 jobs:
@@ -89,13 +87,6 @@ jobs:
           git add README.md
           git commit -m "chore: Updated coverage badge."
 
-      # - name: Push changes except for the release branch or main (which is protected)
-      #   if: ${{ !startsWith(github.ref_name, 'v1.') && (github.ref_name != 'main') && (steps.verify-changed-files.outputs.files_changed == 'true') }}
-      #   uses: ad-m/github-push-action@master
-      #   with:
-      #     github_token: ${{ github.token }}
-      #     force: true
-      #     branch: ${{ github.ref }}
 
       - name: Lint and Build
         run: |
@@ -204,49 +195,42 @@ jobs:
 
 
   int-minimal-non-ha:
-    # if: ${{ false }}  # disable for now
     needs: build
     uses: ./.github/workflows/test-minimal-params.yml
     secrets: inherit
 
   int-minimal-ha:
-    # if: ${{ false }}  # disable for now
     needs: build
     uses: ./.github/workflows/test-minimal-params-ha.yml
     secrets: inherit
 
   int-full-non-ha:
-    # if: ${{ false }}  # disable for now
     needs: build
     uses: ./.github/workflows/test-full-params.yml
     secrets: inherit
 
   int-full-ha:
-    # if: ${{ false }}  # disable for now
     needs: build
     uses: ./.github/workflows/test-full-params-ha.yml
     secrets: inherit
 
   int-broker-version-update:
-    # if: ${{ false }}  # disable for now
     needs: build
     uses: ./.github/workflows/test-broker-upgrade-update.yml
     secrets: inherit
 
   int-helm-to-operator-upgrade:
-    # if: ${{ false }}  # disable for now
     needs: build
     uses: ./.github/workflows/test-helm-upgrade.yml
     secrets: inherit
 
   int-chaos-mesh:
-    # if: ${{ false }}  # disable for now
     needs: build
     uses: ./.github/workflows/test-broker-chaos-situation.yml
     secrets: inherit
 
   taints-and-tolerations:
-    if: ${{ false }}  # disable for now as GKE Autopilot does not allow taints after creation
+    if: ${{ false }}  # disable for now
     needs: build
     uses: ./.github/workflows/test-taints-and-toleration.yml
     secrets: inherit
