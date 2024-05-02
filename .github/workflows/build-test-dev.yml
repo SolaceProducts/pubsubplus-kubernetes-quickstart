@@ -5,40 +5,60 @@ on:
     branches-ignore:
       - main
 
+env:
+  VERSION: 1.0.3
+  IMAGE_NAME: pubsubplus-eventbroker-operator
+  VAULT_ADDR: ${{ secrets.VAULT_ADDR }}
+  GCLOUD_PROJECT_ID_DEV: ${{ secrets.GCLOUD_PROJECT_ID }}
+
+
 jobs:
   build:
     name: Build & push image
     runs-on: ubuntu-latest
+    permissions:
+      repository-projects: read
+      contents: read
+      actions: read
+      id-token: write
     steps:
       - name: Set up Go
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v5
         with:
-          go-version: 1.19
+          go-version: "1.21"
+        env:
+          GOTOOLCHAIN: go1.21rc3
 
       - name: Check out code
         uses: actions/checkout@v1
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
 
       - name: Login to Github Packages
         uses: docker/login-action@v2
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ secrets.RELEASE_GITHUB_TOKEN }}
 
       - name: Create k8s Kind Cluster for Unit Tests
+        if: ${{ startsWith(github.ref_name, 'dev1.') && (github.ref_name != 'main') }}
         uses: helm/kind-action@v1.3.0
 
       - name: Create Secret
+        if: ${{ startsWith(github.ref_name, 'dev1.') && (github.ref_name != 'main') }}
         run: |
           kubectl create secret generic regcred --from-file=.dockerconfigjson=${HOME}/.docker/config.json --type=kubernetes.io/dockerconfigjson
 
       - name: Unit Test and Coverage Report.
+        if: ${{ startsWith(github.ref_name, 'dev1.') && (github.ref_name != 'main') }}
         run: |
             mkdir -p reports
             make test-coverage
 
       - name: Upload Test coverage Reports
-        if: ${{ always() }}
+        if: ${{ startsWith(github.ref_name, 'dev1.') && (github.ref_name != 'main') }}
         uses: actions/upload-artifact@v3
         with:
           name: code-coverage-report
@@ -47,11 +67,13 @@ jobs:
             ./reports/cover.html
 
       - name: Go Coverage Badge
+        if: ${{ startsWith(github.ref_name, 'dev1.') && (github.ref_name != 'main') }}
         uses: tj-actions/coverage-badge-go@v2
         with:
           filename: ./reports/coverage.out
 
       - name: Verify Changed files
+        if: ${{ startsWith(github.ref_name, 'dev1.') && (github.ref_name != 'main') }}
         uses: tj-actions/verify-changed-files@v12
         id: verify-changed-files
         with:
@@ -65,25 +87,73 @@ jobs:
           git add README.md
           git commit -m "chore: Updated coverage badge."
 
-      # - name: Push changes except for the release branch or main (which is protected)
-      #   if: ${{ !startsWith(github.ref_name, 'v1.') && (github.ref_name != 'main') && (steps.verify-changed-files.outputs.files_changed == 'true') }}
-      #   uses: ad-m/github-push-action@master
-      #   with:
-      #     github_token: ${{ github.token }}
-      #     force: true
-      #     branch: ${{ github.ref }}
 
       - name: Lint and Build
         run: |
           go fmt ./... | wc -l | grep 0
           make docker-build
 
+      - name: Set up Docker Buildx
+        id: buildx
+        if: ${{ startsWith(github.ref_name, 'dev1.') && (github.ref_name != 'main') }}
+        uses: docker/setup-buildx-action@v2
+
+      - name: Checkout SolaceDev/maas-build-actions
+        if: ${{ startsWith(github.ref_name, 'dev1.') && (github.ref_name != 'main') }}
+        uses: actions/checkout@v2
+        with:
+          repository: SolaceDev/maas-build-actions
+          ref: refs/heads/master
+          token: ${{ secrets.RELEASE_GITHUB_TOKEN }}
+          persist-credentials: false
+          path: maas-build-actions
+
+      - name: Retrieve google container registry secrets
+        id: docker_registry_secrets
+        if: ${{ startsWith(github.ref_name, 'dev1.') && (github.ref_name != 'main') }}
+        uses: hashicorp/vault-action@v2.5.0
+        with:
+          url: "${{ env.VAULT_ADDR }}"
+          role: github-docker-secrets-read-role
+          method: jwt
+          path: jwt-github
+          jwtGithubAudience: https://github.com/SolaceDev
+          exportToken: true
+          secrets: |
+            secret/data/development/gcp-gcr GCP_SERVICE_ACCOUNT | GCP_DEV_SERVICE_ACCOUNT
+
+      - name: Log in to gcr development docker registry
+        uses: docker/login-action@f054a8b539a109f9f41c372932f1ae047eff08c9
+        if: ${{ startsWith(github.ref_name, 'dev1.') && (github.ref_name != 'main') }}
+        with:
+          registry: gcr.io
+          username: _json_key
+          password: ${{ steps.docker_registry_secrets.outputs.GCP_DEV_SERVICE_ACCOUNT }}
+
+      - name: Build image and push Google Container Registry
+        uses: docker/build-push-action@v2
+        if: ${{ startsWith(github.ref_name, 'dev1.') && (github.ref_name != 'main') }}
+        with:
+          context: ./
+          tags: |
+            gcr.io/${{ env.GCLOUD_PROJECT_ID_DEV }}/${{ env.IMAGE_NAME }}:${{ env.VERSION }}
+          push: true
+
+      - name: Run Vulnerability PreCheck for Prisma
+        uses: ./maas-build-actions/.github/actions/prisma-vulnerability-checker
+        if: ${{ startsWith(github.ref_name, 'dev1.') && (github.ref_name != 'main') }}
+        with:
+          docker_image_to_check: gcr.io/${{ env.GCLOUD_PROJECT_ID_DEV }}/${{ env.IMAGE_NAME }}:${{ env.VERSION }}
+          prisma_repository_name: "${{ env.GCLOUD_PROJECT_ID_DEV }}/${{ env.IMAGE_NAME }}"
+          project_squad: "launchpad"
+          prisma_jira_check: "False"
+
       - name: Build image and push GitHub Container Registry
         run: make docker-push
 
-
       - name: Run Whitesource Action
         uses: SolaceDev/Mend-Scan-GHA@v1.0.0
+        if: ${{ startsWith(github.ref_name, 'dev1.') && (github.ref_name != 'main') }}
         with:
           wssURL: https://saas.whitesourcesoftware.com/agent
           apiKey: ${{ secrets.WSS_API_KEY }}
@@ -93,57 +163,74 @@ jobs:
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
+        if: ${{ startsWith(github.ref_name, 'dev1.') && (github.ref_name != 'main') }}
         with:
-          image-ref: ghcr.io/solacedev/pubsubplus-eventbroker-operator:1.0.2-dev
+          image-ref: ghcr.io/solacedev/${{ env.IMAGE_NAME }}:${{ env.VERSION }}
           format: 'sarif'
           severity: 'CRITICAL,HIGH'
           output: 'trivy-results.sarif'
 
       - name: Uploads Trivy Scan Reports
-        if: ${{ always() }}
+        if: ${{ startsWith(github.ref_name, 'dev1.') && (github.ref_name != 'main') }}
         uses: actions/upload-artifact@v2
         with:
           path: |
             trivy-results.sarif
 
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        if: ${{ startsWith(github.ref_name, 'dev1.') && (github.ref_name != 'main') }}
+        with:
+          image-ref: ghcr.io/solacedev/${{ env.IMAGE_NAME }}:${{ env.VERSION }}
+          format: 'sarif'
+          severity: 'CRITICAL,HIGH'
+          output: 'trivy-results.sarif'
+
+      - name: Uploads Trivy Scan Reports
+        if: ${{ startsWith(github.ref_name, 'dev1.') && (github.ref_name != 'main') }}
+        uses: actions/upload-artifact@v2
+        with:
+          path: |
+            trivy-results.sarif
+
+
   int-minimal-non-ha:
-    # if: ${{ false }}  # disable for now
     needs: build
     uses: ./.github/workflows/test-minimal-params.yml
     secrets: inherit
 
   int-minimal-ha:
-    # if: ${{ false }}  # disable for now
     needs: build
     uses: ./.github/workflows/test-minimal-params-ha.yml
     secrets: inherit
 
   int-full-non-ha:
-    # if: ${{ false }}  # disable for now
     needs: build
     uses: ./.github/workflows/test-full-params.yml
     secrets: inherit
 
   int-full-ha:
-    # if: ${{ false }}  # disable for now
     needs: build
     uses: ./.github/workflows/test-full-params-ha.yml
     secrets: inherit
 
   int-broker-version-update:
-    # if: ${{ false }}  # disable for now
     needs: build
     uses: ./.github/workflows/test-broker-upgrade-update.yml
     secrets: inherit
 
   int-helm-to-operator-upgrade:
-    # if: ${{ false }}  # disable for now
     needs: build
     uses: ./.github/workflows/test-helm-upgrade.yml
     secrets: inherit
 
   int-chaos-mesh:
-    # if: ${{ false }}  # disable for now
     needs: build
     uses: ./.github/workflows/test-broker-chaos-situation.yml
+    secrets: inherit
+
+  taints-and-tolerations:
+    if: ${{ false }}  # disable for now
+    needs: build
+    uses: ./.github/workflows/test-taints-and-toleration.yml
     secrets: inherit

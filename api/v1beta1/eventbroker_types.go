@@ -18,7 +18,6 @@ package v1beta1
 
 import (
 	"encoding/json"
-
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -303,7 +302,7 @@ type NodeAssignment struct {
 	Spec NodeAssignmentSpec `json:"spec"`
 }
 
-// NodeAssignmentSpec defines the NodeAffinity and NodeSelector details to be used for event broker nodes
+// NodeAssignmentSpec defines the NodeAffinity, NodeSelector, and Tolerations details to be used for event broker nodes
 type NodeAssignmentSpec struct {
 	//+optional
 	//+nullable
@@ -316,6 +315,10 @@ type NodeAssignmentSpec struct {
 	//+kubebuilder:default:={}
 	// NodeSelector if provided defines the exact labels of nodes to which PubSubPlusEventBroker nodes can be scheduled
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+	//+optional
+	//+kubebuilder:validation:Type:=array
+	// Toleration if provided defines the exact properties of the PubSubPlusEventBroker nodes can be scheduled on nodes with d matching taint.
+	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
 }
 
 // SecurityContext defines the pod security context for the PubSubPlusEventBroker

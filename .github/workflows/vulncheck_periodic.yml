@@ -1,0 +1,124 @@
+name: Vuln check
+on:
+  schedule:
+    - cron: '0 */6 * * *'
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  vuln-check:
+    name: Build & push image
+    runs-on: ubuntu-latest
+    permissions:
+      repository-projects: read
+      contents: read
+      actions: read
+      id-token: write
+    steps:
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.21"
+
+      - name: Check out code
+        uses: actions/checkout@v1
+
+      - name: Login to Github Packages
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.RELEASE_GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Checkout SolaceDev/maas-build-actions
+        uses: actions/checkout@v2
+        with:
+          repository: SolaceDev/maas-build-actions
+          ref: refs/heads/master
+          token: ${{ secrets.RELEASE_GITHUB_TOKEN }}
+          persist-credentials: false
+          path: maas-build-actions
+
+      - name: Retrieve google container registry secrets
+        id: docker_registry_secrets
+        uses: hashicorp/vault-action@v2.5.0
+        with:
+          url: "${{ env.VAULT_ADDR }}"
+          role: github-docker-secrets-read-role
+          method: jwt
+          path: jwt-github
+          jwtGithubAudience: https://github.com/SolaceDev
+          exportToken: true
+          secrets: |
+            secret/data/development/gcp-gcr GCP_SERVICE_ACCOUNT | GCP_DEV_SERVICE_ACCOUNT
+
+      - name: Log in to gcr development docker registry
+        uses: docker/login-action@f054a8b539a109f9f41c372932f1ae047eff08c9
+        with:
+          registry: gcr.io
+          username: _json_key
+          password: ${{ steps.docker_registry_secrets.outputs.GCP_DEV_SERVICE_ACCOUNT }}
+
+      - name: Build image and push Google Container Registry
+        uses: docker/build-push-action@v2
+        with:
+          context: ./
+          tags: |
+            gcr.io/${{ env.GCLOUD_PROJECT_ID_DEV }}/${{ env.IMAGE_NAME }}:${{ env.VERSION }}
+          push: true
+
+      - name: Run Vulnerability PreCheck for Prisma
+        uses: ./maas-build-actions/.github/actions/prisma-vulnerability-checker
+        with:
+          docker_image_to_check: gcr.io/${{ env.GCLOUD_PROJECT_ID_DEV }}/${{ env.IMAGE_NAME }}:${{ env.VERSION }}
+          prisma_repository_name: "${{ env.GCLOUD_PROJECT_ID_DEV }}/${{ env.IMAGE_NAME }}"
+          project_squad: "launchpad"
+          prisma_jira_check: "False"
+
+      - name: Build image and push GitHub Container Registry
+        run: make docker-push
+
+      - name: Run Whitesource Action
+        uses: SolaceDev/Mend-Scan-GHA@v1.0.0
+        with:
+          wssURL: https://saas.whitesourcesoftware.com/agent
+          apiKey: ${{ secrets.WSS_API_KEY }}
+          productName: 'pubsubplus-kubernetes-operator'
+          projectName: 'pubsubplus-kubernetes-operator'
+          configFile: 'ci/whitesource/whitesource-agent.config'
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ghcr.io/solacedev/${{ env.IMAGE_NAME }}:${{ env.VERSION }}
+          format: 'sarif'
+          severity: 'CRITICAL,HIGH'
+          output: 'trivy-results.sarif'
+
+      - name: Uploads Trivy Scan Reports
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v2
+        with:
+          path: |
+            trivy-results.sarif
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ghcr.io/solacedev/${{ env.IMAGE_NAME }}:${{ env.VERSION }}
+          format: 'sarif'
+          severity: 'CRITICAL,HIGH'
+          output: 'trivy-results.sarif'
+
+      - name: Uploads Trivy Scan Reports
+        if: ${{ !startsWith(github.ref_name, '1.') }}
+        uses: actions/upload-artifact@v2
+        with:
+          path: |
+            trivy-results.sarif

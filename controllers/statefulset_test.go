@@ -315,6 +315,104 @@ var _ = Describe("Statefulset test", func() {
 
 			})
 
+			By("set up when in prod-level HA mode with Node Config", func() {
+				brokerHA := pubsubplus.PubSubPlusEventBroker{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      broker_ha_prod_level_config,
+						Namespace: namespace,
+					},
+					Spec: pubsubplus.EventBrokerSpec{
+						Developer: false,
+						SystemScaling: &pubsubplus.SystemScaling{
+							MaxConnections:      100,
+							MaxQueueMessages:    100,
+							MaxSpoolUsage:       1000,
+							MessagingNodeCpu:    "2",
+							MessagingNodeMemory: "2000Mi",
+						},
+						ExtraEnvVarsSecret: "",
+						ExtraEnvVarsCM:     "",
+						Redundancy:         true,
+						Timezone:           "UTC",
+						ExtraEnvVars: []*pubsubplus.ExtraEnvVar{
+							{
+								Name:  "Sample",
+								Value: "Testing",
+							},
+						},
+						PodLabels: map[string]string{
+							"Test": "True",
+						},
+						PodAnnotations: map[string]string{
+							"Test": "True",
+						},
+						UpdateStrategy: pubsubplus.AutomatedRollingUpdateStrategy,
+						Storage: pubsubplus.Storage{
+							Slow:                     true,
+							MessagingNodeStorageSize: "0",
+							MonitorNodeStorageSize:   "0",
+						},
+						BrokerNodeAssignment: []pubsubplus.NodeAssignment{
+							{
+								Name: "Primary",
+								Spec: pubsubplus.NodeAssignmentSpec{
+									NodeSelector: map[string]string{
+										"kubernetes.io/os": "linux",
+									},
+									Tolerations: []corev1.Toleration{
+										{
+											Key:      "key1",
+											Operator: corev1.TolerationOperator("Equals"),
+											Value:    "value1",
+											Effect:   corev1.TaintEffect("NoSchedule"),
+										},
+									},
+								},
+							},
+						},
+						BrokerTLS: pubsubplus.BrokerTLS{
+							Enabled: true,
+						},
+						Service: pubsubplus.Service{
+							ServiceType: corev1.ServiceTypeClusterIP,
+							Annotations: map[string]string{
+								"Sample": "Test",
+							},
+							Ports: []*pubsubplus.BrokerPort{},
+						},
+					},
+				}
+				Expect(k8sClient.Create(ctx, &brokerHA)).Should(Succeed())
+
+				//primary statefulset created successfully
+				EventuallyWithOffset(10, func() bool {
+					statefulset := &v1.StatefulSet{}
+					statefulsetName := getStatefulsetName(brokerHA.Name, "p")
+					err := k8sClient.Get(ctx, types.NamespacedName{Name: statefulsetName, Namespace: brokerHA.Namespace}, statefulset)
+					return err == nil
+				}).WithTimeout(20 * time.Second).Should(BeTrue())
+
+				//backup statefulset created successfully
+				EventuallyWithOffset(10, func() bool {
+					statefulset := &v1.StatefulSet{}
+					statefulsetName := getStatefulsetName(brokerHA.Name, "b")
+					err := k8sClient.Get(ctx, types.NamespacedName{Name: statefulsetName, Namespace: brokerHA.Namespace}, statefulset)
+					return err == nil
+				}).WithTimeout(20 * time.Second).Should(BeTrue())
+
+				//monitor statefulset created successfully
+				EventuallyWithOffset(10, func() bool {
+					statefulset := &v1.StatefulSet{}
+					statefulsetName := getStatefulsetName(brokerHA.Name, "m")
+					err := k8sClient.Get(ctx, types.NamespacedName{Name: statefulsetName, Namespace: brokerHA.Namespace}, statefulset)
+					return err == nil
+				}).WithTimeout(20 * time.Second).Should(BeTrue())
+
+				//delete broker
+				Expect(k8sClient.Delete(ctx, &brokerHA)).To(Succeed())
+
+			})
+
 		})
 	})
 
