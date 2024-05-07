@@ -305,7 +305,7 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(sts *a
 						Privileged: &[]bool{false}[0], // Set to false
 						Capabilities: &corev1.Capabilities{
 							Drop: []corev1.Capability{
-								corev1.Capability("ALL"),
+								"ALL",
 							},
 						},
 						RunAsNonRoot:             &[]bool{true}[0],  // Set to true
@@ -347,7 +347,6 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(sts *a
 			RestartPolicy:                 corev1.RestartPolicyAlways,
 			TerminationGracePeriodSeconds: &[]int64{1200}[0], // 1200
 			ServiceAccountName:            sa.Name,
-			// NodeName:                      "",
 			Volumes: []corev1.Volume{
 				{
 					Name: "podinfo",
@@ -403,10 +402,13 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(sts *a
 					},
 				},
 			},
+			SecurityContext: &corev1.PodSecurityContext{
+				RunAsNonRoot: &[]bool{true}[0], // Set to true
+				SeccompProfile: &corev1.SeccompProfile{
+					Type: corev1.SeccompProfileTypeRuntimeDefault,
+				},
+			},
 			ImagePullSecrets: m.Spec.BrokerImage.ImagePullSecrets,
-			// SchedulerName:                 "",
-			// Tolerations:                   []corev1.Toleration{},
-			// TopologySpreadConstraints:     []corev1.TopologySpreadConstraint{},
 		},
 	}
 
@@ -435,7 +437,6 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(sts *a
 	// Set pod security context
 	// Following cases are distinguished for RunAsUser and FSGroup: 1) if value not specified AND in OpenShift env AND using non-default namespace, then leave it to unspecified
 	// 2) value not specified or using default namespace: set to default 3) value specified, then set to value.
-	sts.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{}
 	// Set RunAsUser
 	if m.Spec.SecurityContext.RunAsUser == 0 {
 		// not specified case
@@ -453,6 +454,28 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(sts *a
 		} // else in OpenShift env AND using non-default namespace so leave it undefined
 	} else {
 		sts.Spec.Template.Spec.SecurityContext.FSGroup = &m.Spec.SecurityContext.FSGroup
+	}
+
+	// Set container security context
+	// Following cases are distinguished for RunAsUser and RunAsGroup: 1) if value not specified AND in OpenShift env AND using non-default namespace, then leave it to unspecified
+	// 2) value not specified or using default namespace: set to default 3) value specified, then set to value.
+	// Set containerSecurityRunAsUser
+	if m.Spec.BrokerSecurityContext.RunAsUser == 0 {
+		// not specified case
+		if !r.IsOpenShift || sts.ObjectMeta.Namespace == corev1.NamespaceDefault {
+			sts.Spec.Template.Spec.Containers[0].SecurityContext.RunAsUser = &[]int64{1000001}[0]
+		} // else in OpenShift env AND using non-default namespace so leave it undefined
+	} else {
+		sts.Spec.Template.Spec.Containers[0].SecurityContext.RunAsUser = &m.Spec.BrokerSecurityContext.RunAsUser
+	}
+	// Set containerSecurityRunAsGroup
+	if m.Spec.BrokerSecurityContext.RunAsGroup == 0 {
+		// not specified case
+		if !r.IsOpenShift || sts.ObjectMeta.Namespace == corev1.NamespaceDefault {
+			sts.Spec.Template.Spec.Containers[0].SecurityContext.RunAsGroup = &[]int64{1000002}[0]
+		} // else in OpenShift env AND using non-default namespace so leave it undefined
+	} else {
+		sts.Spec.Template.Spec.Containers[0].SecurityContext.RunAsGroup = &m.Spec.BrokerSecurityContext.RunAsGroup
 	}
 
 	//Set TLS configuration

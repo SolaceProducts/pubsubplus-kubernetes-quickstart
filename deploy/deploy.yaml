@@ -54,6 +54,23 @@ spec:
                   When provided, ensure the secret key name is `username_admin_password`. For valid values refer to the Solace documentation https://docs.solace.com/Admin/Configuring-Internal-CLI-User-Accounts.htm.
                 nullable: true
                 type: string
+              brokerContainerSecurity:
+                description: ContainerSecurityContext defines the container security
+                  context for the PubSubPlusEventBroker.
+                properties:
+                  fsGroup:
+                    description: Specifies fsGroup in pod security context. 0 or unset
+                      defaults either to 1000002, or if OpenShift detected to unspecified
+                      (see documentation)
+                    format: int64
+                    type: number
+                  runAsUser:
+                    description: Specifies runAsUser in pod security context. 0 or
+                      unset defaults either to 1000001, or if OpenShift detected to
+                      unspecified (see documentation)
+                    format: int64
+                    type: number
+                type: object
               developer:
                 default: false
                 description: |-
@@ -1903,7 +1920,7 @@ spec:
         env:
         - name: WATCH_NAMESPACE
           value: ""
-        image: docker.io/solace/pubsubplus-eventbroker-operator:1.0.3
+        image: ghcr.io/solacedev/pubsubplus-eventbroker-operator:1.2.0
         imagePullPolicy: Always
         livenessProbe:
           httpGet:

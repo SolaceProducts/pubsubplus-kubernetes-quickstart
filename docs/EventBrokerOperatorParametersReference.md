@@ -92,6 +92,13 @@ When provided, ensure the secret key name is `username_admin_password`. For vali
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#pubsubpluseventbrokerspecbrokercontainersecurity">brokerContainerSecurity</a></b></td>
+        <td>object</td>
+        <td>
+          ContainerSecurityContext defines the container security context for the PubSubPlusEventBroker.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>developer</b></td>
         <td>boolean</td>
         <td>
@@ -257,6 +264,44 @@ and the assigned CPU / memory resources to the Pod.<br/>
           <br/>
             <i>Enum</i>: automatedRolling, manualPodRestart<br/>
             <i>Default</i>: automatedRolling<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### PubSubPlusEventBroker.spec.brokerContainerSecurity
+<sup><sup>[↩ Parent](#pubsubpluseventbrokerspec)</sup></sup>
+
+
+
+ContainerSecurityContext defines the container security context for the PubSubPlusEventBroker.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>fsGroup</b></td>
+        <td>number</td>
+        <td>
+          Specifies fsGroup in pod security context. 0 or unset defaults either to 1000002, or if OpenShift detected to unspecified (see documentation)<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>runAsUser</b></td>
+        <td>number</td>
+        <td>
+          Specifies runAsUser in pod security context. 0 or unset defaults either to 1000001, or if OpenShift detected to unspecified (see documentation)<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
         </td>
         <td>false</td>
       </tr></tbody>
