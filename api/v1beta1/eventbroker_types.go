@@ -110,6 +110,9 @@ type EventBrokerSpec struct {
 	// SecurityContext defines the pod security context for the event broker.
 	SecurityContext SecurityContext `json:"securityContext,omitempty"`
 	//+kubebuilder:validation:Type:=object
+	// ContainerSecurityContext defines the container security context for the PubSubPlusEventBroker.
+	BrokerSecurityContext ContainerSecurityContext `json:"brokerContainerSecurity,omitempty"`
+	//+kubebuilder:validation:Type:=object
 	// ServiceAccount defines a ServiceAccount dedicated to the PubSubPlusEventBroker
 	ServiceAccount BrokerServiceAccount `json:"serviceAccount,omitempty"`
 	//+kubebuilder:validation:Type:=object
@@ -330,6 +333,18 @@ type SecurityContext struct {
 	//+optional
 	//+kubebuilder:validation:Type:=number
 	// Specifies runAsUser in pod security context. 0 or unset defaults either to 1000001, or if OpenShift detected to unspecified (see documentation)
+	RunAsUser int64 `json:"runAsUser"`
+}
+
+// ContainerSecurityContext defines the container security context for the PubSubPlusEventBroker
+type ContainerSecurityContext struct {
+	//+optional
+	//+kubebuilder:validation:Type:=number
+	// Specifies runAsGroup in container security context. 0 or unset defaults either to 1000002, or if OpenShift detected to unspecified (see documentation)
+	RunAsGroup int64 `json:"runAsGroup"`
+	//+optional
+	//+kubebuilder:validation:Type:=number
+	// Specifies runAsUser in container security context. 0 or unset defaults either to 1000001, or if OpenShift detected to unspecified (see documentation)
 	RunAsUser int64 `json:"runAsUser"`
 }
 
