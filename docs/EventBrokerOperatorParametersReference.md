@@ -287,10 +287,10 @@ ContainerSecurityContext defines the container security context for the PubSubPl
         </tr>
     </thead>
     <tbody><tr>
-        <td><b>fsGroup</b></td>
+        <td><b>runAsGroup</b></td>
         <td>number</td>
         <td>
-          Specifies fsGroup in pod security context. 0 or unset defaults either to 1000002, or if OpenShift detected to unspecified (see documentation)<br/>
+          Specifies runAsGroup in container security context. 0 or unset defaults either to 1000002, or if OpenShift detected to unspecified (see documentation)<br/>
           <br/>
             <i>Format</i>: int64<br/>
         </td>
@@ -299,7 +299,7 @@ ContainerSecurityContext defines the container security context for the PubSubPl
         <td><b>runAsUser</b></td>
         <td>number</td>
         <td>
-          Specifies runAsUser in pod security context. 0 or unset defaults either to 1000001, or if OpenShift detected to unspecified (see documentation)<br/>
+          Specifies runAsUser in container security context. 0 or unset defaults either to 1000001, or if OpenShift detected to unspecified (see documentation)<br/>
           <br/>
             <i>Format</i>: int64<br/>
         </td>

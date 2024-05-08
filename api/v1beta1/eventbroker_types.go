@@ -340,11 +340,11 @@ type SecurityContext struct {
 type ContainerSecurityContext struct {
 	//+optional
 	//+kubebuilder:validation:Type:=number
-	// Specifies fsGroup in pod security context. 0 or unset defaults either to 1000002, or if OpenShift detected to unspecified (see documentation)
-	RunAsGroup int64 `json:"fsGroup"`
+	// Specifies runAsGroup in container security context. 0 or unset defaults either to 1000002, or if OpenShift detected to unspecified (see documentation)
+	RunAsGroup int64 `json:"runAsGroup"`
 	//+optional
 	//+kubebuilder:validation:Type:=number
-	// Specifies runAsUser in pod security context. 0 or unset defaults either to 1000001, or if OpenShift detected to unspecified (see documentation)
+	// Specifies runAsUser in container security context. 0 or unset defaults either to 1000001, or if OpenShift detected to unspecified (see documentation)
 	RunAsUser int64 `json:"runAsUser"`
 }
 
