@@ -109,6 +109,16 @@ If set to true it overrides SystemScaling parameters.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>enableServiceLinks</b></td>
+        <td>boolean</td>
+        <td>
+          EnableServiceLinks indicates whether information about services should be injected into pod's environment
+variables, matching the syntax of Docker links. Optional: Defaults to false.<br/>
+          <br/>
+            <i>Default</i>: false<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#pubsubpluseventbrokerspecextraenvvarsindex">extraEnvVars</a></b></td>
         <td>[]object</td>
         <td>
