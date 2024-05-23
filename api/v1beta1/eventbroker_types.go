@@ -112,6 +112,12 @@ type EventBrokerSpec struct {
 	//+kubebuilder:validation:Type:=object
 	// ContainerSecurityContext defines the container security context for the PubSubPlusEventBroker.
 	BrokerSecurityContext ContainerSecurityContext `json:"brokerContainerSecurity,omitempty"`
+	//+optional
+	//+kubebuilder:validation:Type:=boolean
+	//+kubebuilder:default:=false
+	// EnableServiceLinks indicates whether information about services should be injected into pod's environment
+	// variables, matching the syntax of Docker links. Optional: Defaults to false.
+	EnableServiceLinks bool `json:"enableServiceLinks,omitempty"`
 	//+kubebuilder:validation:Type:=object
 	// ServiceAccount defines a ServiceAccount dedicated to the PubSubPlusEventBroker
 	ServiceAccount BrokerServiceAccount `json:"serviceAccount,omitempty"`

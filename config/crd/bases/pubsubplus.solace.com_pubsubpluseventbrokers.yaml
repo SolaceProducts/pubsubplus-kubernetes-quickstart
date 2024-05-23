@@ -71,6 +71,12 @@ spec:
                   Developer true specifies a minimum footprint scaled-down deployment, not for production use.
                   If set to true it overrides SystemScaling parameters.
                 type: boolean
+              enableServiceLinks:
+                default: false
+                description: |-
+                  EnableServiceLinks indicates whether information about services should be injected into pod's environment
+                  variables, matching the syntax of Docker links. Optional: Defaults to false.
+                type: boolean
               extraEnvVars:
                 description: |-
                   List of extra environment variables to be added to the PubSubPlusEventBroker container. Note: Do not configure Timezone or SystemScaling parameters here as it could cause unintended consequences.

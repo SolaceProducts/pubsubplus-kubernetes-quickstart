@@ -190,6 +190,7 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(sts *a
 			Annotations: podAnnotations,
 		},
 		Spec: corev1.PodSpec{
+			EnableServiceLinks: &m.Spec.EnableServiceLinks,
 			Containers: []corev1.Container{
 				{
 					Name:            "pubsubplus",
