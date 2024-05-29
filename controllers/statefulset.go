@@ -19,6 +19,8 @@ package controllers
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	ctrllog "sigs.k8s.io/controller-runtime/pkg/log"
 	"strconv"
 	"strings"
 
@@ -107,6 +109,7 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(sts *a
 	haDeployment := m.Spec.Redundancy
 	stsName := sts.ObjectMeta.Name
 	nodeType := getBrokerNodeType(stsName)
+	log := ctrllog.FromContext(ctx)
 
 	// Determine broker sizing
 	var cpuRequests, cpuLimits string
@@ -641,6 +644,24 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(sts *a
 	tolerationConfiguration := getNodeTolerationDetails(m.Spec.BrokerNodeAssignment, nodeType)
 	if tolerationConfiguration != nil {
 		sts.Spec.Template.Spec.Tolerations = tolerationConfiguration
+	}
+
+	//Set unknown scaling parameter values
+	if m.Spec.SystemScaling != nil {
+		var scalingParamMap map[string]interface{}
+		inrec, _ := json.Marshal(m.Spec.SystemScaling)
+		json.Unmarshal(inrec, &scalingParamMap)
+		allEnv := sts.Spec.Template.Spec.Containers[0].Env
+		for key, val := range scalingParamMap {
+			if strings.HasPrefix(strings.ToLower(key), scalingParameterPrefix) {
+				log.V(1).Info("Detected Scaling Parameter ", " pubsubpluseventbroker.scalingParameter", key)
+				allEnv = append(allEnv, corev1.EnvVar{
+					Name:  key,
+					Value: fmt.Sprint(val),
+				})
+			}
+		}
+		sts.Spec.Template.Spec.Containers[0].Env = allEnv
 	}
 
 }

@@ -37,6 +37,7 @@ const (
 	tlsSempPortName                      = "tls-semp"
 	brokerNodeComponent                  = "brokernode"
 	metricsExporterComponent             = "metricsexporter"
+	scalingParameterPrefix               = "scaling_parameter"
 )
 
 type BrokerRole int // Notice that this is about the current role, not the broker node designation
