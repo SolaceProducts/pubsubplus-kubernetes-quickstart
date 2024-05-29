@@ -23,6 +23,7 @@ import (
 	"encoding/gob"
 	"fmt"
 	"hash/crc64"
+	"math"
 	"strconv"
 
 	eventbrokerv1beta1 "github.com/SolaceProducts/pubsubplus-operator/api/v1beta1"
@@ -123,4 +124,15 @@ func convertToByteArray(e any) []byte {
 func hash(s any) string {
 	crc64Table := crc64.MakeTable(crc64.ECMA)
 	return strconv.FormatUint(crc64.Checksum(convertToByteArray(s), crc64Table), 16)
+}
+
+func convertSizeFromBaseOfTenToBaseOfTwo(size int) string {
+	bf := float64(size)
+	for _, unit := range []string{"", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi"} {
+		if math.Abs(bf) < 1024.0 {
+			return fmt.Sprintf("%3.1f%sB", bf, unit)
+		}
+		bf /= 1024.0
+	}
+	return fmt.Sprintf("%.1fYiB", bf)
 }
