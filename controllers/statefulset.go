@@ -126,13 +126,13 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(sts *a
 	} else {
 		// First determine default settings for the message routing broker nodes, depending on developer mode set
 		// refer to https://docs.solace.com/Admin-Ref/Resource-Calculator/pubsubplus-resource-calculator.html
-		cpuRequests = (map[bool]string{true: "1", false: DefaultMessagingNodeCPURequests})[m.Spec.Developer]
-		cpuLimits = (map[bool]string{true: "2", false: DefaultMessagingNodeCPULimits})[m.Spec.Developer]
-		memRequests = (map[bool]string{true: "3410Mi", false: DefaultMessagingNodeMemoryRequests})[m.Spec.Developer]
-		memLimits = (map[bool]string{true: "3410Mi", false: DefaultMessagingNodeMemoryLimits})[m.Spec.Developer]
-		maxConnections = (map[bool]int{true: 100, false: DefaultMessagingNodeMaxConnections})[m.Spec.Developer]
-		maxQueueMessages = (map[bool]int{true: 100, false: DefaultMessagingNodeMaxQueueMessages})[m.Spec.Developer]
-		maxSpoolUsage = (map[bool]int{true: 1000, false: DefaultMessagingNodeMaxSpoolUsage})[m.Spec.Developer]
+		cpuRequests = (map[bool]string{true: DefaultDeveloperModeCPURequests, false: DefaultMessagingNodeCPURequests})[m.Spec.Developer]
+		cpuLimits = (map[bool]string{true: DefaultDeveloperModeCPULimits, false: DefaultMessagingNodeCPULimits})[m.Spec.Developer]
+		memRequests = (map[bool]string{true: DefaultDeveloperModeMemoryRequests, false: DefaultMessagingNodeMemoryRequests})[m.Spec.Developer]
+		memLimits = (map[bool]string{true: DefaultDeveloperModeMemoryLimits, false: DefaultMessagingNodeMemoryLimits})[m.Spec.Developer]
+		maxConnections = (map[bool]int{true: DefaultDeveloperModeMaxConnections, false: DefaultMessagingNodeMaxConnections})[m.Spec.Developer]
+		maxQueueMessages = (map[bool]int{true: DefaultDeveloperModeMaxQueueMessages, false: DefaultMessagingNodeMaxQueueMessages})[m.Spec.Developer]
+		maxSpoolUsage = (map[bool]int{true: DefaultDeveloperModeMaxSpoolUsage, false: DefaultMessagingNodeMaxSpoolUsage})[m.Spec.Developer]
 		// Overwrite for any values defined in spec.systemScaling
 		if m.Spec.SystemScaling != nil && !m.Spec.Developer {
 			if m.Spec.SystemScaling.MessagingNodeCpu != "" {
@@ -634,7 +634,7 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(sts *a
 
 	//Set unknown scaling parameter values
 	if m.Spec.SystemScaling != nil {
-		var err error = nil
+		var err error
 		var scalingParamMap map[string]interface{}
 		inrec, _ := json.Marshal(m.Spec.SystemScaling)
 		json.Unmarshal(inrec, &scalingParamMap)
@@ -645,21 +645,21 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(sts *a
 				value := fmt.Sprint(val)
 				if "system_scaling_maxconnectioncount" == strings.ToLower(key) {
 					maxConnections, err = strconv.Atoi(value)
-					if maxConnections == 0 {
+					if maxConnections == 0 || err != nil {
 						maxConnections = DefaultMessagingNodeMaxConnections
-						r.recordErrorState(ctx, log, m, err, ScalingParameterMisConfigurationReason, "Failed to read Scaling Parameter "+key+". Using default")
+						r.recordErrorState(ctx, log, m, err, ScalingParameterMisConfigurationReason, "Failed to read Scaling Parameter '"+key+"'. Using default", "Namespace", m.Namespace, "Name", m.Name)
 					}
 				} else if "system_scaling_maxqueuemessagecount" == strings.ToLower(key) {
 					maxQueueMessages, err = strconv.Atoi(value)
-					if maxQueueMessages == 0 {
+					if maxQueueMessages == 0 || err != nil {
 						maxQueueMessages = DefaultMessagingNodeMaxQueueMessages
-						r.recordErrorState(ctx, log, m, err, ScalingParameterMisConfigurationReason, "Failed to read Scaling Parameter "+key+". Using default")
+						r.recordErrorState(ctx, log, m, err, ScalingParameterMisConfigurationReason, "Failed to read Scaling Parameter '"+key+"'. Using default", "Namespace", m.Namespace, "Name", m.Name)
 					}
 				} else if "messagespool_maxspoolusage" == strings.ToLower(key) {
 					maxSpoolUsage, err = strconv.Atoi(value)
-					if maxSpoolUsage == 0 {
+					if maxSpoolUsage == 0 || err != nil {
 						maxSpoolUsage = DefaultMessagingNodeMaxSpoolUsage
-						r.recordErrorState(ctx, log, m, err, ScalingParameterMisConfigurationReason, "Failed to read Scaling Parameter "+key+". Using default")
+						r.recordErrorState(ctx, log, m, err, ScalingParameterMisConfigurationReason, "Failed to read Scaling Parameter '"+key+"'. Using default", "Namespace", m.Namespace, "Name", m.Name)
 					}
 				} else {
 					allEnv = append(allEnv, corev1.EnvVar{

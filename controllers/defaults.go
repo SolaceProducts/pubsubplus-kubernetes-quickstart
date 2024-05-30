@@ -44,4 +44,12 @@ const (
 	DefaultMessagingNodeMaxConnections   = 100
 	DefaultMessagingNodeMaxQueueMessages = 100
 	DefaultMessagingNodeMaxSpoolUsage    = 10000
+
+	DefaultDeveloperModeCPURequests      = "1"
+	DefaultDeveloperModeCPULimits        = "2"
+	DefaultDeveloperModeMemoryRequests   = "3410Mi"
+	DefaultDeveloperModeMemoryLimits     = "3410Mi"
+	DefaultDeveloperModeMaxConnections   = 100
+	DefaultDeveloperModeMaxQueueMessages = 100
+	DefaultDeveloperModeMaxSpoolUsage    = 1000
 )
