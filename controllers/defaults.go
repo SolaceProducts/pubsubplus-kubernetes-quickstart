@@ -26,6 +26,22 @@ const (
 
 	DefaultBrokerImageRepoOpenShift   = "registry.connect.redhat.com/solace/pubsubplus-standard"
 	DefaultBrokerImageTagOpenShift    = "latest"
-	DefaultExporterImageRepoOpenShift = "registry.connect.redhat.com/solace/pubsubplus-prometheus-exporter" // TODO: update once published to public
+	DefaultExporterImageRepoOpenShift = "registry.connect.redhat.com/solace/pubsubplus-prometheus-exporter"
 	DefaultExporterImageTagOpenShift  = "latest"
+
+	DefaultMonitorNodeCPURequests      = "1"
+	DefaultMonitorNodeCPULimits        = "1"
+	DefaultMonitorNodeMemoryRequests   = "2Gi"
+	DefaultMonitorNodeMemoryLimits     = "2Gi"
+	DefaultMonitorNodeMaxConnections   = 100
+	DefaultMonitorNodeMaxQueueMessages = 100
+	DefaultMonitorNodeMaxSpoolUsage    = 1000
+
+	DefaultMessagingNodeCPURequests      = "2"
+	DefaultMessagingNodeCPULimits        = "2"
+	DefaultMessagingNodeMemoryRequests   = "4025Mi"
+	DefaultMessagingNodeMemoryLimits     = "4025Mi"
+	DefaultMessagingNodeMaxConnections   = 100
+	DefaultMessagingNodeMaxQueueMessages = 100
+	DefaultMessagingNodeMaxSpoolUsage    = 10000
 )

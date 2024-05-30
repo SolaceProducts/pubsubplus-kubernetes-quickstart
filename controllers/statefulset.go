@@ -115,26 +115,24 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(sts *a
 	var cpuRequests, cpuLimits string
 	var memRequests, memLimits string
 	var maxConnections, maxQueueMessages, maxSpoolUsage int
-	// TODO: _types.go has already defaults. Review if those indeed need to be duplicated here.
-	// TODO: remove any hardcoded values - at a minimum move it to the beginning of this code file
 	if nodeType == "monitor" {
-		cpuRequests = "1"
-		cpuLimits = "1"
-		memRequests = "2Gi"
-		memLimits = "2Gi"
-		maxConnections = 100
-		maxQueueMessages = 100
-		maxSpoolUsage = 1000
+		cpuRequests = DefaultMonitorNodeCPURequests
+		cpuLimits = DefaultMonitorNodeCPULimits
+		memRequests = DefaultMonitorNodeMemoryRequests
+		memLimits = DefaultMonitorNodeMemoryLimits
+		maxConnections = DefaultMonitorNodeMaxConnections
+		maxQueueMessages = DefaultMonitorNodeMaxQueueMessages
+		maxSpoolUsage = DefaultMonitorNodeMaxSpoolUsage
 	} else {
 		// First determine default settings for the message routing broker nodes, depending on developer mode set
 		// refer to https://docs.solace.com/Admin-Ref/Resource-Calculator/pubsubplus-resource-calculator.html
-		cpuRequests = (map[bool]string{true: "1", false: "2"})[m.Spec.Developer]
-		cpuLimits = (map[bool]string{true: "2", false: "2"})[m.Spec.Developer]
-		memRequests = (map[bool]string{true: "3410Mi", false: "4025Mi"})[m.Spec.Developer]
-		memLimits = (map[bool]string{true: "3410Mi", false: "4025Mi"})[m.Spec.Developer]
-		maxConnections = (map[bool]int{true: 100, false: 100})[m.Spec.Developer]
-		maxQueueMessages = (map[bool]int{true: 100, false: 100})[m.Spec.Developer]
-		maxSpoolUsage = (map[bool]int{true: 1000, false: 10000})[m.Spec.Developer]
+		cpuRequests = (map[bool]string{true: "1", false: DefaultMessagingNodeCPURequests})[m.Spec.Developer]
+		cpuLimits = (map[bool]string{true: "2", false: DefaultMessagingNodeCPULimits})[m.Spec.Developer]
+		memRequests = (map[bool]string{true: "3410Mi", false: DefaultMessagingNodeMemoryRequests})[m.Spec.Developer]
+		memLimits = (map[bool]string{true: "3410Mi", false: DefaultMessagingNodeMemoryLimits})[m.Spec.Developer]
+		maxConnections = (map[bool]int{true: 100, false: DefaultMessagingNodeMaxConnections})[m.Spec.Developer]
+		maxQueueMessages = (map[bool]int{true: 100, false: DefaultMessagingNodeMaxQueueMessages})[m.Spec.Developer]
+		maxSpoolUsage = (map[bool]int{true: 1000, false: DefaultMessagingNodeMaxSpoolUsage})[m.Spec.Developer]
 		// Overwrite for any values defined in spec.systemScaling
 		if m.Spec.SystemScaling != nil && !m.Spec.Developer {
 			if m.Spec.SystemScaling.MessagingNodeCpu != "" {
@@ -230,18 +228,6 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(sts *a
 						{
 							Name:  "BROKERSERVICES_NAME",
 							Value: brokerServicesName,
-						},
-						{
-							Name:  "BROKER_MAXCONNECTIONCOUNT",
-							Value: strconv.Itoa(maxConnections),
-						},
-						{
-							Name:  "BROKER_MAXQUEUEMESSAGECOUNT",
-							Value: strconv.Itoa(maxQueueMessages),
-						},
-						{
-							Name:  "BROKER_MAXSPOOLUSAGE",
-							Value: strconv.Itoa(maxSpoolUsage),
 						},
 						{
 							Name:  "BROKER_TLS_ENABLED",
@@ -648,21 +634,60 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(sts *a
 
 	//Set unknown scaling parameter values
 	if m.Spec.SystemScaling != nil {
+		var err error = nil
 		var scalingParamMap map[string]interface{}
 		inrec, _ := json.Marshal(m.Spec.SystemScaling)
 		json.Unmarshal(inrec, &scalingParamMap)
 		allEnv := sts.Spec.Template.Spec.Containers[0].Env
 		for key, val := range scalingParamMap {
-			if strings.HasPrefix(strings.ToLower(key), scalingParameterPrefix) {
+			if strings.HasPrefix(strings.ToLower(key), scalingParameterPrefix) || strings.HasPrefix(strings.ToLower(key), scalingParameterSpoolPrefix) {
 				log.V(1).Info("Detected Scaling Parameter ", " pubsubpluseventbroker.scalingParameter", key)
-				allEnv = append(allEnv, corev1.EnvVar{
-					Name:  key,
-					Value: fmt.Sprint(val),
-				})
+				value := fmt.Sprint(val)
+				if "system_scaling_maxconnectioncount" == strings.ToLower(key) {
+					maxConnections, err = strconv.Atoi(value)
+					if maxConnections == 0 {
+						maxConnections = DefaultMessagingNodeMaxConnections
+						r.recordErrorState(ctx, log, m, err, ScalingParameterMisConfigurationReason, "Failed to read Scaling Parameter "+key+". Using default")
+					}
+				} else if "system_scaling_maxqueuemessagecount" == strings.ToLower(key) {
+					maxQueueMessages, err = strconv.Atoi(value)
+					if maxQueueMessages == 0 {
+						maxQueueMessages = DefaultMessagingNodeMaxQueueMessages
+						r.recordErrorState(ctx, log, m, err, ScalingParameterMisConfigurationReason, "Failed to read Scaling Parameter "+key+". Using default")
+					}
+				} else if "messagespool_maxspoolusage" == strings.ToLower(key) {
+					maxSpoolUsage, err = strconv.Atoi(value)
+					if maxSpoolUsage == 0 {
+						maxSpoolUsage = DefaultMessagingNodeMaxSpoolUsage
+						r.recordErrorState(ctx, log, m, err, ScalingParameterMisConfigurationReason, "Failed to read Scaling Parameter "+key+". Using default")
+					}
+				} else {
+					allEnv = append(allEnv, corev1.EnvVar{
+						Name:  key,
+						Value: value,
+					})
+				}
 			}
 		}
 		sts.Spec.Template.Spec.Containers[0].Env = allEnv
 	}
+
+	//set init scaling parameters
+	allEnv := sts.Spec.Template.Spec.Containers[0].Env
+	allEnv = append(allEnv,
+		corev1.EnvVar{
+			Name:  "BROKER_MAXCONNECTIONCOUNT",
+			Value: strconv.Itoa(maxConnections),
+		},
+		corev1.EnvVar{
+			Name:  "BROKER_MAXQUEUEMESSAGECOUNT",
+			Value: strconv.Itoa(maxQueueMessages),
+		},
+		corev1.EnvVar{
+			Name:  "BROKER_MAXSPOOLUSAGE",
+			Value: strconv.Itoa(maxSpoolUsage),
+		})
+	sts.Spec.Template.Spec.Containers[0].Env = allEnv
 
 }
 

@@ -38,6 +38,7 @@ const (
 	brokerNodeComponent                  = "brokernode"
 	metricsExporterComponent             = "metricsexporter"
 	scalingParameterPrefix               = "system_scaling_"
+	scalingParameterSpoolPrefix          = "messagespool_"
 )
 
 type BrokerRole int // Notice that this is about the current role, not the broker node designation
