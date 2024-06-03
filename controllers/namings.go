@@ -39,6 +39,9 @@ const (
 	metricsExporterComponent             = "metricsexporter"
 	scalingParameterPrefix               = "system_scaling_"
 	scalingParameterSpoolPrefix          = "messagespool_"
+	scalingParameterMaxConnectionCount   = "system_scaling_maxconnectioncount"
+	scalingParameterMaxQueueCount        = "system_scaling_maxqueuemessagecount"
+	scalingParameterMaxSpoolUsage        = "messagespool_maxspoolusage"
 )
 
 type BrokerRole int // Notice that this is about the current role, not the broker node designation
@@ -47,6 +50,14 @@ const (
 	Standby
 	Monitor
 )
+
+var unitSuffix = map[string]string{
+	"KB": "Ki",
+	"MB": "Mi",
+	"GB": "Gi",
+	"TB": "Ti",
+	"PB": "Pi",
+}
 
 // Provides the object names for the current PubSubPlusEventBroker deployment
 func getObjectName(objectType string, deploymentName string) string {

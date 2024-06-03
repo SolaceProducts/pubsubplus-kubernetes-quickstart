@@ -42,7 +42,8 @@ func (r *PubSubPlusEventBrokerReconciler) createStatefulsetForEventBroker(stsNam
 	// Determine broker sizing
 	var storageSize string
 	if nodeType == "monitor" {
-		if len(strings.TrimSpace(m.Spec.Storage.MonitorNodeStorageSize)) == 0 || m.Spec.Storage.MonitorNodeStorageSize == "0" {
+		monitorNodeSize := strings.TrimSpace(m.Spec.Storage.MonitorNodeStorageSize)
+		if len(strings.TrimSpace(monitorNodeSize)) == 0 || monitorNodeSize == "0" {
 			storageSize = "3Gi"
 		} else {
 			storageSize = m.Spec.Storage.MonitorNodeStorageSize
@@ -81,7 +82,7 @@ func (r *PubSubPlusEventBrokerReconciler) createStatefulsetForEventBroker(stsNam
 					AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
 					Resources: corev1.VolumeResourceRequirements{
 						Requests: map[corev1.ResourceName]resource.Quantity{
-							corev1.ResourceStorage: resource.MustParse(storageSize),
+							corev1.ResourceStorage: resource.MustParse(getResourceSize(storageSize)),
 						},
 					},
 				},
@@ -140,7 +141,7 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(sts *a
 				cpuLimits = cpuRequests
 			}
 			if m.Spec.SystemScaling.MessagingNodeMemory != "" {
-				memRequests = m.Spec.SystemScaling.MessagingNodeMemory
+				memRequests = getResourceSize(m.Spec.SystemScaling.MessagingNodeMemory)
 				memLimits = memRequests
 			}
 			if m.Spec.SystemScaling.MaxConnections > 0 {
@@ -643,19 +644,19 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(sts *a
 			if strings.HasPrefix(strings.ToLower(key), scalingParameterPrefix) || strings.HasPrefix(strings.ToLower(key), scalingParameterSpoolPrefix) {
 				log.V(1).Info("Detected Scaling Parameter ", " pubsubpluseventbroker.scalingParameter", key)
 				value := fmt.Sprint(val)
-				if "system_scaling_maxconnectioncount" == strings.ToLower(key) {
+				if strings.ToLower(scalingParameterMaxConnectionCount) == strings.ToLower(key) {
 					maxConnections, err = strconv.Atoi(value)
 					if maxConnections == 0 || err != nil {
 						maxConnections = DefaultMessagingNodeMaxConnections
 						r.recordErrorState(ctx, log, m, err, ScalingParameterMisConfigurationReason, "Failed to read Scaling Parameter '"+key+"'. Using default", "Namespace", m.Namespace, "Name", m.Name)
 					}
-				} else if "system_scaling_maxqueuemessagecount" == strings.ToLower(key) {
+				} else if strings.ToLower(scalingParameterMaxQueueCount) == strings.ToLower(key) {
 					maxQueueMessages, err = strconv.Atoi(value)
 					if maxQueueMessages == 0 || err != nil {
 						maxQueueMessages = DefaultMessagingNodeMaxQueueMessages
 						r.recordErrorState(ctx, log, m, err, ScalingParameterMisConfigurationReason, "Failed to read Scaling Parameter '"+key+"'. Using default", "Namespace", m.Namespace, "Name", m.Name)
 					}
-				} else if "messagespool_maxspoolusage" == strings.ToLower(key) {
+				} else if strings.ToLower(scalingParameterMaxSpoolUsage) == strings.ToLower(key) {
 					maxSpoolUsage, err = strconv.Atoi(value)
 					if maxSpoolUsage == 0 || err != nil {
 						maxSpoolUsage = DefaultMessagingNodeMaxSpoolUsage
@@ -663,7 +664,7 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(sts *a
 					}
 				} else {
 					allEnv = append(allEnv, corev1.EnvVar{
-						Name:  key,
+						Name:  strings.ToUpper(key),
 						Value: value,
 					})
 				}
@@ -674,7 +675,19 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(sts *a
 
 	//set init scaling parameters
 	allEnv := sts.Spec.Template.Spec.Containers[0].Env
-	allEnv = append(allEnv,
+	allEnvCleanedMap := convertEnvVarSliceToMap(allEnv)
+	delete(allEnvCleanedMap, strings.ToUpper(scalingParameterMaxConnectionCount))
+	delete(allEnvCleanedMap, strings.ToUpper(scalingParameterMaxQueueCount))
+	delete(allEnvCleanedMap, strings.ToUpper(scalingParameterMaxSpoolUsage))
+	var allEnvCleaned []corev1.EnvVar
+	for key, value := range allEnvCleanedMap {
+		allEnvCleaned = append(allEnvCleaned,
+			corev1.EnvVar{
+				Name:  key,
+				Value: value,
+			})
+	}
+	allEnvCleaned = append(allEnvCleaned,
 		corev1.EnvVar{
 			Name:  "BROKER_MAXCONNECTIONCOUNT",
 			Value: strconv.Itoa(maxConnections),
@@ -687,7 +700,7 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(sts *a
 			Name:  "BROKER_MAXSPOOLUSAGE",
 			Value: strconv.Itoa(maxSpoolUsage),
 		})
-	sts.Spec.Template.Spec.Containers[0].Env = allEnv
+	sts.Spec.Template.Spec.Containers[0].Env = allEnvCleaned
 
 }
 
@@ -711,10 +724,11 @@ func getTimezone(tz string) string {
 }
 
 func getBrokerMessageNodeStorageSize(st *eventbrokerv1beta1.Storage) string {
-	if st == nil || len(strings.TrimSpace(st.MessagingNodeStorageSize)) == 0 || st.MessagingNodeStorageSize == "0" {
+	messagingNodeSize := strings.TrimSpace(st.MessagingNodeStorageSize)
+	if st == nil || len(messagingNodeSize) == 0 || messagingNodeSize == "0" {
 		return "30Gi"
 	}
-	return st.MessagingNodeStorageSize
+	return getResourceSize(messagingNodeSize)
 }
 
 func getNodeAffinityDetails(na []eventbrokerv1beta1.NodeAssignment, nodeType string) *corev1.Affinity {
