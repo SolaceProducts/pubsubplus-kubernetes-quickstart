@@ -51,14 +51,6 @@ const (
 	Monitor
 )
 
-var unitSuffix = map[string]string{
-	"KB": "Ki",
-	"MB": "Mi",
-	"GB": "Gi",
-	"TB": "Ti",
-	"PB": "Pi",
-}
-
 // Provides the object names for the current PubSubPlusEventBroker deployment
 func getObjectName(objectType string, deploymentName string) string {
 	nameSuffix := map[string]string{

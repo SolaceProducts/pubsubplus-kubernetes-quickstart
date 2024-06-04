@@ -73,6 +73,9 @@ func (r *PubSubPlusEventBrokerReconciler) createStatefulsetForEventBroker(stsNam
 	}
 
 	if len(m.Spec.Storage.CustomVolumeMount) == 0 && !usesEphemeralStorageForMonitoringNode(&m.Spec.Storage, nodeType) && !usesEphemeralStorageForMessageNode(&m.Spec.Storage, nodeType) {
+		if strings.Contains(storageSize, "B") {
+			storageSize = strings.Replace(storageSize, "B", "", -1)
+		}
 		dep.Spec.VolumeClaimTemplates = []corev1.PersistentVolumeClaim{
 			{
 				ObjectMeta: metav1.ObjectMeta{
@@ -82,7 +85,7 @@ func (r *PubSubPlusEventBrokerReconciler) createStatefulsetForEventBroker(stsNam
 					AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
 					Resources: corev1.VolumeResourceRequirements{
 						Requests: map[corev1.ResourceName]resource.Quantity{
-							corev1.ResourceStorage: resource.MustParse(getResourceSize(storageSize)),
+							corev1.ResourceStorage: resource.MustParse(storageSize),
 						},
 					},
 				},
@@ -141,7 +144,7 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(sts *a
 				cpuLimits = cpuRequests
 			}
 			if m.Spec.SystemScaling.MessagingNodeMemory != "" {
-				memRequests = getResourceSize(m.Spec.SystemScaling.MessagingNodeMemory)
+				memRequests = m.Spec.SystemScaling.MessagingNodeMemory
 				memLimits = memRequests
 			}
 			if m.Spec.SystemScaling.MaxConnections > 0 {
@@ -675,19 +678,18 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(sts *a
 
 	//set init scaling parameters
 	allEnv := sts.Spec.Template.Spec.Containers[0].Env
-	allEnvCleanedMap := convertEnvVarSliceToMap(allEnv)
-	delete(allEnvCleanedMap, strings.ToUpper(scalingParameterMaxConnectionCount))
-	delete(allEnvCleanedMap, strings.ToUpper(scalingParameterMaxQueueCount))
-	delete(allEnvCleanedMap, strings.ToUpper(scalingParameterMaxSpoolUsage))
-	var allEnvCleaned []corev1.EnvVar
-	for key, value := range allEnvCleanedMap {
-		allEnvCleaned = append(allEnvCleaned,
-			corev1.EnvVar{
-				Name:  key,
-				Value: value,
-			})
+	exisingEnv := make(map[string]bool)
+	for i, envVar := range allEnv {
+		//remove existing keys and supported scaling parameters
+		if strings.ToLower(envVar.Name) == scalingParameterMaxSpoolUsage ||
+			strings.ToLower(envVar.Name) == scalingParameterMaxConnectionCount ||
+			strings.ToLower(envVar.Name) == scalingParameterMaxQueueCount ||
+			exisingEnv[strings.ToLower(envVar.Name)] {
+			allEnv[i] = allEnv[len(allEnv)-1]
+		}
+		exisingEnv[strings.ToLower(envVar.Name)] = true
 	}
-	allEnvCleaned = append(allEnvCleaned,
+	allEnv = append(allEnv,
 		corev1.EnvVar{
 			Name:  "BROKER_MAXCONNECTIONCOUNT",
 			Value: strconv.Itoa(maxConnections),
@@ -700,8 +702,7 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(sts *a
 			Name:  "BROKER_MAXSPOOLUSAGE",
 			Value: strconv.Itoa(maxSpoolUsage),
 		})
-	sts.Spec.Template.Spec.Containers[0].Env = allEnvCleaned
-
+	sts.Spec.Template.Spec.Containers[0].Env = allEnv
 }
 
 func (r *PubSubPlusEventBrokerReconciler) getBrokerImageDetails(bm *eventbrokerv1beta1.BrokerImage) string {
@@ -728,7 +729,7 @@ func getBrokerMessageNodeStorageSize(st *eventbrokerv1beta1.Storage) string {
 	if st == nil || len(messagingNodeSize) == 0 || messagingNodeSize == "0" {
 		return "30Gi"
 	}
-	return getResourceSize(messagingNodeSize)
+	return messagingNodeSize
 }
 
 func getNodeAffinityDetails(na []eventbrokerv1beta1.NodeAssignment, nodeType string) *corev1.Affinity {

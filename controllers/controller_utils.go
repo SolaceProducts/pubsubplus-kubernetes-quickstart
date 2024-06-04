@@ -22,15 +22,13 @@ import (
 	"embed"
 	"encoding/gob"
 	"fmt"
-	"hash/crc64"
-	"strconv"
-	"strings"
-
 	eventbrokerv1beta1 "github.com/SolaceProducts/pubsubplus-operator/api/v1beta1"
+	"hash/crc64"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"strconv"
 )
 
 var (
@@ -124,40 +122,4 @@ func convertToByteArray(e any) []byte {
 func hash(s any) string {
 	crc64Table := crc64.MakeTable(crc64.ECMA)
 	return strconv.FormatUint(crc64.Checksum(convertToByteArray(s), crc64Table), 16)
-}
-
-func getResourceSize(size string) string {
-	for unitKey, _ := range unitSuffix {
-		if strings.Contains(size, unitKey) {
-			val, _ := strconv.ParseFloat(strings.TrimSuffix(size, unitKey), 64)
-			return ConvertBase10ToBase2(val, unitKey)
-		}
-	}
-	return size
-}
-
-func ConvertBase10ToBase2(size float64, unit string) string {
-	unit = strings.ToUpper(unit)
-	newSize := size
-	switch unit {
-	case "KB":
-		newSize = size * 1000 / 1024
-	case "MB":
-		newSize = size * 1000 * 1000 / (1024 * 1024)
-	case "GB":
-		newSize = size * 1000 * 1000 * 1000 / (1024 * 1024 * 1024)
-	case "TB":
-		newSize = size * 1000 * 1000 * 1000 * 1000 / (1024 * 1024 * 1024 * 1024)
-	case "PB":
-		newSize = size * 1000 * 1000 * 1000 * 1000 * 1000 / (1024 * 1024 * 1024 * 1024 * 1024)
-	}
-	return fmt.Sprintf("%.2f%s", newSize, unitSuffix[strings.ToUpper(unit)])
-}
-
-func convertEnvVarSliceToMap(envars []corev1.EnvVar) map[string]string {
-	enVars := make(map[string]string)
-	for _, data := range envars {
-		enVars[strings.ToUpper(data.Name)] = data.Value
-	}
-	return enVars
 }

@@ -19,26 +19,18 @@ metadata:
   name: loose-ha-scaling-parameters
 spec:
   timezone: UTC
-  extraEnvVars:
-    - name: SYSTEM_SCALING_MAXSUBSCRIPTIONCOUNT
-      value: "600"
-    - name: system_scaling_maxsubscriptioncount
-      value: "300"
   systemScaling:
     system_scaling_maxconnectioncount: 100
     system_scaling_maxqueuemessagecount: 240
-    system_scaling_maxkafkabridgecount: 30
+    system_scaling_maxkafkabridgecount: 10
     system_scaling_maxkafkabrokerconnectioncount: 300
     system_scaling_maxbridgecount: 25
-    system_scaling_maxsubscriptioncount: 900000
-    SYSTEM_SCALING_MAXSUBSCRIPTIONCOUNT: 50000
-    this_is_dummy: ok
-    messagespool_maxspoolusage: yes
+    system_scaling_maxsubscriptioncount: 90
     messagingNodeCpu: "2"
-    messagingNodeMemory: "5325Mi"
+    messagingNodeMemory: "535Mi"
   storage:
-    messagingNodeStorageSize: "7950MB"
-  redundancy: true
+    messagingNodeStorageSize: "700MB"
+  redundancy: false
   podDisruptionBudgetForHA: true
   podLabels:
     "DeploymentType": "HA"
