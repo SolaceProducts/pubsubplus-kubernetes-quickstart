@@ -321,7 +321,7 @@ The [PubSub+ deployment uses disk storage](https://docs.solace.com/Software-Brok
 
 For a given set of [scaling](#vertical-scaling), use the [Solace online System Resource Calculator](https://docs.solace.com/Admin-Ref/Resource-Calculator/pubsubplus-resource-calculator.html) to determine the required storage size. 
 
->Note: Scaling parameters are intentionally mixture of camelCase and snake_case to match the backward and forward compatibility Solace PubSub+ Software Event Broker configuration. If you are using the resource calculator, ensure the scaling parameters are in the correct format and match what the broker expects.
+>Note: The scaling parameters intentionally use a mix of *camelCase* and *snake_case* to maintain backward and forward compatibility with Solace PubSub+ Software Event Broker configurations. When using the [resource calculator](https://docs.solace.com/Admin-Ref/Resource-Calculator/pubsubplus-resource-calculator.html), ensure that the scaling parameters are in the correct format to match what the Solace PubSub+ Software Event Broker expects. If invalid scaling parameters are provided, the Operator will revert to default values. For the list of default values, please refer to this [link](/docs/EventBrokerOperatorParametersReference.md).
 
 The broker pods can use following storage options:
 * Dynamically allocated storage from a Kubernetes Storage Class (default)
