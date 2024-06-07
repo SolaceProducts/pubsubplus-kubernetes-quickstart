@@ -47,6 +47,7 @@ const (
 	ActivePodAndServiceExistsReason          = "ActivePodAndServiceExists"
 	MissingReadyPodReason                    = "MissingReadyPod"
 	AtLeastOnePodPendingReason               = "AtLeastOnePodPending"
+	ScalingParameterMisConfigurationReason   = "ScalingParameterMisconfigured"
 )
 
 // sets or updates a status condition using helper from meta
