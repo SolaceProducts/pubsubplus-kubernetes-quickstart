@@ -778,7 +778,7 @@ In a Production environment additional steps are required to ensure there is onl
 
 #### Broker Security Context
 
-The following container-level security context configuration is automatically set by the operator:
+The following container-level security context configuration is automatically set by the operator for the PubSub+ broker container
 
 ```
 capabilities:

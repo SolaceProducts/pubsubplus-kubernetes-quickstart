@@ -154,6 +154,26 @@ spec:
                     description: Enabled true enables the setup of the Prometheus
                       Exporter.
                     type: boolean
+                  extraEnvVars:
+                    description: List of extra environment variables to be added to
+                      the Prometheus Exporter container.
+                    items:
+                      description: MonitoringExtraEnvVar defines environment variables
+                        to be added to the Prometheus Exporter container for Monitoring
+                      properties:
+                        name:
+                          description: Specifies the Name of an environment variable
+                            to be added to the Prometheus Exporter container for Monitoring
+                          type: string
+                        value:
+                          description: Specifies the Value of an environment variable
+                            to be added to the Prometheus Exporter container for Monitoring
+                          type: string
+                      required:
+                      - name
+                      - value
+                      type: object
+                    type: array
                   image:
                     description: Image defines container image parameters for the
                       Prometheus Exporter.

@@ -284,6 +284,16 @@ type ExtraEnvVar struct {
 	Value string `json:"value"`
 }
 
+// MonitoringExtraEnvVar defines environment variables to be added to the Prometheus Exporter container for Monitoring
+type MonitoringExtraEnvVar struct {
+	//+kubebuilder:validation:Type:=string
+	// Specifies the Name of an environment variable to be added to the Prometheus Exporter container for Monitoring
+	Name string `json:"name"`
+	//+kubebuilder:validation:Type:=string
+	// Specifies the Value of an environment variable to be added to the Prometheus Exporter container for Monitoring
+	Value string `json:"value"`
+}
+
 // BrokerImage defines Image details and pulling configurations
 type BrokerImage struct {
 	//+optional
@@ -386,6 +396,10 @@ type Monitoring struct {
 	//+kubebuilder:default:=false
 	// Enabled true enables the setup of the Prometheus Exporter.
 	Enabled bool `json:"enabled"`
+	//+optional
+	//+kubebuilder:validation:Type:=array
+	// List of extra environment variables to be added to the Prometheus Exporter container.
+	ExtraEnvVars []*MonitoringExtraEnvVar `json:"extraEnvVars"`
 	//+optional
 	//+kubebuilder:validation:Type:=object
 	// Image defines container image parameters for the Prometheus Exporter.
