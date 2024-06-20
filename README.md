@@ -198,7 +198,7 @@ kubectl wait --for=condition=MonitoringReady eventbroker non-ha-monitoring-enabl
 ```
 For more information about Prometheus monitoring, see [Exposing Metrics to Prometheus](/docs/EventBrokerOperatorUserGuide.md#exposing-metrics-to-prometheus) in the detailed PubSub+ Operator documentation.
 
-> Note: If you have monitoring enabled, it will default to downloading the [Solace version](https://hub.docker.com/r/solace/pubsubplus-prometheus-exporter) of the Prometheus Exporter. However, you can also use the community version. Please note that Solace will discontinue developing the Prometheus Exporter after the version 1.0.1 in favor of the [community version](https://hub.docker.com/r/solacecommunity/solace-prometheus-exporter/tags).
+> Solace Pubsub+ Prometheus Exporter End of Life Notice : Please note that Solace will end of life Pubsub+ Prometheus Exporter version 1.0.1 as of June ,2024. This means there will be no releases for Pubsub+ Prometheus Exporter after June ,2024, however, Solace will continue to provide technical support for it until June, 2025. Refer  https://solace.com/legal/technical-product-support/  for support terminologies. If you have monitoring enabled, the operator will default to downloading the Solace version of Pubsub+ Prometheus Exporter 1.0.1. The community version of the Prometheus Exporter available at  https://github.com/solacecommunity/solace-prometheus-exporter   can be deployed with Pubsub+ Event Broker Operator. Note that Solace does not officially support the community version of the Prometheus Exporter.
 
 ### 4. Test the deployment
 
