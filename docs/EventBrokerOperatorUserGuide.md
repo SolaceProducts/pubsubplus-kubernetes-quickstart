@@ -463,6 +463,8 @@ In summary, a deployment is ready for service requests when there is a broker po
 kubectl get pods --show-labels
 ```
 
+> Note: The Operator uses SEMP to determine the active PubSub+ Event Broker. Restarting SEMP will affect the active broker selection.
+
 #### Using a Service Type
 
 [PubSub+ services](https://docs.solace.com/Configuring-and-Managing/Default-Port-Numbers.htm#Software) can be exposed using one of the following [Kubernetes service types](https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types) by specifying the `spec.service.type` parameter:
@@ -776,7 +778,7 @@ In a Production environment additional steps are required to ensure there is onl
 
 #### Broker Security Context
 
-The following container-level security context configuration is automatically set by the operator:
+The following container-level security context configuration is automatically set by the operator for the PubSub+ broker container
 
 ```
 capabilities:
