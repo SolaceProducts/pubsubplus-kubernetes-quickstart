@@ -678,17 +678,28 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(sts *a
 
 	//set init scaling parameters
 	allEnv := sts.Spec.Template.Spec.Containers[0].Env
-	exisingEnv := make(map[string]bool)
-	for i, envVar := range allEnv {
-		//remove existing keys and supported scaling parameters
-		if strings.ToLower(envVar.Name) == scalingParameterMaxSpoolUsage ||
-			strings.ToLower(envVar.Name) == scalingParameterMaxConnectionCount ||
-			strings.ToLower(envVar.Name) == scalingParameterMaxQueueCount ||
-			exisingEnv[strings.ToLower(envVar.Name)] {
-			allEnv[i] = allEnv[len(allEnv)-1]
-		}
-		exisingEnv[strings.ToLower(envVar.Name)] = true
+
+	envMap := make(map[string]corev1.EnvVar)
+	for _, envVar := range allEnv {
+		envMap[strings.ToUpper(envVar.Name)] = envVar
 	}
+
+	uniqueEnvVars := make([]corev1.EnvVar, 0, len(envMap))
+	for _, envVar := range envMap {
+		uniqueEnvVars = append(uniqueEnvVars, envVar)
+	}
+
+	filteredEnv := []corev1.EnvVar{}
+	for _, envVar := range uniqueEnvVars {
+		envVarNameLower := strings.ToLower(envVar.Name)
+		if envVarNameLower != scalingParameterMaxSpoolUsage &&
+			envVarNameLower != scalingParameterMaxConnectionCount &&
+			envVarNameLower != scalingParameterMaxQueueCount {
+			filteredEnv = append(filteredEnv, envVar)
+		}
+	}
+	allEnv = filteredEnv
+
 	allEnv = append(allEnv,
 		corev1.EnvVar{
 			Name:  "BROKER_MAXCONNECTIONCOUNT",
