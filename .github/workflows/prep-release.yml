@@ -4,7 +4,7 @@ on:
       release_tag:
         description: 'Release tag'
         required: true
-        default: '1.0.3-dev'
+        default: '1.1.0'
       prep_internal_release:
         # Need to distinguish between internal and external releases
         # Internal release: Will use default internal location for created images (ghcr.io) and will tag and push operator candidate there

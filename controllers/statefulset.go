@@ -19,6 +19,8 @@ package controllers
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	ctrllog "sigs.k8s.io/controller-runtime/pkg/log"
 	"strconv"
 	"strings"
 
@@ -40,7 +42,8 @@ func (r *PubSubPlusEventBrokerReconciler) createStatefulsetForEventBroker(stsNam
 	// Determine broker sizing
 	var storageSize string
 	if nodeType == "monitor" {
-		if len(strings.TrimSpace(m.Spec.Storage.MonitorNodeStorageSize)) == 0 || m.Spec.Storage.MonitorNodeStorageSize == "0" {
+		monitorNodeSize := strings.TrimSpace(m.Spec.Storage.MonitorNodeStorageSize)
+		if len(strings.TrimSpace(monitorNodeSize)) == 0 || monitorNodeSize == "0" {
 			storageSize = "3Gi"
 		} else {
 			storageSize = m.Spec.Storage.MonitorNodeStorageSize
@@ -70,6 +73,9 @@ func (r *PubSubPlusEventBrokerReconciler) createStatefulsetForEventBroker(stsNam
 	}
 
 	if len(m.Spec.Storage.CustomVolumeMount) == 0 && !usesEphemeralStorageForMonitoringNode(&m.Spec.Storage, nodeType) && !usesEphemeralStorageForMessageNode(&m.Spec.Storage, nodeType) {
+		if strings.Contains(storageSize, "B") {
+			storageSize = strings.Replace(storageSize, "B", "", -1)
+		}
 		dep.Spec.VolumeClaimTemplates = []corev1.PersistentVolumeClaim{
 			{
 				ObjectMeta: metav1.ObjectMeta{
@@ -107,31 +113,30 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(sts *a
 	haDeployment := m.Spec.Redundancy
 	stsName := sts.ObjectMeta.Name
 	nodeType := getBrokerNodeType(stsName)
+	log := ctrllog.FromContext(ctx)
 
 	// Determine broker sizing
 	var cpuRequests, cpuLimits string
 	var memRequests, memLimits string
 	var maxConnections, maxQueueMessages, maxSpoolUsage int
-	// TODO: _types.go has already defaults. Review if those indeed need to be duplicated here.
-	// TODO: remove any hardcoded values - at a minimum move it to the beginning of this code file
 	if nodeType == "monitor" {
-		cpuRequests = "1"
-		cpuLimits = "1"
-		memRequests = "2Gi"
-		memLimits = "2Gi"
-		maxConnections = 100
-		maxQueueMessages = 100
-		maxSpoolUsage = 1000
+		cpuRequests = DefaultMonitorNodeCPURequests
+		cpuLimits = DefaultMonitorNodeCPULimits
+		memRequests = DefaultMonitorNodeMemoryRequests
+		memLimits = DefaultMonitorNodeMemoryLimits
+		maxConnections = DefaultMonitorNodeMaxConnections
+		maxQueueMessages = DefaultMonitorNodeMaxQueueMessages
+		maxSpoolUsage = DefaultMonitorNodeMaxSpoolUsage
 	} else {
 		// First determine default settings for the message routing broker nodes, depending on developer mode set
 		// refer to https://docs.solace.com/Admin-Ref/Resource-Calculator/pubsubplus-resource-calculator.html
-		cpuRequests = (map[bool]string{true: "1", false: "2"})[m.Spec.Developer]
-		cpuLimits = (map[bool]string{true: "2", false: "2"})[m.Spec.Developer]
-		memRequests = (map[bool]string{true: "3410Mi", false: "4025Mi"})[m.Spec.Developer]
-		memLimits = (map[bool]string{true: "3410Mi", false: "4025Mi"})[m.Spec.Developer]
-		maxConnections = (map[bool]int{true: 100, false: 100})[m.Spec.Developer]
-		maxQueueMessages = (map[bool]int{true: 100, false: 100})[m.Spec.Developer]
-		maxSpoolUsage = (map[bool]int{true: 1000, false: 10000})[m.Spec.Developer]
+		cpuRequests = (map[bool]string{true: DefaultDeveloperModeCPURequests, false: DefaultMessagingNodeCPURequests})[m.Spec.Developer]
+		cpuLimits = (map[bool]string{true: DefaultDeveloperModeCPULimits, false: DefaultMessagingNodeCPULimits})[m.Spec.Developer]
+		memRequests = (map[bool]string{true: DefaultDeveloperModeMemoryRequests, false: DefaultMessagingNodeMemoryRequests})[m.Spec.Developer]
+		memLimits = (map[bool]string{true: DefaultDeveloperModeMemoryLimits, false: DefaultMessagingNodeMemoryLimits})[m.Spec.Developer]
+		maxConnections = (map[bool]int{true: DefaultDeveloperModeMaxConnections, false: DefaultMessagingNodeMaxConnections})[m.Spec.Developer]
+		maxQueueMessages = (map[bool]int{true: DefaultDeveloperModeMaxQueueMessages, false: DefaultMessagingNodeMaxQueueMessages})[m.Spec.Developer]
+		maxSpoolUsage = (map[bool]int{true: DefaultDeveloperModeMaxSpoolUsage, false: DefaultMessagingNodeMaxSpoolUsage})[m.Spec.Developer]
 		// Overwrite for any values defined in spec.systemScaling
 		if m.Spec.SystemScaling != nil && !m.Spec.Developer {
 			if m.Spec.SystemScaling.MessagingNodeCpu != "" {
@@ -190,6 +195,7 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(sts *a
 			Annotations: podAnnotations,
 		},
 		Spec: corev1.PodSpec{
+			EnableServiceLinks: &m.Spec.EnableServiceLinks,
 			Containers: []corev1.Container{
 				{
 					Name:            "pubsubplus",
@@ -226,18 +232,6 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(sts *a
 						{
 							Name:  "BROKERSERVICES_NAME",
 							Value: brokerServicesName,
-						},
-						{
-							Name:  "BROKER_MAXCONNECTIONCOUNT",
-							Value: strconv.Itoa(maxConnections),
-						},
-						{
-							Name:  "BROKER_MAXQUEUEMESSAGECOUNT",
-							Value: strconv.Itoa(maxQueueMessages),
-						},
-						{
-							Name:  "BROKER_MAXSPOOLUSAGE",
-							Value: strconv.Itoa(maxSpoolUsage),
 						},
 						{
 							Name:  "BROKER_TLS_ENABLED",
@@ -305,7 +299,7 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(sts *a
 						Privileged: &[]bool{false}[0], // Set to false
 						Capabilities: &corev1.Capabilities{
 							Drop: []corev1.Capability{
-								corev1.Capability("ALL"),
+								"ALL",
 							},
 						},
 						RunAsNonRoot:             &[]bool{true}[0],  // Set to true
@@ -347,7 +341,6 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(sts *a
 			RestartPolicy:                 corev1.RestartPolicyAlways,
 			TerminationGracePeriodSeconds: &[]int64{1200}[0], // 1200
 			ServiceAccountName:            sa.Name,
-			// NodeName:                      "",
 			Volumes: []corev1.Volume{
 				{
 					Name: "podinfo",
@@ -403,10 +396,13 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(sts *a
 					},
 				},
 			},
+			SecurityContext: &corev1.PodSecurityContext{
+				RunAsNonRoot: &[]bool{true}[0], // Set to true
+				SeccompProfile: &corev1.SeccompProfile{
+					Type: corev1.SeccompProfileTypeRuntimeDefault,
+				},
+			},
 			ImagePullSecrets: m.Spec.BrokerImage.ImagePullSecrets,
-			// SchedulerName:                 "",
-			// Tolerations:                   []corev1.Toleration{},
-			// TopologySpreadConstraints:     []corev1.TopologySpreadConstraint{},
 		},
 	}
 
@@ -435,7 +431,6 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(sts *a
 	// Set pod security context
 	// Following cases are distinguished for RunAsUser and FSGroup: 1) if value not specified AND in OpenShift env AND using non-default namespace, then leave it to unspecified
 	// 2) value not specified or using default namespace: set to default 3) value specified, then set to value.
-	sts.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{}
 	// Set RunAsUser
 	if m.Spec.SecurityContext.RunAsUser == 0 {
 		// not specified case
@@ -453,6 +448,28 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(sts *a
 		} // else in OpenShift env AND using non-default namespace so leave it undefined
 	} else {
 		sts.Spec.Template.Spec.SecurityContext.FSGroup = &m.Spec.SecurityContext.FSGroup
+	}
+
+	// Set container security context
+	// Following cases are distinguished for RunAsUser and RunAsGroup: 1) if value not specified AND in OpenShift env AND using non-default namespace, then leave it to unspecified
+	// 2) value not specified or using default namespace: set to default 3) value specified, then set to value.
+	// Set containerSecurityRunAsUser
+	if m.Spec.BrokerSecurityContext.RunAsUser == 0 {
+		// not specified case
+		if !r.IsOpenShift || sts.ObjectMeta.Namespace == corev1.NamespaceDefault {
+			sts.Spec.Template.Spec.Containers[0].SecurityContext.RunAsUser = &[]int64{1000001}[0]
+		} // else in OpenShift env AND using non-default namespace so leave it undefined
+	} else {
+		sts.Spec.Template.Spec.Containers[0].SecurityContext.RunAsUser = &m.Spec.BrokerSecurityContext.RunAsUser
+	}
+	// Set containerSecurityRunAsGroup
+	if m.Spec.BrokerSecurityContext.RunAsGroup == 0 {
+		// not specified case
+		if !r.IsOpenShift || sts.ObjectMeta.Namespace == corev1.NamespaceDefault {
+			sts.Spec.Template.Spec.Containers[0].SecurityContext.RunAsGroup = &[]int64{1000002}[0]
+		} // else in OpenShift env AND using non-default namespace so leave it undefined
+	} else {
+		sts.Spec.Template.Spec.Containers[0].SecurityContext.RunAsGroup = &m.Spec.BrokerSecurityContext.RunAsGroup
 	}
 
 	//Set TLS configuration
@@ -619,6 +636,84 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(sts *a
 		sts.Spec.Template.Spec.Tolerations = tolerationConfiguration
 	}
 
+	//Set unknown scaling parameter values
+	if m.Spec.SystemScaling != nil {
+		var err error
+		var scalingParamMap map[string]interface{}
+		inrec, _ := json.Marshal(m.Spec.SystemScaling)
+		json.Unmarshal(inrec, &scalingParamMap)
+		allEnv := sts.Spec.Template.Spec.Containers[0].Env
+		for key, val := range scalingParamMap {
+			if strings.HasPrefix(strings.ToLower(key), scalingParameterPrefix) || strings.HasPrefix(strings.ToLower(key), scalingParameterSpoolPrefix) {
+				log.V(1).Info("Detected Scaling Parameter ", " pubsubpluseventbroker.scalingParameter", key)
+				value := fmt.Sprint(val)
+				if strings.ToLower(scalingParameterMaxConnectionCount) == strings.ToLower(key) {
+					maxConnections, err = strconv.Atoi(value)
+					if maxConnections == 0 || err != nil {
+						maxConnections = DefaultMessagingNodeMaxConnections
+						r.recordErrorState(ctx, log, m, err, ScalingParameterMisConfigurationReason, "Failed to read Scaling Parameter '"+key+"'. Using default", "Namespace", m.Namespace, "Name", m.Name)
+					}
+				} else if strings.ToLower(scalingParameterMaxQueueCount) == strings.ToLower(key) {
+					maxQueueMessages, err = strconv.Atoi(value)
+					if maxQueueMessages == 0 || err != nil {
+						maxQueueMessages = DefaultMessagingNodeMaxQueueMessages
+						r.recordErrorState(ctx, log, m, err, ScalingParameterMisConfigurationReason, "Failed to read Scaling Parameter '"+key+"'. Using default", "Namespace", m.Namespace, "Name", m.Name)
+					}
+				} else if strings.ToLower(scalingParameterMaxSpoolUsage) == strings.ToLower(key) {
+					maxSpoolUsage, err = strconv.Atoi(value)
+					if maxSpoolUsage == 0 || err != nil {
+						maxSpoolUsage = DefaultMessagingNodeMaxSpoolUsage
+						r.recordErrorState(ctx, log, m, err, ScalingParameterMisConfigurationReason, "Failed to read Scaling Parameter '"+key+"'. Using default", "Namespace", m.Namespace, "Name", m.Name)
+					}
+				} else {
+					allEnv = append(allEnv, corev1.EnvVar{
+						Name:  strings.ToUpper(key),
+						Value: value,
+					})
+				}
+			}
+		}
+		sts.Spec.Template.Spec.Containers[0].Env = allEnv
+	}
+
+	//set init scaling parameters
+	allEnv := sts.Spec.Template.Spec.Containers[0].Env
+
+	envMap := make(map[string]corev1.EnvVar)
+	for _, envVar := range allEnv {
+		envMap[strings.ToUpper(envVar.Name)] = envVar
+	}
+
+	uniqueEnvVars := make([]corev1.EnvVar, 0, len(envMap))
+	for _, envVar := range envMap {
+		uniqueEnvVars = append(uniqueEnvVars, envVar)
+	}
+
+	filteredEnv := []corev1.EnvVar{}
+	for _, envVar := range uniqueEnvVars {
+		envVarNameLower := strings.ToLower(envVar.Name)
+		if envVarNameLower != scalingParameterMaxSpoolUsage &&
+			envVarNameLower != scalingParameterMaxConnectionCount &&
+			envVarNameLower != scalingParameterMaxQueueCount {
+			filteredEnv = append(filteredEnv, envVar)
+		}
+	}
+	allEnv = filteredEnv
+
+	allEnv = append(allEnv,
+		corev1.EnvVar{
+			Name:  "BROKER_MAXCONNECTIONCOUNT",
+			Value: strconv.Itoa(maxConnections),
+		},
+		corev1.EnvVar{
+			Name:  "BROKER_MAXQUEUEMESSAGECOUNT",
+			Value: strconv.Itoa(maxQueueMessages),
+		},
+		corev1.EnvVar{
+			Name:  "BROKER_MAXSPOOLUSAGE",
+			Value: strconv.Itoa(maxSpoolUsage),
+		})
+	sts.Spec.Template.Spec.Containers[0].Env = allEnv
 }
 
 func (r *PubSubPlusEventBrokerReconciler) getBrokerImageDetails(bm *eventbrokerv1beta1.BrokerImage) string {
@@ -641,10 +736,11 @@ func getTimezone(tz string) string {
 }
 
 func getBrokerMessageNodeStorageSize(st *eventbrokerv1beta1.Storage) string {
-	if st == nil || len(strings.TrimSpace(st.MessagingNodeStorageSize)) == 0 || st.MessagingNodeStorageSize == "0" {
+	messagingNodeSize := strings.TrimSpace(st.MessagingNodeStorageSize)
+	if st == nil || len(messagingNodeSize) == 0 || messagingNodeSize == "0" {
 		return "30Gi"
 	}
-	return st.MessagingNodeStorageSize
+	return messagingNodeSize
 }
 
 func getNodeAffinityDetails(na []eventbrokerv1beta1.NodeAssignment, nodeType string) *corev1.Affinity {

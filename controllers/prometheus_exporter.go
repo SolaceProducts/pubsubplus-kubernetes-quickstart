@@ -29,99 +29,113 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-func (r *PubSubPlusEventBrokerReconciler) newDeploymentForPrometheusExporter(name string, monitoringSecret *corev1.Secret, m *eventbrokerv1beta1.PubSubPlusEventBroker) *appsv1.Deployment {
-	dep := &appsv1.Deployment{
+func (r *PubSubPlusEventBrokerReconciler) newDeploymentForPrometheusExporter(monitoringDeploymentName string, monitoringSecret *corev1.Secret, m *eventbrokerv1beta1.PubSubPlusEventBroker) *appsv1.Deployment {
+	monitoringDeployment := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
+			Name:      monitoringDeploymentName,
 			Namespace: m.Namespace,
 			Labels:    getObjectLabels(m.Name),
 		},
-		Spec: appsv1.DeploymentSpec{
-			Selector: &metav1.LabelSelector{
-				MatchLabels: getMonitoringDeploymentSelector(m.Name),
-			},
-			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels: getMonitoringDeploymentSelector(m.Name),
-				},
-				Spec: corev1.PodSpec{
-					Containers: []corev1.Container{
-						{
-							Name:            "exporter",
-							Image:           r.getExporterImageDetails(m.Spec.Monitoring.MonitoringImage),
-							ImagePullPolicy: getExporterImagePullPolicy(m.Spec.Monitoring.MonitoringImage),
-							Ports: []corev1.ContainerPort{{
-								Name:          getExporterHttpProtocolType(&m.Spec.Monitoring),
-								ContainerPort: getExporterContainerPort(&m.Spec.Monitoring),
-							}},
+	}
+	r.updateDeploymentForPrometheusExporter(monitoringDeployment, monitoringSecret, m)
+	// Set PubSubPlusEventBroker instance as the owner and controller
+	ctrl.SetControllerReference(m, monitoringDeployment, r.Scheme)
+	return monitoringDeployment
+}
 
-							Env: []corev1.EnvVar{
-								{
-									Name:  "SOLACE_WEB_LISTEN_ADDRESS",
-									Value: fmt.Sprintf("%s://%s.%s.svc.cluster.local:%d", getExporterHttpProtocolType(&m.Spec.Monitoring), getObjectName("PrometheusExporterService", m.Name), m.Namespace, getExporterContainerPort(&m.Spec.Monitoring)),
-								},
-								{
-									Name:  "SOLACE_SCRAPE_URI",
-									Value: fmt.Sprintf("%s://%s.%s.svc.cluster.local:%d", getPubSubPlusEventBrokerProtocol(&m.Spec), getObjectName("BrokerService", m.Name), m.Namespace, getPubSubPlusEventBrokerPort(&m.Spec.Service, &m.Spec.BrokerTLS)),
-								},
-								{
-									Name:  "SOLACE_LISTEN_TLS",
-									Value: getExporterTLSConfiguration(&m.Spec.Monitoring),
-								},
-								{
-									Name:  "SOLACE_USERNAME",
-									Value: "monitor",
-								},
-								{
-									Name: "SOLACE_PASSWORD",
-									ValueFrom: &corev1.EnvVarSource{
-										SecretKeyRef: &corev1.SecretKeySelector{
-											LocalObjectReference: corev1.LocalObjectReference{
-												Name: monitoringSecret.Name,
-											},
-											Key: monitorSecretKeyName,
+func (r *PubSubPlusEventBrokerReconciler) updateDeploymentForPrometheusExporter(monitoringDeployment *appsv1.Deployment, monitoringSecret *corev1.Secret, eventBroker *eventbrokerv1beta1.PubSubPlusEventBroker) *appsv1.Deployment {
+	if monitoringDeployment.Annotations == nil {
+		monitoringDeployment.Annotations = map[string]string{}
+	}
+	monitoringDeployment.Annotations[monitoringSpecSignatureAnnotationName] = monitoringSpecHash(eventBroker.Spec)
+	monitoringDeployment.Spec = appsv1.DeploymentSpec{
+		Selector: &metav1.LabelSelector{
+			MatchLabels: getMonitoringDeploymentSelector(eventBroker.Name),
+		},
+		Template: corev1.PodTemplateSpec{
+			ObjectMeta: metav1.ObjectMeta{
+				Labels: getMonitoringDeploymentSelector(eventBroker.Name),
+			},
+			Spec: corev1.PodSpec{
+				Containers: []corev1.Container{
+					{
+						Name:            "exporter",
+						Image:           r.getExporterImageDetails(eventBroker.Spec.Monitoring.MonitoringImage),
+						ImagePullPolicy: getExporterImagePullPolicy(eventBroker.Spec.Monitoring.MonitoringImage),
+						Ports: []corev1.ContainerPort{{
+							Name:          getExporterHttpProtocolType(&eventBroker.Spec.Monitoring),
+							ContainerPort: getExporterContainerPort(&eventBroker.Spec.Monitoring),
+						}},
+
+						Env: []corev1.EnvVar{
+							{
+								Name:  monitoringExporterListenAddress,
+								Value: fmt.Sprintf("%s://%s.%s.svc.cluster.local:%d", getExporterHttpProtocolType(&eventBroker.Spec.Monitoring), getObjectName("PrometheusExporterService", eventBroker.Name), eventBroker.Namespace, getExporterContainerPort(&eventBroker.Spec.Monitoring)),
+							},
+							{
+								Name:  monitoringExporterScrapeURI,
+								Value: fmt.Sprintf("%s://%s.%s.svc.cluster.local:%d", getPubSubPlusEventBrokerProtocol(&eventBroker.Spec), getObjectName("BrokerService", eventBroker.Name), eventBroker.Namespace, getPubSubPlusEventBrokerPort(&eventBroker.Spec.Service, &eventBroker.Spec.BrokerTLS)),
+							},
+							{
+								Name:  monitoringExporterListenTLS,
+								Value: getExporterTLSConfiguration(&eventBroker.Spec.Monitoring),
+							},
+							{
+								Name:  monitoringExporterBrokerUsername,
+								Value: "monitor",
+							},
+							{
+								Name: monitoringExporterBrokerPassword,
+								ValueFrom: &corev1.EnvVarSource{
+									SecretKeyRef: &corev1.SecretKeySelector{
+										LocalObjectReference: corev1.LocalObjectReference{
+											Name: monitoringSecret.Name,
 										},
+										Key: monitorSecretKeyName,
 									},
-								},
-								{
-									Name:  "SOLACE_SCRAPE_TIMEOUT",
-									Value: fmt.Sprint(m.Spec.Monitoring.TimeOut) + "s",
-								},
-								{
-									Name:  "SOLACE_SSL_VERIFY",
-									Value: strconv.FormatBool(m.Spec.Monitoring.SSLVerify),
-								},
-								{
-									Name:  "SOLACE_INCLUDE_RATES",
-									Value: strconv.FormatBool(m.Spec.Monitoring.IncludeRates),
 								},
 							},
-							SecurityContext: &corev1.SecurityContext{
-								Privileged: &[]bool{false}[0], // Set to false
-								Capabilities: &corev1.Capabilities{
-									Drop: []corev1.Capability{
-										corev1.Capability("ALL"),
-									},
+							{
+								Name:  monitoringExporterScrapeTimeout,
+								Value: fmt.Sprint(eventBroker.Spec.Monitoring.TimeOut) + "s",
+							},
+							{
+								Name:  monitoringExporterSSLVerify,
+								Value: strconv.FormatBool(eventBroker.Spec.Monitoring.SSLVerify),
+							},
+							{
+								Name:  monitoringExporterIncludeRates,
+								Value: strconv.FormatBool(eventBroker.Spec.Monitoring.IncludeRates),
+							},
+						},
+						SecurityContext: &corev1.SecurityContext{
+							Privileged: &[]bool{false}[0], // Set to false
+							Capabilities: &corev1.Capabilities{
+								Drop: []corev1.Capability{
+									corev1.Capability("ALL"),
 								},
-								RunAsNonRoot:             &[]bool{true}[0],  // Set to true
-								AllowPrivilegeEscalation: &[]bool{false}[0], // Set to false
-								SeccompProfile: &corev1.SeccompProfile{
-									Type: corev1.SeccompProfileTypeRuntimeDefault,
-								},
+							},
+							RunAsNonRoot:             &[]bool{true}[0],  // Set to true
+							AllowPrivilegeEscalation: &[]bool{false}[0], // Set to false
+							SeccompProfile: &corev1.SeccompProfile{
+								Type: corev1.SeccompProfileTypeRuntimeDefault,
 							},
 						},
 					},
-					ImagePullSecrets: getExporterImagePullSecrets(m.Spec.Monitoring.MonitoringImage),
 				},
+				ImagePullSecrets: getExporterImagePullSecrets(eventBroker.Spec.Monitoring.MonitoringImage),
 			},
+		},
+		Strategy: appsv1.DeploymentStrategy{
+			Type: appsv1.RollingUpdateDeploymentStrategyType,
 		},
 	}
 
 	// OpenShift and namespace must be considered for RunAsUser
 	// Only set it if not on OpenShift or using the "default" namespace
 	// otherwise leave it undefined
-	if !r.IsOpenShift || m.Namespace == corev1.NamespaceDefault {
-		dep.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
+	if !r.IsOpenShift || eventBroker.Namespace == corev1.NamespaceDefault {
+		monitoringDeployment.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
 			RunAsUser:  &[]int64{10001}[0],
 			RunAsGroup: &[]int64{10001}[0],
 			FSGroup:    &[]int64{10002}[0],
@@ -129,53 +143,74 @@ func (r *PubSubPlusEventBrokerReconciler) newDeploymentForPrometheusExporter(nam
 	}
 
 	//Set TLS configuration
-	if m.Spec.Monitoring.MonitoringMetricsEndpoint != nil && len(strings.TrimSpace(m.Spec.Monitoring.MonitoringMetricsEndpoint.EndpointTLSConfigSecret)) > 0 {
-		allVolumes := dep.Spec.Template.Spec.Volumes
+	if eventBroker.Spec.Monitoring.MonitoringMetricsEndpoint != nil && len(strings.TrimSpace(eventBroker.Spec.Monitoring.MonitoringMetricsEndpoint.EndpointTLSConfigSecret)) > 0 {
+		allVolumes := monitoringDeployment.Spec.Template.Spec.Volumes
 		allVolumes = append(allVolumes, corev1.Volume{
 			Name: "server-certs",
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName:  m.Spec.Monitoring.MonitoringMetricsEndpoint.EndpointTLSConfigSecret,
+					SecretName:  eventBroker.Spec.Monitoring.MonitoringMetricsEndpoint.EndpointTLSConfigSecret,
 					DefaultMode: &[]int32{0400}[0],
 				},
 			},
 		})
-		allContainerVolumeMounts := dep.Spec.Template.Spec.Containers[0].VolumeMounts
+		allContainerVolumeMounts := monitoringDeployment.Spec.Template.Spec.Containers[0].VolumeMounts
 		allContainerVolumeMounts = append(allContainerVolumeMounts, corev1.VolumeMount{
 			Name:      "server-certs",
 			MountPath: "/mnt/disks/solace",
 			ReadOnly:  true,
 		})
-		allEnv := dep.Spec.Template.Spec.Containers[0].Env
+		allEnv := monitoringDeployment.Spec.Template.Spec.Containers[0].Env
 
 		allEnv = append(allEnv, corev1.EnvVar{
-			Name:  "SOLACE_SERVER_CERT",
-			Value: "/mnt/disks/solace/" + m.Spec.Monitoring.MonitoringMetricsEndpoint.EndpointTlsConfigServerCertName,
+			Name:  monitoringExporterServerCert,
+			Value: "/mnt/disks/solace/" + eventBroker.Spec.Monitoring.MonitoringMetricsEndpoint.EndpointTlsConfigServerCertName,
 		})
 		allEnv = append(allEnv, corev1.EnvVar{
-			Name:  "SOLACE_PRIVATE_KEY",
-			Value: "/mnt/disks/solace/" + m.Spec.Monitoring.MonitoringMetricsEndpoint.EndpointTlsConfigPrivateKeyName,
+			Name:  monitoringExporterPrivateKey,
+			Value: "/mnt/disks/solace/" + eventBroker.Spec.Monitoring.MonitoringMetricsEndpoint.EndpointTlsConfigPrivateKeyName,
 		})
 
-		dep.Spec.Template.Spec.Containers[0].Env = allEnv
-		dep.Spec.Template.Spec.Volumes = allVolumes
-		dep.Spec.Template.Spec.Containers[0].VolumeMounts = allContainerVolumeMounts
+		monitoringDeployment.Spec.Template.Spec.Containers[0].Env = allEnv
+		monitoringDeployment.Spec.Template.Spec.Volumes = allVolumes
+		monitoringDeployment.Spec.Template.Spec.Containers[0].VolumeMounts = allContainerVolumeMounts
 	} else {
-		allEnv := dep.Spec.Template.Spec.Containers[0].Env
+		allEnv := monitoringDeployment.Spec.Template.Spec.Containers[0].Env
 		allEnv = append(allEnv, corev1.EnvVar{
-			Name:  "SOLACE_SERVER_CERT",
-			Value: ".", //This is a mandatory parameter.
+			Name:  monitoringExporterServerCert,
+			Value: ".", //This is a mandatory parameter for older versions of the exporter.
 		})
 		allEnv = append(allEnv, corev1.EnvVar{
-			Name:  "SOLACE_PRIVATE_KEY",
-			Value: ".", //This is a mandatory parameter.
+			Name:  monitoringExporterPrivateKey,
+			Value: ".", //This is a mandatory parameter for older versions of the exporter.
 		})
-		dep.Spec.Template.Spec.Containers[0].Env = allEnv
+		monitoringDeployment.Spec.Template.Spec.Containers[0].Env = allEnv
 	}
 
-	// Set PubSubPlusEventBroker instance as the owner and controller
-	ctrl.SetControllerReference(m, dep, r.Scheme)
-	return dep
+	//Set Extra environment variables
+	if len(eventBroker.Spec.Monitoring.ExtraEnvVars) > 0 {
+		allEnv := monitoringDeployment.Spec.Template.Spec.Containers[0].Env
+		for _, envV := range eventBroker.Spec.Monitoring.ExtraEnvVars {
+			if strings.ToUpper(envV.Name) != monitoringExporterIncludeRates &&
+				strings.ToUpper(envV.Name) != monitoringExporterPrivateKey &&
+				strings.ToUpper(envV.Name) != monitoringExporterServerCert &&
+				strings.ToUpper(envV.Name) != monitoringExporterBrokerUsername &&
+				strings.ToUpper(envV.Name) != monitoringExporterBrokerPassword &&
+				strings.ToUpper(envV.Name) != monitoringExporterListenAddress &&
+				strings.ToUpper(envV.Name) != monitoringExporterListenTLS &&
+				strings.ToUpper(envV.Name) != monitoringExporterScrapeTimeout &&
+				strings.ToUpper(envV.Name) != monitoringExporterScrapeURI &&
+				strings.ToUpper(envV.Name) != monitoringExporterSSLVerify {
+				allEnv = append(allEnv, corev1.EnvVar{
+					Name:  envV.Name,
+					Value: envV.Value,
+				})
+			}
+		}
+		monitoringDeployment.Spec.Template.Spec.Containers[0].Env = allEnv
+	}
+
+	return monitoringDeployment
 }
 
 func (r *PubSubPlusEventBrokerReconciler) newServiceForPrometheusExporter(exporter *eventbrokerv1beta1.Monitoring, svcName string, m *eventbrokerv1beta1.PubSubPlusEventBroker) *corev1.Service {

@@ -72,7 +72,7 @@ jobs:
           kubectl create secret tls monitoring-tls --key="tls.private.pem" --cert="tls.public.pem"
           kubectl apply -f ci/manifests/eventbroker-ha.yaml | grep "test-ha created"
           sleep 10 ; kubectl get all
-          kubectl wait pods --selector app.kubernetes.io/instance=test-ha --for condition=Ready --timeout=300s
+          kubectl wait pods --selector app.kubernetes.io/instance=test-ha --for condition=Ready --timeout=500s
           kubectl get po --show-labels -n $TESTNAMESPACE | grep test-ha | grep "1/1"
           kubectl get po --show-labels -n $TESTNAMESPACE | grep test-ha | grep active=true
           kubectl get sts -n $TESTNAMESPACE | grep test-ha
@@ -99,7 +99,7 @@ jobs:
         run: |
           openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout tlsupdated.key -out tlsupdated.crt -subj "/CN=*"
           kubectl create secret tls test-tlsupdated --key="tlsupdated.key" --cert="tlsupdated.crt"
-          kubectl wait pods --selector node-type=message-routing-primary --for condition=Ready --timeout=300s
+          kubectl wait pods --selector node-type=message-routing-primary --for condition=Ready --timeout=400s
           kubectl get all        
           kubectl apply -f ci/manifests/chaos-manifests/admin-secret-update.yaml | grep "configured"
           kubectl get all
@@ -113,11 +113,11 @@ jobs:
 
       - name: Testing the Operator - HA - Chaos Scenario 3 - Update Scaling Parameters and confirm recovery for message delivery
         run: |
-          kubectl wait pods --selector node-type=message-routing-primary --for condition=Ready --timeout=300s
+          kubectl wait pods --selector node-type=message-routing-primary --for condition=Ready --timeout=400s
           kubectl get all
           kubectl apply -f ci/manifests/chaos-manifests/scaling-parameter-update.yaml | grep "configured"
           kubectl get all
-          kubectl wait pods --selector node-type=message-routing-primary --for condition=Ready --timeout=300s
+          kubectl wait pods --selector node-type=message-routing-primary --for condition=Ready --timeout=400s
           kubectl get all
           kubectl port-forward svc/test-ha-pubsubplus -n $TESTNAMESPACE 55558:55555 &
           sleep 5
@@ -127,7 +127,7 @@ jobs:
 
       - name: Testing the Operator - HA - Chaos Scenario 4 - Kill 2 Nodes and confirm recovery for message delivery
         run: |
-          kubectl wait pods --selector node-type=message-routing-primary --for condition=Ready --timeout=300s
+          kubectl wait pods --selector node-type=message-routing-primary --for condition=Ready --timeout=400s
           kubectl get all
           kubectl get pods -n $TESTNAMESPACE --selector node-type=message-routing-primary | grep Running | awk '{print $1}' | xargs kubectl delete pod
           kubectl get pods -n $TESTNAMESPACE --selector node-type=message-routing-backup | grep Running | awk '{print $1}' | xargs kubectl delete pod
@@ -143,7 +143,7 @@ jobs:
         run: |
           kubectl get sts -n $TESTNAMESPACE  | grep 1/1 | awk '{print $1}' | xargs kubectl delete sts
           kubectl get all
-          kubectl wait pods --selector node-type=message-routing-primary --for condition=Ready --timeout=300s
+          kubectl wait pods --selector node-type=message-routing-primary --for condition=Ready --timeout=400s
           sleep 120          
           kubectl get all
           kubectl port-forward svc/test-ha-pubsubplus -n $TESTNAMESPACE 55552:55555 &

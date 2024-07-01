@@ -658,6 +658,7 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 
 	// Check and ensure setup if Prometheus Exporter is enabled
 	prometheusExporterEnabled := pubsubpluseventbroker.Spec.Monitoring.Enabled
+	monitoringSpecHash := monitoringSpecHash(pubsubpluseventbroker.Spec)
 	prometheusExporterSvc := &corev1.Service{}
 	prometheusExporterDeployment := &appsv1.Deployment{}
 	if prometheusExporterEnabled {
@@ -707,6 +708,29 @@ func (r *PubSubPlusEventBrokerReconciler) Reconcile(ctx context.Context, req ctr
 		}
 		// At this point monitoring is setup
 		r.SetCondition(ctx, log, pubsubpluseventbroker, MonitoringReadyCondition, metav1.ConditionTrue, MonitoringReadyReason, "All checks passed")
+	}
+
+	// Check and address if monitoring require update
+	if brokerMonitoringOutdated(prometheusExporterDeployment, monitoringSpecHash) {
+		log.Info("Updating existing Prometheus Exporter Deployment", "Deployment.Namespace", prometheusExporterDeployment.Namespace, "Deployment.Name", prometheusExporterDeployment.Name)
+		prometheusExporterDeploymentName := getObjectName("PrometheusExporterDeployment", pubsubpluseventbroker.Name)
+		err := r.Get(ctx, types.NamespacedName{Name: prometheusExporterDeploymentName, Namespace: pubsubpluseventbroker.Namespace}, prometheusExporterDeployment)
+		if err != nil {
+			log.Info("Prometheus Exporter Deployment resource not found. Ignoring since object must be deleted")
+		} else {
+			if prometheusExporterDeployment.ObjectMeta.DeletionTimestamp == nil {
+				log.Info("Deleting outdated Prometheus Exporter Deployment", "Deployment.Namespace", prometheusExporterDeployment.Namespace, "Deployment.Name", prometheusExporterDeployment.Name)
+
+				err := r.Delete(ctx, prometheusExporterDeployment, client.PropagationPolicy(metav1.DeletePropagationForeground))
+				if err != nil {
+					r.recordErrorState(ctx, log, pubsubpluseventbroker, err, ResourceErrorReason, "Failed to delete outdated Prometheus Exporter Deployment", "Deployment.Namespace", prometheusExporterDeployment.Namespace, "Deployment.Name", prometheusExporterDeployment.Name)
+					return ctrl.Result{}, err
+				}
+				// Prometheus Exporter Deployment deleted successfully - return and requeue
+				r.emitResourceRestartEvent(pubsubpluseventbroker, "Prometheus Exporter Deployment", prometheusExporterDeployment.Name)
+				return ctrl.Result{RequeueAfter: time.Duration(3) * time.Second}, nil
+			}
+		}
 	}
 
 	// Now update elements of the PubSubPlusEventBroker deployment status; fetch the latest as needed

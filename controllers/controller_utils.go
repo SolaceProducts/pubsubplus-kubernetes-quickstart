@@ -22,14 +22,13 @@ import (
 	"embed"
 	"encoding/gob"
 	"fmt"
-	"hash/crc64"
-	"strconv"
-
 	eventbrokerv1beta1 "github.com/SolaceProducts/pubsubplus-operator/api/v1beta1"
+	"hash/crc64"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"strconv"
 )
 
 var (
@@ -82,6 +81,11 @@ func brokerSpecHash(s eventbrokerv1beta1.EventBrokerSpec) string {
 	return hash(brokerSpecSubset.String())
 }
 
+func monitoringSpecHash(s eventbrokerv1beta1.EventBrokerSpec) string {
+	brokerSpecSubset := s.DeepCopy()
+	return hash(brokerSpecSubset.Monitoring.String())
+}
+
 func brokerServiceHash(s eventbrokerv1beta1.EventBrokerSpec) string {
 	brokerServiceSubset := s.Service.DeepCopy()
 	return hash(brokerServiceSubset.String())
@@ -108,6 +112,10 @@ func brokerPodOutdated(pod *corev1.Pod, expectedBrokerSpecHash string, expectedT
 		result = result || (pod.ObjectMeta.Annotations[tlsSecretSignatureAnnotationName] != expectedTlsSecretHash)
 	}
 	return result
+}
+
+func brokerMonitoringOutdated(monitoring *appsv1.Deployment, expectedMonitoringSpecHash string) bool {
+	return monitoring.ObjectMeta.Annotations[monitoringSpecSignatureAnnotationName] != expectedMonitoringSpecHash
 }
 
 func convertToByteArray(e any) []byte {

@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 // EventBrokerSpec defines the desired state of PubSubPlusEventBroker
@@ -39,6 +40,8 @@ type EventBrokerSpec struct {
 	Developer bool `json:"developer"`
 	//+optional
 	//+kubebuilder:validation:Type:=object
+	//+kubebuilder:pruning:PreserveUnknownFields
+	//+kubebuilder:validation:Schemaless
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3
 	// SystemScaling provides exact fine-grained specification of the event broker scaling parameters
 	// and the assigned CPU / memory resources to the Pod.
@@ -109,6 +112,15 @@ type EventBrokerSpec struct {
 	//+kubebuilder:validation:Type:=object
 	// SecurityContext defines the pod security context for the event broker.
 	SecurityContext SecurityContext `json:"securityContext,omitempty"`
+	//+kubebuilder:validation:Type:=object
+	// ContainerSecurityContext defines the container security context for the PubSubPlusEventBroker.
+	BrokerSecurityContext ContainerSecurityContext `json:"brokerContainerSecurity,omitempty"`
+	//+optional
+	//+kubebuilder:validation:Type:=boolean
+	//+kubebuilder:default:=false
+	// EnableServiceLinks indicates whether information about services should be injected into pod's environment
+	// variables, matching the syntax of Docker links. Optional: Defaults to false.
+	EnableServiceLinks bool `json:"enableServiceLinks,omitempty"`
 	//+kubebuilder:validation:Type:=object
 	// ServiceAccount defines a ServiceAccount dedicated to the PubSubPlusEventBroker
 	ServiceAccount BrokerServiceAccount `json:"serviceAccount,omitempty"`
@@ -214,6 +226,7 @@ type BrokerPersistentVolumeClaim struct {
 	ClaimName string `json:"claimName"`
 }
 
+// +kubebuilder:pruning:PreserveUnknownFields
 type SystemScaling struct {
 	// +kubebuilder:default:=100
 	MaxConnections int `json:"maxConnections,omitempty"`
@@ -225,6 +238,8 @@ type SystemScaling struct {
 	MessagingNodeCpu string `json:"messagingNodeCpu,omitempty"`
 	// +kubebuilder:default:="4025Mi"
 	MessagingNodeMemory string `json:"messagingNodeMemory,omitempty"`
+	//+kubebuilder:pruning:PreserveUnknownFields
+	runtime.RawExtension `json:"-"`
 }
 
 // BrokerTLS defines TLS configuration for the PubSubPlusEventBroker
@@ -266,6 +281,16 @@ type ExtraEnvVar struct {
 	Name string `json:"name"`
 	//+kubebuilder:validation:Type:=string
 	// Specifies the Value of an environment variable to be added to the PubSubPlusEventBroker container
+	Value string `json:"value"`
+}
+
+// MonitoringExtraEnvVar defines environment variables to be added to the Prometheus Exporter container for Monitoring
+type MonitoringExtraEnvVar struct {
+	//+kubebuilder:validation:Type:=string
+	// Specifies the Name of an environment variable to be added to the Prometheus Exporter container for Monitoring
+	Name string `json:"name"`
+	//+kubebuilder:validation:Type:=string
+	// Specifies the Value of an environment variable to be added to the Prometheus Exporter container for Monitoring
 	Value string `json:"value"`
 }
 
@@ -333,6 +358,18 @@ type SecurityContext struct {
 	RunAsUser int64 `json:"runAsUser"`
 }
 
+// ContainerSecurityContext defines the container security context for the PubSubPlusEventBroker
+type ContainerSecurityContext struct {
+	//+optional
+	//+kubebuilder:validation:Type:=number
+	// Specifies runAsGroup in container security context. 0 or unset defaults either to 1000002, or if OpenShift detected to unspecified (see documentation)
+	RunAsGroup int64 `json:"runAsGroup"`
+	//+optional
+	//+kubebuilder:validation:Type:=number
+	// Specifies runAsUser in container security context. 0 or unset defaults either to 1000001, or if OpenShift detected to unspecified (see documentation)
+	RunAsUser int64 `json:"runAsUser"`
+}
+
 // MonitoringImage defines Image details and pulling configurations for the Prometheus Exporter for Monitoring
 type MonitoringImage struct {
 	//+kubebuilder:validation:Type:=string
@@ -359,6 +396,10 @@ type Monitoring struct {
 	//+kubebuilder:default:=false
 	// Enabled true enables the setup of the Prometheus Exporter.
 	Enabled bool `json:"enabled"`
+	//+optional
+	//+kubebuilder:validation:Type:=array
+	// List of extra environment variables to be added to the Prometheus Exporter container.
+	ExtraEnvVars []*MonitoringExtraEnvVar `json:"extraEnvVars"`
 	//+optional
 	//+kubebuilder:validation:Type:=object
 	// Image defines container image parameters for the Prometheus Exporter.
