@@ -58,16 +58,16 @@ spec:
                 description: ContainerSecurityContext defines the container security
                   context for the PubSubPlusEventBroker.
                 properties:
-                  fsGroup:
-                    description: Specifies fsGroup in pod security context. 0 or unset
-                      defaults either to 1000002, or if OpenShift detected to unspecified
-                      (see documentation)
+                  runAsGroup:
+                    description: Specifies runAsGroup in container security context.
+                      0 or unset defaults either to 1000002, or if OpenShift detected
+                      to unspecified (see documentation)
                     format: int64
                     type: number
                   runAsUser:
-                    description: Specifies runAsUser in pod security context. 0 or
-                      unset defaults either to 1000001, or if OpenShift detected to
-                      unspecified (see documentation)
+                    description: Specifies runAsUser in container security context.
+                      0 or unset defaults either to 1000001, or if OpenShift detected
+                      to unspecified (see documentation)
                     format: int64
                     type: number
                 type: object
@@ -76,6 +76,12 @@ spec:
                 description: |-
                   Developer true specifies a minimum footprint scaled-down deployment, not for production use.
                   If set to true it overrides SystemScaling parameters.
+                type: boolean
+              enableServiceLinks:
+                default: false
+                description: |-
+                  EnableServiceLinks indicates whether information about services should be injected into pod's environment
+                  variables, matching the syntax of Docker links. Optional: Defaults to false.
                 type: boolean
               extraEnvVars:
                 description: |-
@@ -154,6 +160,26 @@ spec:
                     description: Enabled true enables the setup of the Prometheus
                       Exporter.
                     type: boolean
+                  extraEnvVars:
+                    description: List of extra environment variables to be added to
+                      the Prometheus Exporter container.
+                    items:
+                      description: MonitoringExtraEnvVar defines environment variables
+                        to be added to the Prometheus Exporter container for Monitoring
+                      properties:
+                        name:
+                          description: Specifies the Name of an environment variable
+                            to be added to the Prometheus Exporter container for Monitoring
+                          type: string
+                        value:
+                          description: Specifies the Value of an environment variable
+                            to be added to the Prometheus Exporter container for Monitoring
+                          type: string
+                      required:
+                      - name
+                      - value
+                      type: object
+                    type: array
                   image:
                     description: Image defines container image parameters for the
                       Prometheus Exporter.
@@ -1476,23 +1502,8 @@ spec:
                 description: |-
                   SystemScaling provides exact fine-grained specification of the event broker scaling parameters
                   and the assigned CPU / memory resources to the Pod.
-                properties:
-                  maxConnections:
-                    default: 100
-                    type: integer
-                  maxQueueMessages:
-                    default: 100
-                    type: integer
-                  maxSpoolUsage:
-                    default: 1000
-                    type: integer
-                  messagingNodeCpu:
-                    default: "2"
-                    type: string
-                  messagingNodeMemory:
-                    default: 4025Mi
-                    type: string
                 type: object
+                x-kubernetes-preserve-unknown-fields: true
               timezone:
                 default: UTC
                 description: Defines the timezone for the event broker container,
@@ -1920,7 +1931,7 @@ spec:
         env:
         - name: WATCH_NAMESPACE
           value: ""
-        image: ghcr.io/solacedev/pubsubplus-eventbroker-operator:1.1.0-dev
+        image: ghcr.io/solacedev/pubsubplus-eventbroker-operator:1.1.0
         imagePullPolicy: Always
         livenessProbe:
           httpGet:

@@ -31,8 +31,7 @@ __Contents:__
       - [Pulling images from a private registry](#pulling-images-from-a-private-registry)
     - [Broker Scaling](#broker-scaling)
       - [Vertical Scaling](#vertical-scaling)
-        - [Minimum footprint deployment for Developers](#minimum-footprint-deployment-for-developers)
-        - [Forward Compatibility for Vertical Scaling](#forward-compatibility-for-vertical-scaling)
+        - [Minimum footprint deployment for Developers](#minimum-footprint-deployment-for-developers) 
     - [Storage](#storage)
       - [Dynamically allocated storage from a Storage Class](#dynamically-allocated-storage-from-a-storage-class)
         - [Using an existing Storage Class](#using-an-existing-storage-class)
@@ -305,7 +304,10 @@ spec:
 
 >Note: Beyond CPU and memory requirements, broker storage size (see [Storage](#storage) section) must also support the provided scaling. The calculator can be used to determine that as well.
 
-Also note, that specifying maxConnections, maxQueueMessages, and maxSpoolUsage on initial deployment overwrites the broker’s default values. On the other hand, doing the same using upgrade on an existing deployment does not overwrite these values on brokers configuration, but it can be used to prepare (first step) for a manual scale up using CLI where these parameter changes would actually become effective (second step).
+Also note, that specifying `maxConnections`, `maxQueueMessages`, and `maxSpoolUsage` on initial deployment overwrites the broker’s default values. On the other hand, doing the same using upgrade on an existing deployment does not overwrite these values on brokers configuration, but it can be used to prepare (first step) for a manual scale up using CLI where these parameter changes would actually become effective (second step).
+
+>Note: The scaling parameters intentionally use a mix of *camelCase* and *snake_case* to maintain backward and forward compatibility with Solace PubSub+ Software Event Broker configurations. Make sure values are not duplicated for consistency. When using the [resource calculator](https://docs.solace.com/Admin-Ref/Resource-Calculator/pubsubplus-resource-calculator.html), ensure that the scaling parameters are in the correct format to match what the Solace PubSub+ Software Event Broker expects. If invalid scaling parameters are provided, the Operator will revert to default values. For the list of default values, please refer to this [link](/docs/EventBrokerOperatorParametersReference.md).
+
 
 ##### Minimum footprint deployment for Developers
 
@@ -320,8 +322,6 @@ To activate, set `spec.developer` to `true`.
 The [PubSub+ deployment uses disk storage](https://docs.solace.com/Software-Broker/Configuring-Storage.htm) for logging, configuration, guaranteed messaging, and storing diagnostic and other information, allocated from Kubernetes volumes.
 
 For a given set of [scaling](#vertical-scaling), use the [Solace online System Resource Calculator](https://docs.solace.com/Admin-Ref/Resource-Calculator/pubsubplus-resource-calculator.html) to determine the required storage size. 
-
->Note: The scaling parameters intentionally use a mix of *camelCase* and *snake_case* to maintain backward and forward compatibility with Solace PubSub+ Software Event Broker configurations. Make sure values are not duplicated for consistency. When using the [resource calculator](https://docs.solace.com/Admin-Ref/Resource-Calculator/pubsubplus-resource-calculator.html), ensure that the scaling parameters are in the correct format to match what the Solace PubSub+ Software Event Broker expects. If invalid scaling parameters are provided, the Operator will revert to default values. For the list of default values, please refer to this [link](/docs/EventBrokerOperatorParametersReference.md).
 
 The broker pods can use following storage options:
 * Dynamically allocated storage from a Kubernetes Storage Class (default)
