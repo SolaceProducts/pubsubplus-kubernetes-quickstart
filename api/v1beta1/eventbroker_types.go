@@ -110,6 +110,10 @@ type EventBrokerSpec struct {
 	// SecurityContext defines the pod security context for the event broker.
 	SecurityContext SecurityContext `json:"securityContext,omitempty"`
 	//+kubebuilder:validation:Type:=object
+	// ContainerSpec configures the pubsubplus container securityContext
+	// created by the operator.
+	ContainerSpec ContainerSpec `json:"container,omitempty"`
+	//+kubebuilder:validation:Type:=object
 	// ServiceAccount defines a ServiceAccount dedicated to the PubSubPlusEventBroker
 	ServiceAccount BrokerServiceAccount `json:"serviceAccount,omitempty"`
 	//+kubebuilder:validation:Type:=object
@@ -331,6 +335,14 @@ type SecurityContext struct {
 	//+kubebuilder:validation:Type:=number
 	// Specifies runAsUser in pod security context. 0 or unset defaults either to 1000001, or if OpenShift detected to unspecified (see documentation)
 	RunAsUser int64 `json:"runAsUser"`
+}
+
+// ContainerSpec SecurityContext defines the container security context for the PubSubPlusEventBroker container. This may be required to comply with security rules
+type ContainerSpec struct {
+	//+optional
+	//+kubebuilder:validation:Type:=object
+	// SecurityContext that will be added to pubsubplus container created by operator.
+	SecurityContext *corev1.SecurityContext `json:"securityContext,omitempty"`
 }
 
 // MonitoringImage defines Image details and pulling configurations for the Prometheus Exporter for Monitoring

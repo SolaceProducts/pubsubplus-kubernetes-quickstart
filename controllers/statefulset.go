@@ -341,6 +341,11 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(sts *a
 							Name:      "data",
 							MountPath: "/var/lib/solace",
 						},
+						{
+							Name:      "kube-api-access",
+							MountPath: "/var/run/secrets/kubernetes.io/serviceaccount",
+							ReadOnly:  true,
+						},
 					},
 				},
 			},
@@ -402,8 +407,47 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(sts *a
 						},
 					},
 				},
+				{
+					Name: "kube-api-access",
+					VolumeSource: corev1.VolumeSource{
+						Projected: &corev1.ProjectedVolumeSource{
+							DefaultMode: &[]int32{420}[0], // 420
+							Sources: []corev1.VolumeProjection{
+								{
+									ServiceAccountToken: &corev1.ServiceAccountTokenProjection{
+										ExpirationSeconds: &[]int64{3600}[0],
+										Path:              "token",
+									},
+								},
+								{
+									ConfigMap: &corev1.ConfigMapProjection{
+										LocalObjectReference: corev1.LocalObjectReference{
+											Name: "kube-root-ca.crt",
+										},
+										Items: []corev1.KeyToPath{{
+											Key:  "ca.crt",
+											Path: "ca.crt",
+										}},
+									},
+								},
+								{
+									DownwardAPI: &corev1.DownwardAPIProjection{
+										Items: []corev1.DownwardAPIVolumeFile{{
+											FieldRef: &corev1.ObjectFieldSelector{
+												APIVersion: "v1",
+												FieldPath:  "metadata.namespace",
+											},
+											Path: "namespace",
+										}},
+									},
+								},
+							},
+						},
+					},
+				},
 			},
-			ImagePullSecrets: m.Spec.BrokerImage.ImagePullSecrets,
+			AutomountServiceAccountToken: &[]bool{false}[0],
+			ImagePullSecrets:             m.Spec.BrokerImage.ImagePullSecrets,
 			// SchedulerName:                 "",
 			// Tolerations:                   []corev1.Toleration{},
 			// TopologySpreadConstraints:     []corev1.TopologySpreadConstraint{},
@@ -453,6 +497,12 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(sts *a
 		} // else in OpenShift env AND using non-default namespace so leave it undefined
 	} else {
 		sts.Spec.Template.Spec.SecurityContext.FSGroup = &m.Spec.SecurityContext.FSGroup
+	}
+
+	// Set container security context
+	// This SecurityContext is for main pubsub container
+	if m.Spec.ContainerSpec.SecurityContext != nil {
+		sts.Spec.Template.Spec.Containers[0].SecurityContext = m.Spec.ContainerSpec.SecurityContext
 	}
 
 	//Set TLS configuration
