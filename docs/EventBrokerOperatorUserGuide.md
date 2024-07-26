@@ -31,8 +31,7 @@ __Contents:__
       - [Pulling images from a private registry](#pulling-images-from-a-private-registry)
     - [Broker Scaling](#broker-scaling)
       - [Vertical Scaling](#vertical-scaling)
-        - [Minimum footprint deployment for Developers](#minimum-footprint-deployment-for-developers)
-        - [Forward Compatibility for Vertical Scaling](#forward-compatibility-for-vertical-scaling)
+        - [Minimum footprint deployment for Developers](#minimum-footprint-deployment-for-developers) 
     - [Storage](#storage)
       - [Dynamically allocated storage from a Storage Class](#dynamically-allocated-storage-from-a-storage-class)
         - [Using an existing Storage Class](#using-an-existing-storage-class)
@@ -305,7 +304,10 @@ spec:
 
 >Note: Beyond CPU and memory requirements, broker storage size (see [Storage](#storage) section) must also support the provided scaling. The calculator can be used to determine that as well.
 
-Also note, that specifying maxConnections, maxQueueMessages, and maxSpoolUsage on initial deployment overwrites the broker’s default values. On the other hand, doing the same using upgrade on an existing deployment does not overwrite these values on brokers configuration, but it can be used to prepare (first step) for a manual scale up using CLI where these parameter changes would actually become effective (second step).
+Also note, that specifying `maxConnections`, `maxQueueMessages`, and `maxSpoolUsage` on initial deployment overwrites the broker’s default values. On the other hand, doing the same using upgrade on an existing deployment does not overwrite these values on brokers configuration, but it can be used to prepare (first step) for a manual scale up using CLI where these parameter changes would actually become effective (second step).
+
+>Note: The scaling parameters intentionally use a mix of *camelCase* and *snake_case* to maintain backward and forward compatibility with Solace PubSub+ Software Event Broker configurations. Make sure values are not duplicated for consistency. When using the [resource calculator](https://docs.solace.com/Admin-Ref/Resource-Calculator/pubsubplus-resource-calculator.html), ensure that the scaling parameters are in the correct format to match what the Solace PubSub+ Software Event Broker expects. If invalid scaling parameters are provided, the Operator will revert to default values. For the list of default values, please refer to this [link](/docs/EventBrokerOperatorParametersReference.md).
+
 
 ##### Minimum footprint deployment for Developers
 
@@ -315,63 +317,11 @@ To activate, set `spec.developer` to `true`.
 
 >Important: If set to `true`, `spec.developer` has precedence over any `spec.systemScaling` vertical scaling settings.
 
-##### Forward Compatibility for Vertical Scaling
-
-Use `extraEnvVars`, which allows configuration of [additional properties for broker pods](#broker-pod-additional-properties) to ensure forward compatibility of `scalingParameters`.
-
-For example from 10.7.x of Solace PubSub+ Software Event Broker, new scaling parameters have been added.
-
-* [Maximum Number of Kafka Bridges](https://docs.solace.com/Software-Broker/System-Scaling-Parameters.htm#max-kafka-bridges)
-* [Maximum Number of Kafka Broker Connections](https://docs.solace.com/Software-Broker/System-Scaling-Parameters.htm#max-kafka-broker-connections)
-
-Configure these parameters outside of `systemScaling` using `extraEnvVars`, as shown below:
-
-```yaml
-apiVersion: pubsubplus.solace.com/v1beta1
-kind: PubSubPlusEventBroker
-metadata:
-  name: ha-scaling-param-extra
-spec:
-  extraEnvVars:
-    - name: system_scaling_maxkafkabrokerconnectioncount
-      value: "300"
-    - name: system_scaling_maxkafkabridgecount
-      value: "10"
-  systemScaling:
-    messagingNodeMemory: "8025Mi"
-    messagingNodeCpu: "2"
-    maxSpoolUsage: 500
-    maxQueueMessages: 100
-    maxConnections: 1000
-  redundancy: false
-```
-
-When the broker pod has started, confirm consistency of values with the command `show system` after having [CLI access to individual event broker](#cli-access-to-individual-event-brokers).
-
-```
-ha-scaling-param-extra-pubsubplus-p-0> show system
-
-System Uptime: 0d 0h 1m 13s
-Last Restart Reason: Unknown reason
-
-Scaling:
-Max Connections: 1000
-Max Queue Messages: 100M
-Max Kafka Bridges: 10
-Max Kafka Broker Connections: 300
-
-Topic Routing:
-Subscription Exceptions: Enabled
-Subscription Exceptions Defer: Enabled
-```
-
->Note: Please verify that the value aligns with the `scalingParameter` values. This custom method of configuring `scalingParameters` is only effective if it's supported as environment variables and values consistent with what the Solace PubSub+ Software Event Broker expects. Use the [Resource-Calculator](https://docs.solace.com/Admin-Ref/Resource-Calculator/pubsubplus-resource-calculator.html) as guide.
-
 ### Storage
 
 The [PubSub+ deployment uses disk storage](https://docs.solace.com/Software-Broker/Configuring-Storage.htm) for logging, configuration, guaranteed messaging, and storing diagnostic and other information, allocated from Kubernetes volumes.
 
-For a given set of [scaling](#vertical-scaling), use the [Solace online System Resource Calculator](https://docs.solace.com/Admin-Ref/Resource-Calculator/pubsubplus-resource-calculator.html) to determine the required storage size.
+For a given set of [scaling](#vertical-scaling), use the [Solace online System Resource Calculator](https://docs.solace.com/Admin-Ref/Resource-Calculator/pubsubplus-resource-calculator.html) to determine the required storage size. 
 
 The broker pods can use following storage options:
 * Dynamically allocated storage from a Kubernetes Storage Class (default)
@@ -512,6 +462,8 @@ In summary, a deployment is ready for service requests when there is a broker po
 ```
 kubectl get pods --show-labels
 ```
+
+> Note: The Operator uses SEMP to determine the active PubSub+ Event Broker. Restarting SEMP will affect the active broker selection.
 
 #### Using a Service Type
 
@@ -826,7 +778,7 @@ In a Production environment additional steps are required to ensure there is onl
 
 #### Broker Security Context
 
-The following container-level security context configuration is automatically set by the operator:
+The following container-level security context configuration is automatically set by the operator for the PubSub+ broker container
 
 ```
 capabilities:

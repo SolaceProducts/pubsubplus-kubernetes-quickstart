@@ -6,7 +6,7 @@ on:
       - main
 
 env:
-  VERSION: 1.0.3
+  VERSION: 1.1.0
   IMAGE_NAME: pubsubplus-eventbroker-operator
   VAULT_ADDR: ${{ secrets.VAULT_ADDR }}
   GCLOUD_PROJECT_ID_DEV: ${{ secrets.GCLOUD_PROJECT_ID }}
@@ -121,6 +121,11 @@ jobs:
           exportToken: true
           secrets: |
             secret/data/development/gcp-gcr GCP_SERVICE_ACCOUNT | GCP_DEV_SERVICE_ACCOUNT
+        env:
+          VERSION: 1.1.0
+          IMAGE_NAME: pubsubplus-eventbroker-operator
+          VAULT_ADDR: ${{ secrets.VAULT_ADDR }}
+          GCLOUD_PROJECT_ID_DEV: ${{ secrets.GCLOUD_PROJECT_ID }}
 
       - name: Log in to gcr development docker registry
         uses: docker/login-action@f054a8b539a109f9f41c372932f1ae047eff08c9
@@ -138,6 +143,12 @@ jobs:
           tags: |
             gcr.io/${{ env.GCLOUD_PROJECT_ID_DEV }}/${{ env.IMAGE_NAME }}:${{ env.VERSION }}
           push: true
+        env:
+          VERSION: 1.1.0
+          IMAGE_NAME: pubsubplus-eventbroker-operator
+          VAULT_ADDR: ${{ secrets.VAULT_ADDR }}
+          GCLOUD_PROJECT_ID_DEV: ${{ secrets.GCLOUD_PROJECT_ID }}
+
 
       - name: Run Vulnerability PreCheck for Prisma
         uses: ./maas-build-actions/.github/actions/prisma-vulnerability-checker
