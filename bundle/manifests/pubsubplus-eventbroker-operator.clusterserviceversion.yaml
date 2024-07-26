@@ -296,7 +296,7 @@ spec:
                   valueFrom:
                     fieldRef:
                       fieldPath: metadata.annotations['olm.targetNamespaces']
-                image: ghcr.io/solacedev/pubsubplus-eventbroker-operator:1.1.0
+                image: docker.io/solace/pubsubplus-eventbroker-operator:1.1.0
                 imagePullPolicy: Always
                 livenessProbe:
                   httpGet:
