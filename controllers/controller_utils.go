@@ -21,6 +21,7 @@ import (
 	"context"
 	"embed"
 	"encoding/gob"
+	"encoding/json"
 	"fmt"
 	eventbrokerv1beta1 "github.com/SolaceProducts/pubsubplus-operator/api/v1beta1"
 	"hash/crc64"
@@ -131,4 +132,11 @@ func convertToByteArray(e any) []byte {
 func hash(s any) string {
 	crc64Table := crc64.MakeTable(crc64.ECMA)
 	return strconv.FormatUint(crc64.Checksum(convertToByteArray(s), crc64Table), 16)
+}
+
+func parseScalingParameterWithUnKnownFieldsToMap(scalingParameter *eventbrokerv1beta1.SystemScaling) map[string]interface{} {
+	var scalingParamMap map[string]interface{}
+	marshalScalingParameter, _ := json.Marshal(scalingParameter)
+	json.Unmarshal(marshalScalingParameter, &scalingParamMap)
+	return scalingParamMap
 }

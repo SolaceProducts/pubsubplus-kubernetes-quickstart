@@ -301,10 +301,21 @@ spec:
     messagingNodeCpu: "2"
     messagingNodeMemory: "4025Mi"
 ```
+or 
+
+```yaml
+spec:
+  systemScaling:
+    system_scaling_maxconnectioncount: 100
+    system_scaling_maxqueuemessagecount: 100
+    messagespool_maxspoolusage: 1000
+    messagingNodeCpu: "2"
+    messagingNodeMemory: "4025Mi"
+```
 
 >Note: Beyond CPU and memory requirements, broker storage size (see [Storage](#storage) section) must also support the provided scaling. The calculator can be used to determine that as well.
 
-Also note, that specifying `maxConnections`, `maxQueueMessages`, and `maxSpoolUsage` on initial deployment overwrites the broker’s default values. On the other hand, doing the same using upgrade on an existing deployment does not overwrite these values on brokers configuration, but it can be used to prepare (first step) for a manual scale up using CLI where these parameter changes would actually become effective (second step).
+Also note, that specifying `maxConnections`, `maxQueueMessages`, and `maxSpoolUsage` on initial deployment overwrites the broker’s default values. On the other hand, doing the same using upgrade on an existing deployment does not overwrite these values on brokers configuration, but it can be used to prepare (first step) for a manual scale up using CLI where these parameter changes would actually become effective (second step). The Operator will use default configurations in situations where the scaling parameters are not provided or are not valid. 
 
 >Note: The scaling parameters intentionally use a mix of *camelCase* and *snake_case* to maintain backward and forward compatibility with Solace PubSub+ Software Event Broker configurations. Make sure values are not duplicated for consistency. When using the [resource calculator](https://docs.solace.com/Admin-Ref/Resource-Calculator/pubsubplus-resource-calculator.html), ensure that the scaling parameters are in the correct format to match what the Solace PubSub+ Software Event Broker expects. If invalid scaling parameters are provided, the Operator will revert to default values. For the list of default values, please refer to this [link](/docs/EventBrokerOperatorParametersReference.md).
 
@@ -1485,8 +1496,6 @@ A given version of the Operator has a dependency on the PubSubPlusEventBroker Cu
 ##### Upgrading the Operator only
 
 You can use OLM to manage installing new versions of the Operator as they become available. The default install of the PubSub+ Event Broker Operator is set to perform automatic updates. This can be changed to `Manual` by editing the broker subscription in the `operators` namespace.
-
-If the Operator has been installed directly from the command line then update `deploy.yaml` to the new operator image tag, run `kubectl apply -f <updated-deploy.yaml>`, and then validate the updated deployment.
 
 #### Upgrade CRD and Operator
 

@@ -1931,7 +1931,7 @@ spec:
         env:
         - name: WATCH_NAMESPACE
           value: ""
-        image: docker.io/solace/pubsubplus-eventbroker-operator:1.1.0
+        image: ghcr.io/solacedev/pubsubplus-eventbroker-operator:1.1.1
         imagePullPolicy: Always
         livenessProbe:
           httpGet:
