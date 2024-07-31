@@ -149,6 +149,8 @@ jobs:
           VAULT_ADDR: ${{ secrets.VAULT_ADDR }}
           GCLOUD_PROJECT_ID_DEV: ${{ secrets.GCLOUD_PROJECT_ID }}
 
+      - name: Build image and push GitHub Container Registry
+        run: make docker-push
 
       - name: Run Vulnerability PreCheck for Prisma
         uses: ./maas-build-actions/.github/actions/prisma-vulnerability-checker
@@ -159,8 +161,6 @@ jobs:
           project_squad: "launchpad"
           prisma_jira_check: "False"
 
-      - name: Build image and push GitHub Container Registry
-        run: make docker-push
 
       - name: Run Whitesource Action
         uses: SolaceDev/Mend-Scan-GHA@v1.0.0
