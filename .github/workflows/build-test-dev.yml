@@ -6,7 +6,7 @@ on:
       - main
 
 env:
-  VERSION: 1.1.1
+  VERSION: 1.1.1-dev
   IMAGE_NAME: pubsubplus-eventbroker-operator
   VAULT_ADDR: ${{ secrets.VAULT_ADDR }}
   GCLOUD_PROJECT_ID_DEV: ${{ secrets.GCLOUD_PROJECT_ID }}
