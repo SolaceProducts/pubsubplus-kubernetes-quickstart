@@ -459,6 +459,13 @@ Monitoring specifies a Prometheus monitoring endpoint for the event broker
             <i>Default</i>: false<br/>
         </td>
         <td>false</td>
+       </tr><tr>
+        <td><b><a href="#pubsubpluseventbrokerspecmonitoringextraenvvarsindex">extraEnvVars</a></b></td>
+        <td>[]object</td>
+        <td>
+          List of extra environment variables to be added to the Prometheus Exporter container.<br/>
+        </td>
+        <td>false</td>
       </tr><tr>
         <td><b><a href="#pubsubpluseventbrokerspecmonitoringimage">image</a></b></td>
         <td>object</td>
@@ -503,6 +510,40 @@ Monitoring specifies a Prometheus monitoring endpoint for the event broker
         <td>false</td>
       </tr></tbody>
 </table>
+
+### PubSubPlusEventBroker.spec.monitoring.extraEnvVars[index]
+<sup><sup>[↩ Parent](#pubsubpluseventbrokerspecmonitoring)</sup></sup>
+
+
+
+MonitoringExtraEnvVar defines environment variables to be added to the Prometheus Exporter container for Monitoring
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Specifies the Name of an environment variable to be added to the Prometheus Exporter container for Monitoring<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>value</b></td>
+        <td>string</td>
+        <td>
+          Specifies the Value of an environment variable to be added to the Prometheus Exporter container for Monitoring<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
 
 
 ### PubSubPlusEventBroker.spec.monitoring.image
