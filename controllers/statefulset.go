@@ -137,24 +137,29 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(sts *a
 		maxConnections = (map[bool]int{true: DefaultDeveloperModeMaxConnections, false: DefaultMessagingNodeMaxConnections})[m.Spec.Developer]
 		maxQueueMessages = (map[bool]int{true: DefaultDeveloperModeMaxQueueMessages, false: DefaultMessagingNodeMaxQueueMessages})[m.Spec.Developer]
 		maxSpoolUsage = (map[bool]int{true: DefaultDeveloperModeMaxSpoolUsage, false: DefaultMessagingNodeMaxSpoolUsage})[m.Spec.Developer]
+
+		scalingParamMap := parseScalingParameterWithUnKnownFieldsToMap(m.Spec.SystemScaling)
 		// Overwrite for any values defined in spec.systemScaling
 		if m.Spec.SystemScaling != nil && !m.Spec.Developer {
-			if m.Spec.SystemScaling.MessagingNodeCpu != "" {
-				cpuRequests = m.Spec.SystemScaling.MessagingNodeCpu
+			if messagingNodeCpu, ok := scalingParamMap["messagingNodeCpu"]; ok && messagingNodeCpu != "" {
+				cpuRequests = messagingNodeCpu.(string)
 				cpuLimits = cpuRequests
 			}
-			if m.Spec.SystemScaling.MessagingNodeMemory != "" {
-				memRequests = m.Spec.SystemScaling.MessagingNodeMemory
+			if messagingNodeMemory, ok := scalingParamMap["messagingNodeMemory"]; ok && messagingNodeMemory != "" {
+				memRequests = messagingNodeMemory.(string)
 				memLimits = memRequests
 			}
-			if m.Spec.SystemScaling.MaxConnections > 0 {
-				maxConnections = m.Spec.SystemScaling.MaxConnections
+			if maxConnectionsValue, ok := scalingParamMap["maxConnections"]; ok && maxConnectionsValue != "" {
+				maxConnectionsFloat := maxConnectionsValue.(float64)
+				maxConnections = int(maxConnectionsFloat)
 			}
-			if m.Spec.SystemScaling.MaxQueueMessages > 0 {
-				maxQueueMessages = m.Spec.SystemScaling.MaxQueueMessages
+			if maxQueueMessagesValue, ok := scalingParamMap["maxQueueMessages"]; ok && maxQueueMessagesValue != "" {
+				maxQueueMessagesValueFloat := maxQueueMessagesValue.(float64)
+				maxQueueMessages = int(maxQueueMessagesValueFloat)
 			}
-			if m.Spec.SystemScaling.MaxSpoolUsage > 0 {
-				maxSpoolUsage = m.Spec.SystemScaling.MaxSpoolUsage
+			if maxSpoolUsageValue, ok := scalingParamMap["maxSpoolUsage"]; ok && maxSpoolUsageValue != "" {
+				maxSpoolUsageValueFloat := maxSpoolUsageValue.(float64)
+				maxSpoolUsage = int(maxSpoolUsageValueFloat)
 			}
 		}
 	}
@@ -639,9 +644,7 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(sts *a
 	//Set unknown scaling parameter values
 	if m.Spec.SystemScaling != nil {
 		var err error
-		var scalingParamMap map[string]interface{}
-		inrec, _ := json.Marshal(m.Spec.SystemScaling)
-		json.Unmarshal(inrec, &scalingParamMap)
+		scalingParamMap := parseScalingParameterWithUnKnownFieldsToMap(m.Spec.SystemScaling)
 		allEnv := sts.Spec.Template.Spec.Containers[0].Env
 		for key, val := range scalingParamMap {
 			if strings.HasPrefix(strings.ToLower(key), scalingParameterPrefix) || strings.HasPrefix(strings.ToLower(key), scalingParameterSpoolPrefix) {
