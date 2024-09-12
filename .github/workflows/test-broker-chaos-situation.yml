@@ -19,7 +19,7 @@ jobs:
           echo "TESTNAMESPACE=op-test-chaos-$(date +%s)" >> $GITHUB_ENV
 
       - name: Check out code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{ github.head_ref }}
           fetch-depth: 0

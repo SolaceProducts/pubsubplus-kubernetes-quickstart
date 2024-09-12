@@ -6,7 +6,7 @@ on:
       - main
 
 env:
-  VERSION: 1.1.1
+  VERSION: 1.2.0
   IMAGE_NAME: pubsubplus-eventbroker-operator
   VAULT_ADDR: ${{ secrets.VAULT_ADDR }}
   GCLOUD_PROJECT_ID_DEV: ${{ secrets.GCLOUD_PROJECT_ID }}
@@ -25,12 +25,10 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: "1.21"
-        env:
-          GOTOOLCHAIN: go1.21rc3
+          go-version: "1.22.7"
 
       - name: Check out code
-        uses: actions/checkout@v1
+        uses: actions/checkout@v4
         with:
           ref: ${{ github.head_ref }}
           fetch-depth: 0
@@ -59,7 +57,7 @@ jobs:
 
       - name: Upload Test coverage Reports
         if: ${{ startsWith(github.ref_name, 'dev1.') && (github.ref_name != 'main') }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: code-coverage-report
           path: |
@@ -100,7 +98,7 @@ jobs:
 
       - name: Checkout SolaceDev/maas-build-actions
         if: ${{ startsWith(github.ref_name, 'dev1.') && (github.ref_name != 'main') }}
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           repository: SolaceDev/maas-build-actions
           ref: refs/heads/master
@@ -145,7 +143,7 @@ jobs:
           push: true
         env:
           VERSION: ${{ env.VERSION }}
-          IMAGE_NAME: pubsubplus-eventbroker-operator
+          IMAGE_NAME: ${{ env.IMAGE_NAME }}
           VAULT_ADDR: ${{ secrets.VAULT_ADDR }}
           GCLOUD_PROJECT_ID_DEV: ${{ secrets.GCLOUD_PROJECT_ID }}
 
@@ -157,7 +155,7 @@ jobs:
         if: ${{ startsWith(github.ref_name, 'dev1.') && (github.ref_name != 'main') }}
         with:
           docker_image_to_check: gcr.io/${{ env.GCLOUD_PROJECT_ID_DEV }}/${{ env.IMAGE_NAME }}:${{ env.VERSION }}
-          prisma_repository_name: "${{ env.GCLOUD_PROJECT_ID_DEV }}/${{ env.IMAGE_NAME }}"
+          prisma_repository_name: "gcr.io/${{ env.GCLOUD_PROJECT_ID_DEV }}/${{ env.IMAGE_NAME }}"
           project_squad: "launchpad"
           prisma_jira_check: "False"
 
@@ -183,8 +181,9 @@ jobs:
 
       - name: Uploads Trivy Scan Reports
         if: ${{ startsWith(github.ref_name, 'dev1.') && (github.ref_name != 'main') }}
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
+          name: trivy-results
           path: |
             trivy-results.sarif
 
@@ -199,7 +198,7 @@ jobs:
 
       - name: Uploads Trivy Scan Reports
         if: ${{ startsWith(github.ref_name, 'dev1.') && (github.ref_name != 'main') }}
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           path: |
             trivy-results.sarif
