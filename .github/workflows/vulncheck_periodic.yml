@@ -4,7 +4,7 @@ on:
     - cron: '0 */ * * *'
 
 env:
-  VERSION: 1.1.1
+  VERSION: 1.2.0
   IMAGE_NAME: pubsubplus-eventbroker-operator
   VAULT_ADDR: ${{ secrets.VAULT_ADDR }}
   GCLOUD_PROJECT_ID_DEV: ${{ secrets.GCLOUD_PROJECT_ID }}
@@ -27,10 +27,10 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: "1.21"
+          go-version: "1.22.7"
 
       - name: Check out code
-        uses: actions/checkout@v1
+        uses: actions/checkout@v4
 
       - name: Login to Github Packages
         uses: docker/login-action@v2
@@ -44,7 +44,7 @@ jobs:
         uses: docker/setup-buildx-action@v2
 
       - name: Checkout SolaceDev/maas-build-actions
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           repository: SolaceDev/maas-build-actions
           ref: refs/heads/master
@@ -65,7 +65,7 @@ jobs:
           secrets: |
             secret/data/development/gcp-gcr GCP_SERVICE_ACCOUNT | GCP_DEV_SERVICE_ACCOUNT
         env:
-          VERSION: 1.1.1
+          VERSION: 1.2.0
           IMAGE_NAME: pubsubplus-eventbroker-operator
           VAULT_ADDR: ${{ secrets.VAULT_ADDR }}
           GCLOUD_PROJECT_ID_DEV: ${{ secrets.GCLOUD_PROJECT_ID }}
@@ -85,7 +85,7 @@ jobs:
             gcr.io/${{ env.GCLOUD_PROJECT_ID_DEV }}/${{ env.IMAGE_NAME }}:${{ env.VERSION }}
           push: true
         env:
-          VERSION: 1.1.1
+          VERSION: 1.2.0
           IMAGE_NAME: pubsubplus-eventbroker-operator
           VAULT_ADDR: ${{ secrets.VAULT_ADDR }}
           GCLOUD_PROJECT_ID_DEV: ${{ secrets.GCLOUD_PROJECT_ID }}
@@ -121,7 +121,7 @@ jobs:
 
       - name: Uploads Trivy Scan Reports
         if: ${{ always() }}
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           path: |
             trivy-results.sarif
@@ -136,7 +136,7 @@ jobs:
 
       - name: Uploads Trivy Scan Reports
         if: ${{ !startsWith(github.ref_name, '1.') }}
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           path: |
             trivy-results.sarif
