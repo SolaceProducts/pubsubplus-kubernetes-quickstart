@@ -8,8 +8,7 @@ The Solace PubSub+ Event Broker Operator (or simply the Operator) is a Kubernete
 
 __Contents:__
 - [Solace PubSub+ Event Broker Operator Quick Start](#solace-pubsub-event-broker-operator-quick-start)
-  - [Overview](#overview)
-    - [Additional Documentation](#additional-documentation)
+  - [Overview](#overview)  
   - [How to deploy the PubSub+ Software Event Broker onto Kubernetes using the Operator](#how-to-deploy-the-pubsub-software-event-broker-onto-kubernetes-using-the-operator)
     - [1. Get a Kubernetes environment](#1-get-a-kubernetes-environment)
     - [2. Install the Operator](#2-install-the-operator)
@@ -22,8 +21,10 @@ __Contents:__
       - [d) Deployment with Prometheus Monitoring Enabled](#d-deployment-with-prometheus-monitoring-enabled)
     - [4. Test the deployment](#4-test-the-deployment)
     - [Additional information](#additional-information)
-  - [Contributing](#contributing)
+  - [Support](#support) 
+  - [Versioning](#versioning)
   - [Authors](#authors)
+  - [Contributing](#contributing)
   - [License](#license)
   - [Resources](#resources)
 
@@ -39,8 +40,6 @@ The following Kubernetes platforms have been tested:
 - OpenShift 4 Platform on AWS
 
 The tested and recommended PubSub+ Software Event Broker version is 10.3.
-
-### Additional Documentation
 
 Detailed documentation is provided in the [Solace PubSub+ Event Broker Operator User Guide](docs/EventBrokerOperatorUserGuide.md). In particular, consult the [Deployment Planning](docs/EventBrokerOperatorUserGuide.md#deployment-planning) section of the User Guide when planning your deployment.
 
@@ -240,7 +239,6 @@ http://<ip-address>:8080
 
 > If required use above Load Balancer access workaround for service port `8008`.
 
-
 ### Additional information
 
 Refer to the detailed PubSub+ Event Broker Operator documentation for:
@@ -248,6 +246,38 @@ Refer to the detailed PubSub+ Event Broker Operator documentation for:
 * [Troubleshooting](docs/EventBrokerOperatorUserGuide.md#troubleshooting)
 * [Modifying or Upgrading](docs/EventBrokerOperatorUserGuide.md#modifying-a-broker-deployment-including-broker-upgrade)
 * [Deleting the deployment](docs/EventBrokerOperatorUserGuide.md#deleting-a-deployment)
+
+## Support
+
+Solace provides full support for the latest Pubsub+ Event Broker Operator and technical support for an additional six months.
+
+_Solace Pubsub+ Prometheus Exporter End of Life Notice : Please note that Solace will end of life Pubsub+ Prometheus Exporter version 1.0.1 as of June ,2024. This means there will be no releases for Pubsub+ Prometheus Exporter after June ,2024, however, Solace will continue to provide technical support for it until June, 2025. If you have monitoring enabled, the operator will default to downloading the Solace version of Pubsub+ Prometheus Exporter 1.0.1. The community version of the Prometheus Exporter available at GitHub - solacecommunity/solace-prometheus-exporter: Prometheus Solace Exporter  can be deployed with Pubsub+ Event Broker Operator. Note that Solace does not officially support the community version of the Prometheus Exporter._
+
+Refer [Technical Product Support | Solace](https://solace.com/legal/technical-product-support/) for support terminologies.
+
+The following table shows:
+
+![image](https://github.com/user-attachments/assets/f22255d5-ec7e-4f6e-a0c9-ac75c3992016)
+A green check mark shows the broker deployment using Pubsub+ Event Broker Operator is supported and tested on the specific Kubernetes distribution.
+
+ 
+
+![image](https://github.com/user-attachments/assets/e6af589a-a91d-41be-8209-e95fe1329cb5)
+A gray check mark shows the broker deployment using Pubsub+ Event Broker Operator is supported but not fully tested on the specific Kubernetes distribution. In addition, there may be known issues or additional work required to deploy event broker services on the Kubernetes cluster.
+
+
+
+| Kubernetes Distribution | Minimum Recommended Pubsub+ Event Broker Version | Supported |
+|-------------------------|--------------------------------------------------|-----------|
+| Google Kubernetes Engine (GKE)                       | 10.3                                               | ![image](https://github.com/user-attachments/assets/f22255d5-ec7e-4f6e-a0c9-ac75c3992016)        |
+| Amazon Elastic Kubernetes Service (EKS)                       | 10.3                                                | ![image](https://github.com/user-attachments/assets/e6af589a-a91d-41be-8209-e95fe1329cb5)         |
+| Azure Kubernetes Service (AKS)                      | 10.3                                                | ![image](https://github.com/user-attachments/assets/e6af589a-a91d-41be-8209-e95fe1329cb5)          |
+|                         |                                                  |           |
+
+
+## Versioning
+
+Pubsub+ Event Broker Operator follows semantic versioning.
 
 ## Contributing
 
