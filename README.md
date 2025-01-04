@@ -277,7 +277,7 @@ A gray check mark shows the broker deployment using Pubsub+ Event Broker Operato
 
 ## Versioning
 
-Pubsub+ Event Broker Operator follows semantic versioning.
+Pubsub+ Event Broker Operator follows [semantic versioning](https://semver.org/).
 
 ## Contributing
 
