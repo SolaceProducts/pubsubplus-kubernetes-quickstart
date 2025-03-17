@@ -356,6 +356,14 @@ type SecurityContext struct {
 	//+kubebuilder:validation:Type:=number
 	// Specifies runAsUser in pod security context. 0 or unset defaults either to 1000001, or if OpenShift detected to unspecified (see documentation)
 	RunAsUser int64 `json:"runAsUser"`
+	//+optional
+	//+kubebuilder:validation:Type:=object
+	// SELinuxOptions defines the SELinux context to be applied to the container.
+	SELinuxOptions *corev1.SELinuxOptions `json:"seLinuxOptions,omitempty"`
+	//+optional
+	//+kubebuilder:validation:Type:=object
+	// WindowsOptions defines the Windows-specific options to be applied to the container.
+	WindowsOptions *corev1.WindowsSecurityContextOptions `json:"windowsOptions,omitempty"`
 }
 
 // ContainerSecurityContext defines the container security context for the PubSubPlusEventBroker

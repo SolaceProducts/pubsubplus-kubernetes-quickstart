@@ -70,6 +70,7 @@ jobs:
           kubectl wait pods --selector app.kubernetes.io/instance=test-ha --for condition=Ready --timeout=300s
           kubectl get po --show-labels -n $TESTNAMESPACE | grep test-ha | grep "1/1"
           kubectl get po --show-labels -n $TESTNAMESPACE | grep test-ha | grep active=true
+          kubectl get po -n $TESTNAMESPACE -o jsonpath='{.items[0].metadata.name}' | xargs -I {} kubectl get po {} -n $TESTNAMESPACE -o jsonpath='{.spec.containers[0].securityContext.seLinuxOptions}' | grep "system_u"
           kubectl get sts -n $TESTNAMESPACE | grep test-ha
           kubectl port-forward svc/test-ha-pubsubplus -n $TESTNAMESPACE 55555:55555 &
           sleep 5

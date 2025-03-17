@@ -499,6 +499,16 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(sts *a
 		sts.Spec.Template.Spec.SecurityContext.FSGroup = &m.Spec.SecurityContext.FSGroup
 	}
 
+	// Check and set SELinuxOptions if present
+	if m.Spec.SecurityContext.SELinuxOptions != nil {
+		sts.Spec.Template.Spec.Containers[0].SecurityContext.SELinuxOptions = m.Spec.SecurityContext.SELinuxOptions
+	}
+
+	// Check and set WindowsOptions if present
+	if m.Spec.SecurityContext.WindowsOptions != nil {
+		sts.Spec.Template.Spec.Containers[0].SecurityContext.WindowsOptions = m.Spec.SecurityContext.WindowsOptions
+	}
+
 	// Set container security context
 	// Following cases are distinguished for RunAsUser and RunAsGroup: 1) if value not specified AND in OpenShift env AND using non-default namespace, then leave it to unspecified
 	// 2) value not specified or using default namespace: set to default 3) value specified, then set to value.

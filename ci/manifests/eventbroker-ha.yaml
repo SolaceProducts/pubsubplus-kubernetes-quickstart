@@ -22,7 +22,12 @@ spec:
     "DeploymentType": "HA"
     "DeploymentTestMode": "GithubAction"
   updateStrategy: manualPodRestart
-  securityContext: {}
+  securityContext:
+    seLinuxOptions:
+      user: "system_u"
+      role: "system_r"
+      type: "container_t"
+      level: "s0:c123,c456"
   tls:
     enabled: true
     serverTlsConfigSecret: test-tls
