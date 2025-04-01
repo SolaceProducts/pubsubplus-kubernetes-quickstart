@@ -376,6 +376,11 @@ type ContainerSecurityContext struct {
 	//+kubebuilder:validation:Type:=number
 	// Specifies runAsUser in container security context. 0 or unset defaults either to 1000001, or if OpenShift detected to unspecified (see documentation)
 	RunAsUser int64 `json:"runAsUser"`
+	//+optional
+	//+kubebuilder:validation:Type:=boolean
+	//+kubebuilder:default:=false
+	// Specifies if the root filesystem of the PubSubPlusEventBroker should be read-only. Note: This will only work for versions 10.9 and above.
+	ReadOnlyRootFilesystem bool `json:"readOnlyRootFilesystem,omitempty"`
 }
 
 // MonitoringImage defines Image details and pulling configurations for the Prometheus Exporter for Monitoring
