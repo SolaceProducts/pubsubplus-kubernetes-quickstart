@@ -189,6 +189,9 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(sts *a
 			}
 		}
 	}
+	if runBrokerAsReadOnlyRootFilesystem(m) {
+		podAnnotations[brokerDeploymentReadOnlyConfig] = "true"
+	}
 
 	sts.Spec.UpdateStrategy = appsv1.StatefulSetUpdateStrategy{
 		Type: appsv1.OnDeleteStatefulSetStrategyType,
@@ -320,6 +323,7 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(sts *a
 						},
 						{
 							Name:      "config-map",
+							ReadOnly:  false,
 							MountPath: "/mnt/disks/solace",
 						},
 						{
@@ -530,6 +534,8 @@ func (r *PubSubPlusEventBrokerReconciler) updateStatefulsetForEventBroker(sts *a
 	} else {
 		sts.Spec.Template.Spec.Containers[0].SecurityContext.RunAsGroup = &m.Spec.BrokerSecurityContext.RunAsGroup
 	}
+
+	setReadOnlyRootFilesystem(sts, m)
 
 	//Set TLS configuration
 	if m.Spec.BrokerTLS.Enabled {
@@ -864,4 +870,31 @@ func usesEphemeralStorageForMessageNode(st *eventbrokerv1beta1.Storage, nodeType
 		useEphemeralStorageForMessageNode = true
 	}
 	return useEphemeralStorageForMessageNode
+}
+
+func runBrokerAsReadOnlyRootFilesystem(m *eventbrokerv1beta1.PubSubPlusEventBroker) bool {
+	return m.Spec.BrokerSecurityContext.ReadOnlyRootFilesystem
+}
+
+func setReadOnlyRootFilesystem(sts *appsv1.StatefulSet, m *eventbrokerv1beta1.PubSubPlusEventBroker) {
+	if runBrokerAsReadOnlyRootFilesystem(m) {
+		sts.Spec.Template.Spec.Containers[0].SecurityContext.ReadOnlyRootFilesystem = &[]bool{true}[0]
+
+		// Mount write volume
+		allVolumes := sts.Spec.Template.Spec.Volumes
+		allVolumes = append(allVolumes, corev1.Volume{
+			Name: "tmp-volume",
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			},
+		})
+		sts.Spec.Template.Spec.Volumes = allVolumes
+
+		allVolumeMounts := sts.Spec.Template.Spec.Containers[0].VolumeMounts
+		allVolumeMounts = append(allVolumeMounts, corev1.VolumeMount{
+			Name:      "tmp-volume",
+			MountPath: "/tmp",
+		})
+		sts.Spec.Template.Spec.Containers[0].VolumeMounts = allVolumeMounts
+	}
 }
