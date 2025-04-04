@@ -735,6 +735,9 @@ Watched namespaces can be configured by providing the comma-separated list of na
 
 It is recommended to restrict the watched namespaces for Production use. It is generally also recommended to not include the Operator's own namespace in the list because it is easier to separate RBAC settings for the operator from the broker's deployment - see next section.
 
+> **Warning:**
+> By default, the Operator watches all namespaces. For production environments, it is recommended to modify this behavior to restrict the Operator to specific namespaces. This can be done by setting the `WATCH_NAMESPACE` environment variable in the Operator's deployment configuration.
+
 #### Operator RBAC
 
 The Operator requires CRUD permissions to manage all broker deployment resource types (e.g.: secrets) and the broker spec itself. This is defined in a ClusterRole which is bound to the Operator's service account using a ClusterRoleBinding if using the default Operator deployment. This enables the Operator to manage any of those resource types in all namespaces even if they don't belong to a broker deployment.
