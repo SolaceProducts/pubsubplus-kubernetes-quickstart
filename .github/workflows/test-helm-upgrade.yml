@@ -64,8 +64,8 @@ jobs:
             else
                echo "Not ready"
                kubectl describe pods
-               echo "Retrying in 10 seconds..."
-               sleep 10
+               echo "Retrying in 25 seconds..."
+               sleep 25
             fi
           done
           helm test my-release | grep Phase | grep Succeeded

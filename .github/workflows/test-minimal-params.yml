@@ -52,12 +52,12 @@ jobs:
           kubectl apply -f ci/manifests/eventbroker-nonha-minimal.yaml | grep "test-nonha-minimal created"
           sleep 5 ; kubectl get all          
           for i in {1..3}; do
-            kubectl wait pods --selector app.kubernetes.io/instance=test-nonha-minimal --for condition=Ready --timeout=120s
-            if [ $? -eq 0 ]; then
+            if kubectl wait pods --selector app.kubernetes.io/instance=test-nonha-minimal --for condition=Ready --timeout=120s; then
               echo "Pods are ready."
               break
             else
               echo "Waiting for pods failed, retrying in 10 seconds..."
+              kubectl describe pods --selector app.kubernetes.io/instance=test-nonha-minimal
               sleep 10
             fi
           done

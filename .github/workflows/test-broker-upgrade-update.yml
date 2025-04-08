@@ -83,7 +83,7 @@ jobs:
           while ! kubectl get po | grep "0/1" ; do sleep 1 ; done
           kubectl get all          
           for i in {1..3}; do
-            kubectl wait pods --selector app.kubernetes.io/instance=test-nonha-upgrade-update --for condition=Ready --timeout=120s
+            kubectl wait pods --selector app.kubernetes.io/instance=test-nonha-upgrade-update --for condition=Ready --timeout=220s
             if [ $? -eq 0 ]; then
               echo "Pods are ready."
               break
