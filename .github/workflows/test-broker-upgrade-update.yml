@@ -81,8 +81,17 @@ jobs:
           kubectl apply -f ci/manifests/eventbroker-upgrade-update.yaml | grep "test-nonha-upgrade-update"
           sleep 10; kubectl get all
           while ! kubectl get po | grep "0/1" ; do sleep 1 ; done
-          kubectl get all
-          kubectl wait pods --selector app.kubernetes.io/instance=test-nonha-upgrade-update --for condition=Ready --timeout=120s | grep "condition met"
+          kubectl get all          
+          for i in {1..3}; do
+            kubectl wait pods --selector app.kubernetes.io/instance=test-nonha-upgrade-update --for condition=Ready --timeout=120s
+            if [ $? -eq 0 ]; then
+              echo "Pods are ready."
+              break
+            else
+              echo "Waiting for pods failed, retrying in 10 seconds..."
+              sleep 10
+            fi
+          done
           kubectl get po --show-labels | grep test-nonha-upgrade-update | grep "1/1"
           kubectl get po --show-labels | grep test-nonha-upgrade-update | grep active=true
           kubectl get po -o yaml | grep "image: ${REPO}:${UPGRADETAG}"

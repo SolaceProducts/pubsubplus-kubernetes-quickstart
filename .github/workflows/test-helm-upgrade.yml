@@ -58,7 +58,17 @@ jobs:
           helm install my-release solacecharts/pubsubplus-dev --set solace.size=dev,solace.redundancy=false,solace.podModifierEnabled=true,tls.enabled=true,tls.serverCertificatesSecret=test-tls,solace.usernameAdminPassword=admin
           kubectl describe pods
           echo "Waiting for broker to become active"
-          until kubectl get pods --show-labels | grep pubsubplus-dev-0 | grep -m 1 -E '1/1'; do sleep 10; done
+#          until kubectl get pods --show-labels | grep pubsubplus-dev-0 | grep -m 1 -E '1/1'; do sleep 10; done
+          while true; do
+            if kubectl get pods --show-labels | grep pubsubplus-dev-0 | grep -m 1 -E '1/1'; then
+               break
+            else
+               echo "Not ready"
+               kubectl describe pods
+               echo "Retrying in 10 seconds..."
+               sleep 10
+            fi
+          done     
           helm test my-release | grep Phase | grep Succeeded
           kubectl get statefulset,svc,pods,pvc,pv --show-labels
           kubectl port-forward svc/my-release-pubsubplus-dev 55566:55555 &

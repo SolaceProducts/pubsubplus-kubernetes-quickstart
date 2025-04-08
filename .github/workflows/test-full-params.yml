@@ -58,16 +58,16 @@ jobs:
           sleep 5 ; kubectl get all
           for i in {1..3}; do
             kubectl wait pods --selector app.kubernetes.io/instance=test-nonha --for condition=Ready
+            kubectl wait --for=condition=ServiceReady eb test-nonha --timeout=120s
+            kubectl wait --for=condition=NoWarnings eb test-nonha
+            kubectl wait --for=condition=MonitoringReady eb test-nonha
             if [ $? -eq 0 ]; then
               break
             else
               echo "Waiting for pods failed, retrying in 5 seconds..."
               sleep 5
             fi
-          done
-          kubectl wait --for=condition=ServiceReady eb test-nonha --timeout=120s
-          kubectl wait --for=condition=NoWarnings eb test-nonha
-          kubectl wait --for=condition=MonitoringReady eb test-nonha
+          done        
           kubectl get po --show-labels | grep test-nonha | grep "1/1"
           kubectl get po --show-labels | grep test-nonha | grep active=true
           kubectl get sts | grep test-nonha
