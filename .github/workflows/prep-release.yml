@@ -80,8 +80,18 @@ jobs:
           make create-deploy-yaml
           make bundle
 
-      - name: Prep for testing - create K8s Kind Cluster
-        uses: helm/kind-action@v1.3.0
+#      - name: Prep for testing - create K8s Kind Cluster
+#        uses: helm/kind-action@v1.3.0
+
+      - name: Prep for testing - create Red Hat OpenShift Cluster
+        run: |
+          curl -LO https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/openshift-install-linux.tar.gz
+          tar -xvf openshift-install-linux.tar.gz
+          sudo mv openshift-install /usr/local/bin/
+          curl -LO https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/openshift-client-linux.tar.gz
+          tar -xvf openshift-client-linux.tar.gz
+          sudo mv oc kubectl /usr/local/bin/
+          openshift-install create cluster --dir=openshift-cluster --log-level=info
 
       - name: Test operator image using preflight tool
         run: |
