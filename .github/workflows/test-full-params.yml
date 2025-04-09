@@ -55,7 +55,7 @@ jobs:
           openssl rsa -in tls.key -text > tls.private.pem
           kubectl create secret tls monitoring-tls --key="tls.private.pem" --cert="tls.public.pem"
           kubectl apply -f ci/manifests/eventbroker-nonha.yaml | grep "test-nonha created"
-          sleep 5 ; kubectl get all
+          sleep 25 ; kubectl get all
           for i in {1..3}; do
             kubectl wait pods --selector app.kubernetes.io/instance=test-nonha --for condition=Ready
             kubectl wait --for=condition=ServiceReady eb test-nonha --timeout=120s

@@ -77,9 +77,9 @@ jobs:
           pubSubTools/sdkperf_c -cip=tcps://localhost:55455 -mn=1000 -mr=0 -ptl=t1 -stl=t1 | grep "Total Messages"
           echo "Helm release for broker working...uninstalling to upgrade to operator"
           bash ci/scripts/uninstall-helm-broker.sh my-release default
-          sleep 5 ; kubectl get all
+          sleep 25 ; kubectl get all
           kubectl apply -f ci/manifests/eventbroker-nonha-upgrade.yaml | grep "test-nonha created"
-          sleep 5 ; kubectl get all
+          sleep 25 ; kubectl get all
           kubectl wait pods --selector app.kubernetes.io/instance=test-nonha --for condition=Ready --timeout=120s
           kubectl get po --show-labels | grep test-nonha | grep "1/1"
           kubectl get po --show-labels | grep test-nonha | grep active=true
