@@ -51,7 +51,7 @@ jobs:
 
       - name: Deploy Operator
         run: |
-          sleep 10
+          sleep 20;
           echo "starting deployment"
           for i in {1..3}; do
           kubectl cluster-info
