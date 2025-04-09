@@ -6,15 +6,37 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
+
+    # Add "id-token" with the intended permissions.
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+      packages: 'read'
+
     steps:
+      - name: Set env and tools
+        run: |
+          echo "TESTNAMESPACE=op-test-fnha-$(date +%s)" >> $GITHUB_ENV
+
       - name: Check out code
         uses: actions/checkout@v4
         with:
           ref: ${{ github.head_ref }}
           fetch-depth: 0
 
-      - name: Create k8s Kind Cluster
-        uses: helm/kind-action@v1.3.0
+      - id: 'auth'
+        name: 'Authenticate to Google Cloud'
+        uses: 'google-github-actions/auth@v1.0.0'
+        with:
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          access_token_lifetime: 600s
+
+      - name: Use the GKE Autopilot test cluster
+        uses: 'google-github-actions/get-gke-credentials@v1.0.0'
+        with:
+          cluster_name: 'dev-integrationtesting'
+          location: 'us-central1'
 
       - name: Login to Github Packages
         uses: docker/login-action@v2
@@ -49,6 +71,7 @@ jobs:
 
       - name: Testing the Operator - nonHA
         run: |
+          kubectl create ns $TESTNAMESPACE && kubectl config set-context --current --namespace=$TESTNAMESPACE
           openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout tls.key -out tls.crt -subj "/CN=*"
           kubectl create secret tls test-tls --key="tls.key" --cert="tls.crt"
           openssl x509 -in tls.crt -out tls.public.pem
@@ -88,3 +111,7 @@ jobs:
           curl localhost:9628 | grep Exporter
           # TLS not working on kind, use http for now.
           kubectl delete eventbroker test-nonha | grep deleted
+
+      - name: Delete broker deployment
+        run: |
+          kubectl delete ns $TESTNAMESPACE --ignore-not-found
