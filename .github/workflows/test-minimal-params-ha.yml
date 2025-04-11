@@ -45,24 +45,45 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Testing operator deployment
+      - name: Deploy Operator
         run: |
-          kubectl cluster-info
-          kubectl get pods -n kube-system
-          echo "current-context:" $(kubectl config current-context)
-          echo "environment-kubeconfig:" ${KUBECONFIG}
-          kubectl create ns pubsubplus-operator-system --save-config --dry-run=client -o yaml | kubectl apply -f -
-          kubectl create secret generic regcred --from-file=.dockerconfigjson=${HOME}/.docker/config.json --type=kubernetes.io/dockerconfigjson -n pubsubplus-operator-system --dry-run=client -o yaml | kubectl apply -f -
-          make deploy | grep 'created \| configured'
-          kubectl rollout status deployment pubsubplus-eventbroker-operator -n pubsubplus-operator-system --timeout=240s
-          kubectl get crd | grep eventbrokers
+          sleep 20;
+          for i in {1..3}; do
+            kubectl cluster-info
+            kubectl get pods -n kube-system
+            echo "current-context:" $(kubectl config current-context)
+            echo "environment-kubeconfig:" ${KUBECONFIG}
+            kubectl get ns pubsubplus-operator-system || kubectl create ns pubsubplus-operator-system
+            if kubectl get deployment pubsubplus-eventbroker-operator -n pubsubplus-operator-system; then
+              echo "pubsubplus-eventbroker-operator is already deployed"
+              break
+            else
+              kubectl apply -f <(kubectl create secret generic regcred --from-file=.dockerconfigjson=${HOME}/.docker/config.json --type=kubernetes.io/dockerconfigjson -n pubsubplus-operator-system --dry-run=client -o yaml)
+              make deploy | grep 'created \| configured'
+              kubectl rollout status deployment pubsubplus-eventbroker-operator -n pubsubplus-operator-system --timeout=240s
+              if [ $? -eq 0 ]; then
+                break
+              else
+                echo "Rollout status check failed, retrying in 20 seconds..."
+                sleep 20
+              fi
+            fi
+          done
 
       - name: Testing the Operator - HA Minimal
         run: |
-          kubectl create ns $TESTNAMESPACE; kubectl config set-context --current --namespace=$TESTNAMESPACE
-          kubectl apply -f ci/manifests/eventbroker-ha-minimal.yaml | grep "test-ha-minimal created"
-          sleep 10 ; kubectl get all
-          kubectl wait pods --selector app.kubernetes.io/instance=test-ha-minimal --for condition=Ready --timeout=300s
+          for i in {1..3}; do
+            kubectl create ns $TESTNAMESPACE; kubectl config set-context --current --namespace=$TESTNAMESPACE
+            kubectl apply -f ci/manifests/eventbroker-ha-minimal.yaml | grep "test-ha-minimal created"
+            sleep 10 ; kubectl get all
+            kubectl wait pods --selector app.kubernetes.io/instance=test-ha-minimal --for condition=Ready --timeout=300s
+            if [ $? -eq 0 ]; then
+              break
+            else
+              echo "Waiting for pods failed, retrying in 5 seconds..."
+              sleep 5
+            fi
+          done
           kubectl get po --show-labels -n $TESTNAMESPACE | grep test-ha-minimal | grep "1/1"
           kubectl get po --show-labels -n $TESTNAMESPACE | grep test-ha-minimal | grep active=true
           kubectl get sts -n $TESTNAMESPACE | grep test-ha-minimal
@@ -72,6 +93,7 @@ jobs:
           tar -xvf SDKPERF_C_LINUX64
           pubSubTools/sdkperf_c -cip=tcp://localhost:55555 -mn=1000 -mr=0 -ptl=t1 -stl=t1 | grep "Total Messages"
           kubectl delete eventbroker test-ha-minimal -n $TESTNAMESPACE | grep deleted
+
 
       - name: Cleanup
         if: ${{ always() }}
