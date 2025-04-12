@@ -105,7 +105,7 @@ var _ = Describe("Monitoring Exporter Test", func() {
 				}
 				Expect(k8sClient.Create(ctx, brokerMNonHA)).Should(Succeed())
 
-				time.Sleep(100 * time.Second)
+				time.Sleep(150 * time.Second)
 
 				statefulset := &appsv1.StatefulSet{}
 				statefulsetName := getStatefulsetName(brokerMNonHA.Name, "p")
@@ -117,7 +117,7 @@ var _ = Describe("Monitoring Exporter Test", func() {
 					monitoringExporter := getObjectName("PrometheusExporterDeployment", brokerMNonHA.Name)
 					err := k8sClient.Get(ctx, types.NamespacedName{Name: monitoringExporter, Namespace: brokerMNonHA.Namespace}, monitoringDeployment)
 					return err == nil
-				}).WithTimeout(360 * time.Second).Should(BeTrue())
+				}).WithTimeout(120 * time.Second).Should(BeTrue())
 
 				//delete broker
 				Expect(k8sClient.Delete(ctx, brokerMNonHA)).Should(Succeed())
