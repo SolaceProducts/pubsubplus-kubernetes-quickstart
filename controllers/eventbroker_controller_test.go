@@ -121,12 +121,10 @@ var _ = Describe("Operator Test", func() {
 				}
 				Expect(k8sClient.Create(ctx, brokerNonHANewConfig)).Should(Succeed())
 
-				time.Sleep(100 * time.Second)
+				time.Sleep(150 * time.Second)
 				statefulset := &appsv1.StatefulSet{}
 				statefulsetName := getStatefulsetName(brokerNonHANewConfig.Name, "p")
 				_ = k8sClient.Get(ctx, types.NamespacedName{Name: statefulsetName, Namespace: brokerNonHANewConfig.Namespace}, statefulset)
-
-				time.Sleep(150 * time.Second)
 
 				//confirm Monitoring Deployment is found
 				EventuallyWithOffset(60, func() bool {

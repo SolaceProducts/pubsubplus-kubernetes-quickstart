@@ -105,7 +105,7 @@ var _ = Describe("Monitoring Exporter Test", func() {
 				}
 				Expect(k8sClient.Create(ctx, brokerMNonHA)).Should(Succeed())
 
-				time.Sleep(150 * time.Second)
+				time.Sleep(100 * time.Second)
 
 				statefulset := &appsv1.StatefulSet{}
 				statefulsetName := getStatefulsetName(brokerMNonHA.Name, "p")
