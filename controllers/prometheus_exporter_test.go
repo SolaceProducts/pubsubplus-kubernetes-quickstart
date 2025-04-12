@@ -117,7 +117,7 @@ var _ = Describe("Monitoring Exporter Test", func() {
 					monitoringExporter := getObjectName("PrometheusExporterDeployment", brokerMNonHA.Name)
 					err := k8sClient.Get(ctx, types.NamespacedName{Name: monitoringExporter, Namespace: brokerMNonHA.Namespace}, monitoringDeployment)
 					return err == nil
-				}).WithTimeout(120 * time.Second).Should(BeTrue())
+				}).WithTimeout(90 * time.Second).Should(BeTrue())
 
 				//delete broker
 				Expect(k8sClient.Delete(ctx, brokerMNonHA)).Should(Succeed())
