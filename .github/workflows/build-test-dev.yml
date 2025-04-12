@@ -40,9 +40,28 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.RELEASE_GITHUB_TOKEN }}
 
+      - id: 'auth'
+        name: 'Authenticate to Google Cloud'
+        uses: 'google-github-actions/auth@v1.0.0'
+        with:
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          access_token_lifetime: 600s
+
+      - name: Use the GKE Autopilot test cluster
+        uses: 'google-github-actions/get-gke-credentials@v1.0.0'
+        with:
+          cluster_name: 'dev-integrationtesting'
+          location: 'us-central1'
+
+
       - name: Create k8s Kind Cluster for Unit Tests
         if: ${{ startsWith(github.ref_name, 'dev1.') && (github.ref_name != 'main') }}
-        uses: helm/kind-action@v1.12.0
+        run: echo ::set-env name=KUBE_CONFIG_DATA::$(base64 -w 0 ~/.kube/config)
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: true
+#        uses: helm/kind-action@v1.12.0
+
 
       - name: Create Secret
         if: ${{ startsWith(github.ref_name, 'dev1.') && (github.ref_name != 'main') }}
