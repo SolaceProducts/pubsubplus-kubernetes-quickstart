@@ -21,6 +21,8 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o manager main.go
 # Refer to https://github.com/GoogleContainerTools/distroless for more details
 FROM registry.access.redhat.com/ubi9-minimal:9.5-1742914212
 
+RUN microdnf update -y libxml2 && microdnf clean all
+
 LABEL name="solace/pubsubplus-eventbroker-operator"
 LABEL vendor="Solace Corporation"
 LABEL version="1.3.0"
