@@ -21,7 +21,12 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o manager main.go
 # Refer to https://github.com/GoogleContainerTools/distroless for more details
 FROM registry.access.redhat.com/ubi9-minimal:9.5-1742914212
 
-RUN microdnf update -y libxml2 && microdnf clean all
+#Update vulnerable packages
+RUN curl -O https://rpmfind.net/linux/centos-stream/9-stream/BaseOS/aarch64/os/Packages/libxml2-2.9.13-9.el9.aarch64.rpm && \
+    rpm -ivh --force libxml2-2.9.13-9.el9.aarch64.rpm && \
+    echo "libxml2 version forced to libxml2-2.9.13-9.el9.aarch64"
+
+RUN rm -f libxml2-2.9.13-6.el9_5.2.aarch64.rpm
 
 LABEL name="solace/pubsubplus-eventbroker-operator"
 LABEL vendor="Solace Corporation"
