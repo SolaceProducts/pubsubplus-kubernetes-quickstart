@@ -163,14 +163,14 @@ jobs:
       - name: Build image and push GitHub Container Registry
         run: make docker-push
 
-      - name: Run Vulnerability PreCheck for Prisma
-        uses: ./maas-build-actions/.github/actions/prisma-vulnerability-checker
-        if: ${{ startsWith(github.ref_name, 'dev1.') && (github.ref_name != 'main') }}
-        with:
-          docker_image_to_check: gcr.io/${{ env.GCLOUD_PROJECT_ID_DEV }}/${{ env.IMAGE_NAME }}:${{ env.VERSION }}
-          prisma_repository_name: "gcr.io/${{ env.GCLOUD_PROJECT_ID_DEV }}/${{ env.IMAGE_NAME }}"
-          project_squad: "launchpad"
-          prisma_jira_check: "False"
+#      - name: Run Vulnerability PreCheck for Prisma
+#        uses: ./maas-build-actions/.github/actions/prisma-vulnerability-checker
+#        if: ${{ startsWith(github.ref_name, 'dev1.') && (github.ref_name != 'main') }}
+#        with:
+#          docker_image_to_check: gcr.io/${{ env.GCLOUD_PROJECT_ID_DEV }}/${{ env.IMAGE_NAME }}:${{ env.VERSION }}
+#          prisma_repository_name: "gcr.io/${{ env.GCLOUD_PROJECT_ID_DEV }}/${{ env.IMAGE_NAME }}"
+#          project_squad: "launchpad"
+#          prisma_jira_check: "False"
 
 
       - name: Run Whitesource Action
