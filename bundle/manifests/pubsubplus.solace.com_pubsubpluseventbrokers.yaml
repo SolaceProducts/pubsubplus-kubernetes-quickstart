@@ -4,7 +4,7 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.14.0
   labels:
-    app.kubernetes.io/version: v1.2.0
+    app.kubernetes.io/version: v1.3.0
   name: pubsubpluseventbrokers.pubsubplus.solace.com
 spec:
   group: pubsubplus.solace.com
@@ -50,9 +50,12 @@ spec:
                 nullable: true
                 type: string
               brokerContainerSecurity:
-                description: ContainerSecurityContext defines the container security
-                  context for the PubSubPlusEventBroker.
+                description: ContainerSecurityContext defines the container security context for the PubSubPlusEventBroker.
                 properties:
+                  readOnlyRootFilesystem:
+                    default: false
+                    description: 'Specifies if the root filesystem of the PubSubPlusEventBroker should be read-only. Note: This will only work for versions 10.9 and above.'
+                    type: boolean
                   runAsGroup:
                     description: Specifies runAsGroup in container security context.
                       0 or unset defaults either to 1000002, or if OpenShift detected
