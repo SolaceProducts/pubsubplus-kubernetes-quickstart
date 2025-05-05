@@ -22,6 +22,7 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o manager main.go
 FROM registry.access.redhat.com/ubi9/ubi-minimal:9.5-1745855087
 
 LABEL name="solace/pubsubplus-eventbroker-operator"
+LABEL maintainer="Solace Corporation"
 LABEL vendor="Solace Corporation"
 LABEL version="1.3.0"
 LABEL release="1.3.0"
