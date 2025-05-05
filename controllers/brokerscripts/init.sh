@@ -16,7 +16,7 @@ if [ "${BROKER_TLS_ENABLED}" = "true" ]; then
   export tls_servercertificate_filepath="/dev/shm/server.cert"
 fi
 # Deal with the fact we cannot accept "-" in router names
-export routername=$(echo $(hostname) | sed 's/-//g')
+export routername=${routername:-$(echo $(hostname) | sed 's/-//g')}
 if [ "${BROKER_REDUNDANCY}" = "true" ]; then
   IFS='-' read -ra host_array <<< $(hostname)
   is_monitor=$([ ${host_array[-2]} = "m" ] && echo 1 || echo 0)
