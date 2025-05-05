@@ -1,6 +1,6 @@
 module github.com/SolaceProducts/pubsubplus-operator
 
-go 1.22.7
+go 1.24.2
 
 require (
 	github.com/google/gnostic-models v0.6.8 // indirect

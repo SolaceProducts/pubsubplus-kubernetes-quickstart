@@ -297,6 +297,15 @@ ContainerSecurityContext defines the container security context for the PubSubPl
         </tr>
     </thead>
     <tbody><tr>
+        <td><b>readOnlyRootFilesystem</b></td>
+        <td>boolean</td>
+        <td>
+          Specifies if the root filesystem of the PubSubPlusEventBroker should be read-only. Note: This will only work for versions 10.9 and above.<br/>
+          <br/>
+            <i>Default</i>: false<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>runAsGroup</b></td>
         <td>number</td>
         <td>
@@ -459,7 +468,7 @@ Monitoring specifies a Prometheus monitoring endpoint for the event broker
             <i>Default</i>: false<br/>
         </td>
         <td>false</td>
-       </tr><tr>
+      </tr><tr>
         <td><b><a href="#pubsubpluseventbrokerspecmonitoringextraenvvarsindex">extraEnvVars</a></b></td>
         <td>[]object</td>
         <td>
@@ -511,6 +520,7 @@ Monitoring specifies a Prometheus monitoring endpoint for the event broker
       </tr></tbody>
 </table>
 
+
 ### PubSubPlusEventBroker.spec.monitoring.extraEnvVars[index]
 <sup><sup>[↩ Parent](#pubsubpluseventbrokerspecmonitoring)</sup></sup>
 
@@ -543,7 +553,6 @@ MonitoringExtraEnvVar defines environment variables to be added to the Prometheu
         <td>true</td>
       </tr></tbody>
 </table>
-
 
 
 ### PubSubPlusEventBroker.spec.monitoring.image
@@ -2525,6 +2534,124 @@ SecurityContext defines the pod security context for the event broker.
           Specifies runAsUser in pod security context. 0 or unset defaults either to 1000001, or if OpenShift detected to unspecified (see documentation)<br/>
           <br/>
             <i>Format</i>: int64<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#pubsubpluseventbrokerspecsecuritycontextselinuxoptions">seLinuxOptions</a></b></td>
+        <td>object</td>
+        <td>
+          SELinuxOptions defines the SELinux context to be applied to the container.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#pubsubpluseventbrokerspecsecuritycontextwindowsoptions">windowsOptions</a></b></td>
+        <td>object</td>
+        <td>
+          WindowsOptions defines the Windows-specific options to be applied to the container.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### PubSubPlusEventBroker.spec.securityContext.seLinuxOptions
+<sup><sup>[↩ Parent](#pubsubpluseventbrokerspecsecuritycontext)</sup></sup>
+
+
+
+SELinuxOptions defines the SELinux context to be applied to the container.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>level</b></td>
+        <td>string</td>
+        <td>
+          Level is SELinux level label that applies to the container.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>role</b></td>
+        <td>string</td>
+        <td>
+          Role is a SELinux role label that applies to the container.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>type</b></td>
+        <td>string</td>
+        <td>
+          Type is a SELinux type label that applies to the container.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>user</b></td>
+        <td>string</td>
+        <td>
+          User is a SELinux user label that applies to the container.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### PubSubPlusEventBroker.spec.securityContext.windowsOptions
+<sup><sup>[↩ Parent](#pubsubpluseventbrokerspecsecuritycontext)</sup></sup>
+
+
+
+WindowsOptions defines the Windows-specific options to be applied to the container.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>gmsaCredentialSpec</b></td>
+        <td>string</td>
+        <td>
+          GMSACredentialSpec is where the GMSA admission webhook
+(https://github.com/kubernetes-sigs/windows-gmsa) inlines the contents of the
+GMSA credential spec named by the GMSACredentialSpecName field.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>gmsaCredentialSpecName</b></td>
+        <td>string</td>
+        <td>
+          GMSACredentialSpecName is the name of the GMSA credential spec to use.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>hostProcess</b></td>
+        <td>boolean</td>
+        <td>
+          HostProcess determines if a container should be run as a 'Host Process' container.
+All of a Pod's containers must have the same effective HostProcess value
+(it is not allowed to have a mix of HostProcess containers and non-HostProcess containers).
+In addition, if HostProcess is true then HostNetwork must also be set to true.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>runAsUserName</b></td>
+        <td>string</td>
+        <td>
+          The UserName in Windows to run the entrypoint of the container process.
+Defaults to the user specified in image metadata if unspecified.
+May also be set in PodSecurityContext. If set in both SecurityContext and
+PodSecurityContext, the value specified in SecurityContext takes precedence.<br/>
         </td>
         <td>false</td>
       </tr></tbody>

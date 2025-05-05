@@ -28,6 +28,7 @@ const (
 	brokerServiceSignatureAnnotationName  = "lastAppliedConfig/brokerService"
 	tlsSecretSignatureAnnotationName      = "lastAppliedConfig/tlsSecret"
 	monitoringSpecSignatureAnnotationName = "lastAppliedConfig/monitoringSpec"
+	brokerDeploymentReadOnlyConfig        = "pubsubpluseventbroker.pubsubplus.solace.com/readonly-filesystem"
 	appKubernetesIoNameLabel              = "pubsubpluseventbroker"
 	appKubernetesIoManagedByLabel         = "solace-pubsubplus-operator"
 	maintenanceLabel                      = "solace.com/pauseReconcile"

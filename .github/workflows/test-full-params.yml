@@ -6,15 +6,37 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
+
+    # Add "id-token" with the intended permissions.
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+      packages: 'read'
+
     steps:
+      - name: Set env and tools
+        run: |
+          echo "TESTNAMESPACE=op-test-fnha-$(date +%s)" >> $GITHUB_ENV
+
       - name: Check out code
         uses: actions/checkout@v4
         with:
           ref: ${{ github.head_ref }}
           fetch-depth: 0
 
-      - name: Create k8s Kind Cluster
-        uses: helm/kind-action@v1.3.0
+      - id: 'auth'
+        name: 'Authenticate to Google Cloud'
+        uses: 'google-github-actions/auth@v1.0.0'
+        with:
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          access_token_lifetime: 600s
+
+      - name: Use the GKE Autopilot test cluster
+        uses: 'google-github-actions/get-gke-credentials@v1.0.0'
+        with:
+          cluster_name: 'dev-integrationtesting'
+          location: 'us-central1'
 
       - name: Login to Github Packages
         uses: docker/login-action@v2
@@ -23,31 +45,53 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Testing operator deployment
+      - name: Deploy Operator
         run: |
-          kubectl cluster-info
-          kubectl get pods -n kube-system
-          echo "current-context:" $(kubectl config current-context)
-          echo "environment-kubeconfig:" ${KUBECONFIG}
-          kubectl create ns pubsubplus-operator-system --save-config
-          kubectl create secret generic regcred --from-file=.dockerconfigjson=${HOME}/.docker/config.json --type=kubernetes.io/dockerconfigjson -n pubsubplus-operator-system
-          make deploy | grep created
-          kubectl rollout status deployment pubsubplus-eventbroker-operator -n pubsubplus-operator-system --timeout=30s
-          kubectl get crd | grep eventbrokers
+          sleep 20;
+          for i in {1..3}; do
+            kubectl cluster-info
+            kubectl get pods -n kube-system
+            echo "current-context:" $(kubectl config current-context)
+            echo "environment-kubeconfig:" ${KUBECONFIG}
+            kubectl get ns pubsubplus-operator-system || kubectl create ns pubsubplus-operator-system
+            if kubectl get deployment pubsubplus-eventbroker-operator -n pubsubplus-operator-system; then
+              echo "pubsubplus-eventbroker-operator is already deployed"
+              break
+            else
+              kubectl apply -f <(kubectl create secret generic regcred --from-file=.dockerconfigjson=${HOME}/.docker/config.json --type=kubernetes.io/dockerconfigjson -n pubsubplus-operator-system --dry-run=client -o yaml)
+              make deploy | grep 'created \| configured'
+              kubectl rollout status deployment pubsubplus-eventbroker-operator -n pubsubplus-operator-system --timeout=240s
+              if [ $? -eq 0 ]; then
+                break
+              else
+                echo "Rollout status check failed, retrying in 20 seconds..."
+                sleep 20
+              fi
+            fi
+          done
 
       - name: Testing the Operator - nonHA
         run: |
+          kubectl create ns $TESTNAMESPACE && kubectl config set-context --current --namespace=$TESTNAMESPACE
           openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout tls.key -out tls.crt -subj "/CN=*"
           kubectl create secret tls test-tls --key="tls.key" --cert="tls.crt"
           openssl x509 -in tls.crt -out tls.public.pem
           openssl rsa -in tls.key -text > tls.private.pem
           kubectl create secret tls monitoring-tls --key="tls.private.pem" --cert="tls.public.pem"
           kubectl apply -f ci/manifests/eventbroker-nonha.yaml | grep "test-nonha created"
-          sleep 5 ; kubectl get all
-          kubectl wait --for=condition=ServiceReady eb test-nonha --timeout=120s
-          kubectl wait --for=condition=NoWarnings eb test-nonha
-          kubectl wait --for=condition=MonitoringReady eb test-nonha
-          kubectl wait pods --selector app.kubernetes.io/instance=test-nonha --for condition=Ready
+          sleep 25 ; kubectl get all
+          for i in {1..3}; do
+            kubectl wait pods --selector app.kubernetes.io/instance=test-nonha --for condition=Ready --timeout=300s
+            kubectl wait --for=condition=ServiceReady eb test-nonha --timeout=120s
+            kubectl wait --for=condition=NoWarnings eb test-nonha
+            kubectl wait --for=condition=MonitoringReady eb test-nonha
+            if [ $? -eq 0 ]; then
+              break
+            else
+              echo "Waiting for pods failed, retrying in 15 seconds..."
+              sleep 15
+            fi
+          done        
           kubectl get po --show-labels | grep test-nonha | grep "1/1"
           kubectl get po --show-labels | grep test-nonha | grep active=true
           kubectl get sts | grep test-nonha
@@ -68,3 +112,7 @@ jobs:
           curl localhost:9628 | grep Exporter
           # TLS not working on kind, use http for now.
           kubectl delete eventbroker test-nonha | grep deleted
+
+      - name: Delete broker deployment
+        run: |
+          kubectl delete ns $TESTNAMESPACE --ignore-not-found

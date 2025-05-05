@@ -45,18 +45,30 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Testing operator deployment
+      - name: Deploy Operator
         run: |
-          kubectl cluster-info
-          kubectl get nodes -o wide
-          kubectl get pods -n kube-system
-          echo "current-context:" $(kubectl config current-context)
-          echo "environment-kubeconfig:" ${KUBECONFIG}
-          kubectl create ns pubsubplus-operator-system --save-config --dry-run=client -o yaml | kubectl apply -f -
-          kubectl create secret generic regcred --from-file=.dockerconfigjson=${HOME}/.docker/config.json --type=kubernetes.io/dockerconfigjson -n pubsubplus-operator-system --dry-run=client -o yaml | kubectl apply -f -
-          make deploy | grep 'created \| configured'
-          kubectl rollout status deployment pubsubplus-eventbroker-operator -n pubsubplus-operator-system --timeout=240s
-          kubectl get crd | grep eventbrokers
+          sleep 20;
+          for i in {1..3}; do
+            kubectl cluster-info
+            kubectl get pods -n kube-system
+            echo "current-context:" $(kubectl config current-context)
+            echo "environment-kubeconfig:" ${KUBECONFIG}
+            kubectl get ns pubsubplus-operator-system || kubectl create ns pubsubplus-operator-system
+            if kubectl get deployment pubsubplus-eventbroker-operator -n pubsubplus-operator-system; then
+              echo "pubsubplus-eventbroker-operator is already deployed"
+              break
+            else
+              kubectl apply -f <(kubectl create secret generic regcred --from-file=.dockerconfigjson=${HOME}/.docker/config.json --type=kubernetes.io/dockerconfigjson -n pubsubplus-operator-system --dry-run=client -o yaml)
+              make deploy | grep 'created \| configured'
+              kubectl rollout status deployment pubsubplus-eventbroker-operator -n pubsubplus-operator-system --timeout=240s
+              if [ $? -eq 0 ]; then
+                break
+              else
+                echo "Rollout status check failed, retrying in 20 seconds..."
+                sleep 20
+              fi
+            fi
+          done
 
       - name: Testing the Operator - HA Tolerations
         run: |

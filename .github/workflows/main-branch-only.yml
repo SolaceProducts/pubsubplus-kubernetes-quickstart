@@ -37,7 +37,7 @@ jobs:
             developer: true" > developer.yaml
           # Then apply it
           kubectl apply -f developer.yaml | grep "test-broker created"
-          sleep 5 ; kubectl get all
+          sleep 25 ; kubectl get all
           kubectl wait pods --selector app.kubernetes.io/instance=test-broker --for condition=Ready --timeout=120s
           kubectl get po --show-labels | grep test-broker | grep "1/1"
           kubectl get po --show-labels | grep test-broker | grep active=true
