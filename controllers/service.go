@@ -63,6 +63,11 @@ func (r *PubSubPlusEventBrokerReconciler) updateServiceForEventBroker(service *c
 				Port:       pbPort.ServicePort,
 				TargetPort: intstr.IntOrString{Type: intstr.Int, IntVal: pbPort.ContainerPort},
 			}
+
+			// If service type is NodePort and a specific nodePort is requested, set it
+			if getServiceType(m.Spec.Service) == corev1.ServiceTypeNodePort && pbPort.NodePort > 0 {
+				ports[idx].NodePort = pbPort.NodePort
+			}
 		}
 		service.Spec.Ports = ports
 	} else {
@@ -76,6 +81,11 @@ func (r *PubSubPlusEventBrokerReconciler) updateServiceForEventBroker(service *c
 					Protocol:   pbPort.Protocol,
 					Port:       pbPort.ServicePort,
 					TargetPort: intstr.IntOrString{Type: intstr.Int, IntVal: pbPort.ContainerPort},
+				}
+
+				// If service type is NodePort and a specific nodePort is requested, set it
+				if getServiceType(m.Spec.Service) == corev1.ServiceTypeNodePort && pbPort.NodePort > 0 {
+					ports[idx].NodePort = pbPort.NodePort
 				}
 			}
 			service.Spec.Ports = ports

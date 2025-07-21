@@ -252,6 +252,11 @@ jobs:
     uses: ./.github/workflows/test-broker-chaos-situation.yml
     secrets: inherit
 
+  int-nodeport:
+    needs: build
+    uses: ./.github/workflows/test-nodeport.yml
+    secrets: inherit
+
   taints-and-tolerations:
     if: ${{ false }}  # disable for now
     needs: build

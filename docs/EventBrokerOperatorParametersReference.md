@@ -2738,6 +2738,15 @@ Port defines parameters configure Service details for the Broker
         </td>
         <td>true</td>
       </tr><tr>
+        <td><b>nodePort</b></td>
+        <td>number</td>
+        <td>
+          NodePort is the port number to expose on each node when service type is NodePort. If not specified, a port will be automatically assigned by Kubernetes.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>protocol</b></td>
         <td>enum</td>
         <td>
