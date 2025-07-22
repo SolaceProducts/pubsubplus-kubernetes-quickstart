@@ -486,7 +486,7 @@ kubectl get pods --show-labels
 
 To support [Internal load balancers](https://kubernetes.io/docs/concepts/services-networking/service/#internal-load-balancer), a provider-specific service annotation can be added by defining the `spec.service.annotations` parameter.
 
-The `spec.service.ports` parameter defines the broker ports/services exposed. It specifies the event broker `containerPort` that provides the service and the mapping to the `servicePort` where the service can be accessed when using LoadBalancer or ClusterIP - however there is no control over the port number mapping when using NodePort. By default most broker service ports are exposed, refer to the ["pubsubpluseventbrokers" Custom Resource definition](/config/crd/bases/pubsubplus.solace.com_pubsubpluseventbrokers.yaml).
+The `spec.service.ports` parameter defines the broker ports/services exposed. It specifies the event broker `containerPort` that provides the service and the mapping to the `servicePort` where the service can be accessed when using LoadBalancer or ClusterIP. By default, most broker service ports are exposed, refer to the ["pubsubpluseventbrokers" Custom Resource definition](/config/crd/bases/pubsubplus.solace.com_pubsubpluseventbrokers.yaml).
 
 Example:
 ```yaml
@@ -501,6 +501,53 @@ spec:
         protocol: TCP
         name: tcp-smf
       - ...
+```
+For the `NodePort` service type, we have two configuration options:
+
+**Option 1:** Explicit NodePort Assignment.
+
+Explicitly specify which node ports to use for each service port. This gives you full control over port assignments. However, if there are conflicts with existing NodePorts, the deployment will fail.
+
+```yaml
+apiVersion: pubsubplus.solace.com/v1beta1
+kind: PubSubPlusEventBroker
+metadata:
+  name: explicit-nodeport-broker
+spec:
+  developer: true
+  service:
+    type: NodePort
+    ports:
+      - name: tcp-semp
+        protocol: TCP
+        containerPort: 8080
+        servicePort: 8080
+        nodePort: 30080  # Explicitly assigned
+      - name: tcp-smf
+        protocol: TCP
+        containerPort: 55555
+        servicePort: 55555
+        nodePort: 30555  # Explicitly assigned
+      - name: tcp-web
+        protocol: TCP
+        containerPort: 8008
+        servicePort: 8008
+        nodePort: 30008  # Explicitly assigned
+```
+
+**Option 2:** Automatic NodePort Assignment.
+
+Let Kubernetes automatically assign node ports. This is simpler but gives you less control. It also avoids conflicts with existing NodePorts, as Kubernetes will find available ports for you.
+
+```yaml
+apiVersion: pubsubplus.solace.com/v1beta1
+kind: PubSubPlusEventBroker
+metadata:
+  name: auto-nodeport-broker
+spec:
+  developer: true
+  service:
+    type: NodePort
 ```
 
 #### Configuring TLS for broker services
