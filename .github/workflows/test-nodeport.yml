@@ -102,7 +102,7 @@ jobs:
           [ "$WEB_NODEPORT" = "30008" ] && echo "WEB NodePort test passed" || echo "WEB NodePort test failed"
           
           # Test connectivity through NodePort
-          NODE_IP=$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}')
+          NODE_IP=$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="ExternalIP")].address}')
           echo "Using node IP: $NODE_IP"
           
           # Test SMF connectivity directly through NodePort
