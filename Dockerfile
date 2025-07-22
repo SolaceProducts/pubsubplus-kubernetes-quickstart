@@ -24,8 +24,8 @@ FROM registry.access.redhat.com/ubi9/ubi-minimal:9.5-1745855087
 LABEL name="solace/pubsubplus-eventbroker-operator"
 LABEL maintainer="Solace Corporation"
 LABEL vendor="Solace Corporation"
-LABEL version="1.3.0"
-LABEL release="1.3.0"
+LABEL version="1.4.0"
+LABEL release="1.4.0"
 LABEL summary="Solace PubSub+ Event Broker Kubernetes Operator"
 LABEL description="The Solace PubSub+ Event Broker Kubernetes Operator deploys and manages the lifecycle of PubSub+ Event Brokers"
 

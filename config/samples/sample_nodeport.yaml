@@ -1,0 +1,24 @@
+apiVersion: pubsubplus.solace.com/v1beta1
+kind: PubSubPlusEventBroker
+metadata:
+  name: node-port-example
+spec:
+  developer: true
+  service:
+    type: NodePort
+    ports:
+      - name: tcp-semp
+        protocol: TCP
+        containerPort: 8080
+        servicePort: 8080
+        nodePort: 30080
+      - name: tcp-smf
+        protocol: TCP
+        containerPort: 55555
+        servicePort: 55555
+        nodePort: 30555
+      - name: tcp-web
+        protocol: TCP
+        containerPort: 8008
+        servicePort: 8008
+        nodePort: 30008
