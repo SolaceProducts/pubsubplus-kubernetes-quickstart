@@ -486,7 +486,7 @@ kubectl get pods --show-labels
 
 To support [Internal load balancers](https://kubernetes.io/docs/concepts/services-networking/service/#internal-load-balancer), a provider-specific service annotation can be added by defining the `spec.service.annotations` parameter.
 
-The `spec.service.ports` parameter defines the broker ports/services exposed. It specifies the event broker `containerPort` that provides the service and the mapping to the `servicePort` where the service can be accessed when using LoadBalancer or ClusterIP. By default most broker service ports are exposed, refer to the ["pubsubpluseventbrokers" Custom Resource definition](/config/crd/bases/pubsubplus.solace.com_pubsubpluseventbrokers.yaml).
+The `spec.service.ports` parameter defines the broker ports/services exposed. It specifies the event broker `containerPort` that provides the service and the mapping to the `servicePort` where the service can be accessed when using LoadBalancer or ClusterIP. By default, most broker service ports are exposed, refer to the ["pubsubpluseventbrokers" Custom Resource definition](/config/crd/bases/pubsubplus.solace.com_pubsubpluseventbrokers.yaml).
 
 Example:
 ```yaml
@@ -502,11 +502,11 @@ spec:
         name: tcp-smf
       - ...
 ```
-For `NodePort` service type, we have two configuration options:
+For the `NodePort` service type, we have two configuration options:
 
 **Option 1:** Explicit NodePort Assignment.
 
-With this option, you explicitly specify which node ports to use for each service port. This gives you full control over port assignments. However, if there are conflicts with existing NodePorts, the deployment will fail.
+Explicitly specify which node ports to use for each service port. This gives you full control over port assignments. However, if there are conflicts with existing NodePorts, the deployment will fail.
 
 ```yaml
 apiVersion: pubsubplus.solace.com/v1beta1
@@ -537,7 +537,7 @@ spec:
 
 **Option 2:** Automatic NodePort Assignment.
 
-With this option, you let Kubernetes automatically assign node ports. This is simpler but gives you less control. It also avoids conflicts with existing NodePorts, as Kubernetes will find available ports for you.
+Let Kubernetes automatically assign node ports. This is simpler but gives you less control. It also avoids conflicts with existing NodePorts, as Kubernetes will find available ports for you.
 
 ```yaml
 apiVersion: pubsubplus.solace.com/v1beta1
