@@ -105,12 +105,11 @@ jobs:
           NODE_IP=$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}')
           echo "Using node IP: $NODE_IP"
           
-          # Test SMF connectivity through NodePort
-          kubectl port-forward svc/test-nonha-nodeport-pubsubplus 55555:55555 &
-          sleep 5
+          # Test SMF connectivity directly through NodePort
+          echo "Testing direct NodePort connection to $NODE_IP:$SMF_NODEPORT"
           curl -O https://sftp.solace.com/download/SDKPERF_C_LINUX64
           tar -xvf SDKPERF_C_LINUX64
-          pubSubTools/sdkperf_c -cip=tcp://localhost:55555 -mn=1000 -mr=0 -ptl=t1 -stl=t1 | grep "Total Messages"
+          pubSubTools/sdkperf_c -cip=tcp://$NODE_IP:$SMF_NODEPORT -mn=1000 -mr=0 -ptl=t1 -stl=t1 | grep "Total Messages"
           
           kubectl delete eventbroker test-nonha-nodeport | grep deleted
 
