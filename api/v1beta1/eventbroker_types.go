@@ -160,6 +160,12 @@ type BrokerPort struct {
 	//+kubebuilder:validation:Type:=number
 	// Port number to expose on the service
 	ServicePort int32 `json:"servicePort"`
+	//+optional
+	//+kubebuilder:validation:Minimum=30000
+	//+kubebuilder:validation:Maximum=32767
+	//+kubebuilder:validation:Type:=number
+	// NodePort specifies a fixed node port when service type is NodePort
+	NodePort int32 `json:"nodePort,omitempty"`
 }
 
 // Service defines parameters configure Service details for the Broker

@@ -4,7 +4,7 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.14.0
   labels:
-    app.kubernetes.io/version: v1.3.0
+    app.kubernetes.io/version: v1.4.0
   name: pubsubpluseventbrokers.pubsubplus.solace.com
 spec:
   group: pubsubplus.solace.com
@@ -50,11 +50,14 @@ spec:
                 nullable: true
                 type: string
               brokerContainerSecurity:
-                description: ContainerSecurityContext defines the container security context for the PubSubPlusEventBroker.
+                description: ContainerSecurityContext defines the container security
+                  context for the PubSubPlusEventBroker.
                 properties:
                   readOnlyRootFilesystem:
                     default: false
-                    description: 'Specifies if the root filesystem of the PubSubPlusEventBroker should be read-only. Note: This will only work for versions 10.9 and above.'
+                    description: 'Specifies if the root filesystem of the PubSubPlusEventBroker
+                    should be read-only. Note: This will only work for versions
+                      10.9 and above.'
                     type: boolean
                   runAsGroup:
                     description: Specifies runAsGroup in container security context.
@@ -1457,6 +1460,13 @@ spec:
                           description: Unique name for the port that can be referred
                             to by services.
                           type: string
+                        nodePort:
+                          description: NodePort specifies a fixed node port when service
+                            type is NodePort
+                          format: int32
+                          maximum: 32767
+                          minimum: 30000
+                          type: number
                         protocol:
                           default: TCP
                           description: Protocol for port. Must be UDP, TCP, or SCTP.

@@ -315,7 +315,7 @@ spec:
 
 >Note: Beyond CPU and memory requirements, broker storage size (see [Storage](#storage) section) must also support the provided scaling. The calculator can be used to determine that as well.
 
-Also note, that specifying `maxConnections`, `maxQueueMessages`, and `maxSpoolUsage` on initial deployment overwrites the broker’s default values. On the other hand, doing the same using upgrade on an existing deployment does not overwrite these values on brokers configuration, but it can be used to prepare (first step) for a manual scale up using CLI where these parameter changes would actually become effective (second step). The Operator will use default configurations in situations where the scaling parameters are not provided or are not valid.
+Also note, that specifying `maxConnections`, `maxQueueMessages`, and `maxSpoolUsage` on initial deployment overwrites the broker's default values. On the other hand, doing the same using upgrade on an existing deployment does not overwrite these values on brokers configuration, but it can be used to prepare (first step) for a manual scale up using CLI where these parameter changes would actually become effective (second step). The Operator will use default configurations in situations where the scaling parameters are not provided or are not valid.
 
 >Note: The scaling parameters intentionally use a mix of *camelCase* and *snake_case* to maintain backward and forward compatibility with Solace PubSub+ Software Event Broker configurations. Make sure values are not duplicated for consistency. When using the [resource calculator](https://docs.solace.com/Admin-Ref/Resource-Calculator/pubsubplus-resource-calculator.html), ensure that the scaling parameters are in the correct format to match what the Solace PubSub+ Software Event Broker expects. If invalid scaling parameters are provided, the Operator will revert to default values. For the list of default values, please refer to this [link](/docs/EventBrokerOperatorParametersReference.md).
 
@@ -486,7 +486,7 @@ kubectl get pods --show-labels
 
 To support [Internal load balancers](https://kubernetes.io/docs/concepts/services-networking/service/#internal-load-balancer), a provider-specific service annotation can be added by defining the `spec.service.annotations` parameter.
 
-The `spec.service.ports` parameter defines the broker ports/services exposed. It specifies the event broker `containerPort` that provides the service and the mapping to the `servicePort` where the service can be accessed when using LoadBalancer or ClusterIP - however there is no control over the port number mapping when using NodePort. By default most broker service ports are exposed, refer to the ["pubsubpluseventbrokers" Custom Resource definition](/config/crd/bases/pubsubplus.solace.com_pubsubpluseventbrokers.yaml).
+The `spec.service.ports` parameter defines the broker ports/services exposed. It specifies the event broker `containerPort` that provides the service and the mapping to the `servicePort` where the service can be accessed when using LoadBalancer or ClusterIP. By default, most broker service ports are exposed, refer to the ["pubsubpluseventbrokers" Custom Resource definition](/config/crd/bases/pubsubplus.solace.com_pubsubpluseventbrokers.yaml).
 
 Example:
 ```yaml
@@ -501,6 +501,53 @@ spec:
         protocol: TCP
         name: tcp-smf
       - ...
+```
+For the `NodePort` service type, we have two configuration options:
+
+**Option 1:** Explicit NodePort Assignment.
+
+Explicitly specify which node ports to use for each service port. This gives you full control over port assignments. However, if there are conflicts with existing NodePorts, the deployment will fail.
+
+```yaml
+apiVersion: pubsubplus.solace.com/v1beta1
+kind: PubSubPlusEventBroker
+metadata:
+  name: explicit-nodeport-broker
+spec:
+  developer: true
+  service:
+    type: NodePort
+    ports:
+      - name: tcp-semp
+        protocol: TCP
+        containerPort: 8080
+        servicePort: 8080
+        nodePort: 30080  # Explicitly assigned
+      - name: tcp-smf
+        protocol: TCP
+        containerPort: 55555
+        servicePort: 55555
+        nodePort: 30555  # Explicitly assigned
+      - name: tcp-web
+        protocol: TCP
+        containerPort: 8008
+        servicePort: 8008
+        nodePort: 30008  # Explicitly assigned
+```
+
+**Option 2:** Automatic NodePort Assignment.
+
+Let Kubernetes automatically assign node ports. This is simpler but gives you less control. It also avoids conflicts with existing NodePorts, as Kubernetes will find available ports for you.
+
+```yaml
+apiVersion: pubsubplus.solace.com/v1beta1
+kind: PubSubPlusEventBroker
+metadata:
+  name: auto-nodeport-broker
+spec:
+  developer: true
+  service:
+    type: NodePort
 ```
 
 #### Configuring TLS for broker services

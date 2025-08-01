@@ -63,6 +63,9 @@ func (r *PubSubPlusEventBrokerReconciler) updateServiceForEventBroker(service *c
 				Port:       pbPort.ServicePort,
 				TargetPort: intstr.IntOrString{Type: intstr.Int, IntVal: pbPort.ContainerPort},
 			}
+
+			// Use the helper function to assign NodePort if needed
+			assignNodePortIfNeeded(&ports[idx], *pbPort, getServiceType(m.Spec.Service))
 		}
 		service.Spec.Ports = ports
 	} else {
@@ -77,6 +80,9 @@ func (r *PubSubPlusEventBrokerReconciler) updateServiceForEventBroker(service *c
 					Port:       pbPort.ServicePort,
 					TargetPort: intstr.IntOrString{Type: intstr.Int, IntVal: pbPort.ContainerPort},
 				}
+
+				// Use the helper function to assign NodePort if needed
+				assignNodePortIfNeeded(&ports[idx], *pbPort, getServiceType(m.Spec.Service))
 			}
 			service.Spec.Ports = ports
 		}
@@ -88,4 +94,11 @@ func getServiceType(ms eventbrokerv1beta1.Service) corev1.ServiceType {
 		return ms.ServiceType
 	}
 	return corev1.ServiceTypeLoadBalancer
+}
+
+// Helper function to assign NodePort if needed
+func assignNodePortIfNeeded(servicePort *corev1.ServicePort, brokerPort eventbrokerv1beta1.BrokerPort, serviceType corev1.ServiceType) {
+	if serviceType == corev1.ServiceTypeNodePort && brokerPort.NodePort > 0 {
+		servicePort.NodePort = brokerPort.NodePort
+	}
 }

@@ -192,6 +192,73 @@ var _ = Describe("Service test", func() {
 
 			})
 
+			By("confirming NodePort values are set correctly when service type is NodePort", func() {
+				brokerNodePort := pubsubplus.PubSubPlusEventBroker{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "service-nodeport",
+						Namespace: namespace,
+					},
+					Spec: pubsubplus.EventBrokerSpec{
+						Developer:      true,
+						Redundancy:     false,
+						UpdateStrategy: pubsubplus.AutomatedRollingUpdateStrategy,
+						Service: pubsubplus.Service{
+							ServiceType: corev1.ServiceTypeNodePort,
+							Annotations: map[string]string{
+								"Sample": "Test",
+							},
+							Ports: []*pubsubplus.BrokerPort{
+								{
+									Name:          "tcp-semp",
+									Protocol:      corev1.ProtocolTCP,
+									ContainerPort: 8080,
+									ServicePort:   8080,
+									NodePort:      30080,
+								},
+								{
+									Name:          "tcp-smf",
+									Protocol:      corev1.ProtocolTCP,
+									ContainerPort: 55555,
+									ServicePort:   55555,
+									NodePort:      30555,
+								},
+							},
+						},
+					},
+				}
+				Expect(k8sClient.Create(ctx, &brokerNodePort)).Should(Succeed())
+
+				// Service created successfully
+				EventuallyWithOffset(10, func() bool {
+					service := &corev1.Service{}
+					serviceName := getObjectName("BrokerService", brokerNodePort.Name)
+					err := k8sClient.Get(ctx, types.NamespacedName{Name: serviceName, Namespace: brokerNodePort.Namespace}, service)
+					if err != nil {
+						return false
+					}
+
+					// Verify service type is NodePort
+					if service.Spec.Type != corev1.ServiceTypeNodePort {
+						return false
+					}
+
+					// Verify nodePort values are set correctly
+					for _, port := range service.Spec.Ports {
+						if port.Name == "tcp-semp" && port.NodePort != 30080 {
+							return false
+						}
+						if port.Name == "tcp-smf" && port.NodePort != 30555 {
+							return false
+						}
+					}
+
+					return true
+				}).WithTimeout(20 * time.Second).Should(BeTrue())
+
+				// Delete broker
+				Expect(k8sClient.Delete(ctx, &brokerNodePort)).To(Succeed())
+			})
+
 		})
 	})
 
