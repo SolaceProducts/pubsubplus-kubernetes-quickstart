@@ -20,8 +20,8 @@ metadata:
     certified: "true"
     com.redhat.delivery.operator.bundle: "true"
     com.redhat.openshift.versions: v4.10
-    containerImage: docker.io/solace/pubsubplus-eventbroker-operator:1.3.0
-    createdAt: "2025-05-04T22:11:52Z"
+    containerImage: docker.io/solace/pubsubplus-eventbroker-operator:1.4.0
+    createdAt: "2025-07-31T19:48:36Z"
     description: The Solace PubSub+ Event Broker Operator deploys and manages the
       lifecycle of PubSub+ Event Brokers
     operators.openshift.io/valid-subscription: '[]'
