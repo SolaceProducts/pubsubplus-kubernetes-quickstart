@@ -1,7 +1,7 @@
 name: SCA Scan on merge to main
 on:
   push:
-    branches: [main]
+    branches: [main, DATAGO-142436-fossa-guardian-onboarding]
 
 permissions:
   contents: read
@@ -20,7 +20,7 @@ jobs:
 
   update_manifest:
     needs: sca_scan
-    if: needs.sca_scan.result == 'success' && github.ref_name == github.event.repository.default_branch
+    if: needs.sca_scan.result == 'success'
     runs-on: ubuntu-latest
     permissions:
       id-token: write
