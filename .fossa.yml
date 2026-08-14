@@ -1,9 +1,9 @@
 version: 3
 
 project:
-  locator: SolaceProducts_solace-kubernetes-quickstart
-  id: SolaceProducts_solace-kubernetes-quickstart
-  name: solace-kubernetes-quickstart
+  locator: SolaceProducts_pubsubplus-kubernetes-quickstart
+  id: SolaceProducts_pubsubplus-kubernetes-quickstart
+  name: pubsubplus-kubernetes-quickstart
   teams: []
   labels:
     - go
