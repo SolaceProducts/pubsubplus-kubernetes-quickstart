@@ -86,7 +86,7 @@ jobs:
 
       - name: Verify Changed files
         if: ${{ startsWith(github.ref_name, 'dev1.') && (github.ref_name != 'main') }}
-        uses: tj-actions/verify-changed-files@a3391b5a01114c49c3a8d55181a9ff4c99bf0db7 # v12
+        uses: tj-actions/verify-changed-files@a1c6acee9df209257a246f2cc6ae8cb6581c1edf # v20.0.4
         id: verify-changed-files
         with:
           files: README.md
